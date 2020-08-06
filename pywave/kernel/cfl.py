@@ -30,20 +30,17 @@ Parameters
 ----------
 dimension : int
     Domain dimension. 2 (2D) or 3 (3D)
-
 space_order : int
     Spatial order
-
 spacing : tuple(float, float, float)
     Spacing between grid points
-
 vel_model : grid
     Velocity model
 
 Returns
 ----------
 float
-    dt in miliseconds
+    dt in seconds
 """
 def calc_dt(dimension, space_order, spacing, vel_model):
 
@@ -72,7 +69,7 @@ time : int
     Propagation simulation time in miliseconds
 
 dt : float
-    Timestep variation
+    Timestep variation in seconds
 
 Returns
 ----------
@@ -81,4 +78,4 @@ int
 """
 def calc_num_timesteps(time, dt):
 
-    return int(np.floor(time / dt))
+    return int(np.floor( (time/1000) / dt))

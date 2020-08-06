@@ -1,3 +1,3 @@
-from .compiler import *
-from .operator import *
-from .solver import *
+from .compiler import Compiler
+from .solver import AcousticSolver
+from .cfl import *

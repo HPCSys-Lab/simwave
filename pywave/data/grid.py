@@ -6,7 +6,7 @@ class Grid():
 
     Parameters
     ----------
-    shape : (int, int, int)
+    shape : (int, ...)
         Size of the grid along each axis (Z, X, Y)
     """
     def __init__(self, shape):
