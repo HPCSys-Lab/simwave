@@ -63,8 +63,13 @@ class Compiler():
     """
     def compile(self):
 
-        current_dir = os.getcwd()
-        object_dir = current_dir + '/tmp/'
+        # get the working dir
+        working_dir = os.getcwd()
+
+        # get the dir of the compiler.py file
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+
+        object_dir = working_dir + '/tmp/'
         object_name = "lib_c_wave_{}.so".format(self.version.lower())
         program_dir = current_dir + '/c_code/'
 
