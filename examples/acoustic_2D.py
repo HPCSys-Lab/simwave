@@ -1,5 +1,4 @@
 from pywave import *
-from utils import *
 
 # shape of the grid
 shape = (512, 512)
