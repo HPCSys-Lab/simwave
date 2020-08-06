@@ -11,8 +11,20 @@ class Solver():
 
     Parameters
     ----------
-    params : dictionary
-        Dictionary with propagation params
+    grid : object
+        Object that represents the grid
+    velocity_model: object
+        Object that represents the velocity model
+    density: object
+        Object that represents the density model
+    compiler: object
+        Object that represents the compiler
+    spacing: tuple
+        Spacing along each axis
+    progatation_time: int
+        Propagation time in miliseconds
+    print_steps: int
+        Print intermediate wavefields according
     """
     def __init__(self, grid=None, velocity_model=None, density=None,
                        compiler=None, spacing=None, progatation_time=1000,
@@ -66,8 +78,9 @@ class Solver():
 
 class AcousticSolver(Solver):
 
+    # apply CFL conditions
     def __apply_cfl_conditions(self):
-        # apply CFL conditions
+
         self.dt = cfl.calc_dt(
             dimension = self.dimension,
             space_order = self.space_order,
