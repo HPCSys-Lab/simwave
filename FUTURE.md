@@ -8,6 +8,8 @@ Next steps:
 * python/CUDA integration
 * create VTK files
 * 4th order in space discretization
+* unit tests
+* documentation
 * paper
 * propagators
-  * acoustic
+  * acoustic ...
