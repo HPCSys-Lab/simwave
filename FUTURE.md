@@ -8,3 +8,4 @@ Next steps:
 * python/CUDA integration
 * create VTK files
 * 4th order in space discretization
+* paper
