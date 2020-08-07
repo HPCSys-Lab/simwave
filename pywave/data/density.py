@@ -1,4 +1,4 @@
-from io import *
+from pywave.data import *
 import numpy as np
 import segyio
 

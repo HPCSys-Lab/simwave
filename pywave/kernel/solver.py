@@ -171,6 +171,43 @@ class AcousticSolver(Solver):
         self.forward.argtypes = [
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_float,
+            ctypes.c_float,
+            ctypes.c_float,
+            ctypes.c_float,
+            ctypes.c_int
+        ]
+
+        nz, nx, ny = self.grid.shape()
+        dz, dx, dy = self.spacing
+
+        self.elapsed_time = self.forward(
+            self.grid.wavefield,
+            self.velocity_model.model,
+            nz,
+            nx,
+            ny,
+            self.timesteps,
+            dz,
+            dx,
+            dy,
+            self.dt,
+            self.print_steps
+        )
+
+    def __forward_3D_variable_density(self):
+
+        self.forward = self.library.forward_3D_variable_density
+
+        self.forward.restype = ctypes.c_double
+
+        self.forward.argtypes = [
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ctypes.c_size_t,
             ctypes.c_size_t,
@@ -190,43 +227,6 @@ class AcousticSolver(Solver):
             self.grid.wavefield,
             self.velocity_model.model,
             self.density.model,
-            nz,
-            nx,
-            ny,
-            self.timesteps,
-            dz,
-            dx,
-            dy,
-            self.dt,
-            self.print_steps
-        )
-
-    def __forward_3D_variable_density(self):
-
-        self.forward = self.library.forward_3D_constant_density
-
-        self.forward.restype = ctypes.c_double
-
-        self.forward.argtypes = [
-            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
-            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
-            ctypes.c_size_t,
-            ctypes.c_size_t,
-            ctypes.c_size_t,
-            ctypes.c_size_t,
-            ctypes.c_float,
-            ctypes.c_float,
-            ctypes.c_float,
-            ctypes.c_float,
-            ctypes.c_int
-        ]
-
-        nz, nx, ny = self.grid.shape()
-        dz, dx, dy = self.spacing
-
-        self.elapsed_time = self.forward(
-            self.grid.wavefield,
-            self.velocity_model.model,
             nz,
             nx,
             ny,
