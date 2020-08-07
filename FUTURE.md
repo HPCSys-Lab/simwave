@@ -9,3 +9,5 @@ Next steps:
 * create VTK files
 * 4th order in space discretization
 * paper
+* propagators
+  * acoustic
