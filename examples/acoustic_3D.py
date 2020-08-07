@@ -1,7 +1,7 @@
 from pywave import *
 
 # shape of the grid
-shape = (128, 128, 128)
+shape = (256, 256, 256)
 
 # spacing
 spacing = (20.0, 20.0, 20.0)
@@ -35,4 +35,4 @@ wavefield, exec_time = solver.forward()
 
 print("Forward execution time: %f seconds" % exec_time)
 
-#plot3D(wavefield)
+plot(wavefield[128,:,:])

@@ -32,7 +32,7 @@ class Grid():
             val = 1.0;
             for s in range(5,0,-1):
                 for i in range (self.shape()[0]//2 - s, self.shape()[0]//2 + s - 1, 1):
-                    for j in range (self.shape()[1]//4 - s, self.shape()[1]//4 + s -1, 1):
-                        for k in range (self.shape()[2]//4 - s, self.shape()[2]//4 + s -1, 1):
+                    for j in range (self.shape()[1]//2 - s, self.shape()[1]//2 + s -1, 1):
+                        for k in range (self.shape()[2]//2 - s, self.shape()[2]//2 + s -1, 1):
                             self.wavefield[i,j,k] = val;
                 val *= 10;
