@@ -10,10 +10,10 @@ spacing = (20.0, 20.0, 20.0)
 time = 1000
 
 # get the velocity model
-vel = VelocityModel(shape=shape)
+vel = Data(shape=shape)
 
 # get the density model
-density = DensityModel(shape=vel.shape())
+density = Data(shape=vel.shape(), constant=1)
 
 # get the compiler
 compiler = Compiler(program_version='sequential')
@@ -25,7 +25,7 @@ grid.add_source()
 solver = AcousticSolver(
     grid = grid,
     velocity_model = vel,
-#    density = density,
+    density = density,
     compiler = compiler,
     spacing = spacing,
     progatation_time = time

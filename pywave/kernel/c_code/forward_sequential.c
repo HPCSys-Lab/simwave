@@ -299,6 +299,100 @@ double forward_3D_constant_density(float *grid, float *vel_base, size_t nz, size
 
 double forward_3D_variable_density(float *grid, float *vel_base, float *density, size_t nz, size_t nx, size_t ny, size_t timesteps, float dz, float dx, float dy, float dt, int print_every){
 
-    return 0.111;
+    float *swap;
+    float value = 0.0;
+    size_t current;
+
+    float dzSquared = dz * dz;
+    float dxSquared = dx * dx;
+    float dySquared = dy * dy;
+    float dtSquared = dt * dt;
+
+    size_t nsize = nz * nx * ny;
+
+    float *prev_base = malloc(nsize * sizeof(float));
+    float *next_base = malloc(nsize * sizeof(float));
+
+    // initialize aux matrix
+    for(size_t i = 0; i < nz; i++){
+        for(size_t j = 0; j < nx; j++){
+
+            size_t offset = (i * nx + j) * ny;
+
+            for(size_t k = 0; k < ny; k++){
+                prev_base[offset + k] = grid[offset + k];
+                next_base[offset + k] = 0.0f;
+            }
+        }
+    }
+
+    // variable to measure execution time
+    struct timeval time_start;
+    struct timeval time_end;
+
+    float z1, z2, x1, x2, y1, y2, term_z, term_x, term_y;
+
+    // get the start time
+    gettimeofday(&time_start, NULL);
+
+    // wavefield modeling
+    for(size_t n = 0; n < timesteps; n++) {
+        for(size_t i = 1; i < nz - HALF_LENGTH; i++) {
+            for(size_t j = 1; j < nx - HALF_LENGTH; j++) {
+                for(size_t k = 1; k < ny - HALF_LENGTH; k++) {
+                    // index of the current point in the grid
+                    current = (i * nx + j) * ny + k;
+
+                    //neighbors in the Y direction
+                    y1 = ((prev_base[current + 1] - prev_base[current]) * (density[current + 1] + density[current])) / density[current + 1];
+                    y2 = ((prev_base[current] - prev_base[current - 1]) * (density[current] + density[current - 1])) / density[current - 1];
+                    term_y = (y1 - y2) / (2 * dySquared);
+
+                    //neighbors in the X direction
+                    x1 = ((prev_base[current + ny] - prev_base[current]) * (density[current + ny] + density[current])) / density[current + ny];
+                    x2 = ((prev_base[current] - prev_base[current - ny]) * (density[current] + density[current - ny])) / density[current - ny];
+                    term_x = (x1 - x2) / (2 * dxSquared);
+
+                    //neighbors in the Z direction
+                    z1 = ((prev_base[current + (nx * ny)] - prev_base[current]) * (density[current + (nx * ny)] + density[current])) / density[current + (nx * ny)];
+                    z2 = ((prev_base[current] - prev_base[current - (nx * ny)]) * (density[current] + density[current - (nx * ny)])) / density[current - (nx * ny)];
+                    term_z = (z1 - z2) / (2 * dzSquared);
+
+                    value = dtSquared * vel_base[current] * vel_base[current] * (term_z + term_x + term_y);
+                    next_base[current] = 2.0 * prev_base[current] - next_base[current] + value;
+
+                }
+            }
+        }
+
+        //swap arrays for next iteration
+        swap = next_base;
+        next_base = prev_base;
+        prev_base = swap;
+
+        if (print_every && n % print_every == 0 )
+            save_grid(n, nz, nx, next_base);
+    }
+
+    // get the end time
+    gettimeofday(&time_end, NULL);
+
+    double exec_time = (double) (time_end.tv_sec - time_start.tv_sec) + (double) (time_end.tv_usec - time_start.tv_usec) / 1000000.0;
+
+    // save final result
+    for(size_t i = 0; i < nz; i++){
+        for(size_t j = 0; j < nx; j++){
+            size_t offset = (i * nx + j) * ny;
+
+            for(size_t k = 0; k < ny; k++){
+                grid[offset + k] = next_base[offset + k];
+            }
+        }
+    }
+
+    free(prev_base);
+    free(next_base);
+
+    return exec_time;
 
 }

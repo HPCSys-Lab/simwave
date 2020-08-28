@@ -10,10 +10,10 @@ spacing = (20.0, 20.0)
 time = 3000
 
 # get the velocity model
-vel = VelocityModel(shape=shape)
+vel = Data(shape=shape)
 
 # get the density model
-density = DensityModel(shape=vel.shape())
+density = Data(shape=vel.shape(), constant=1)
 
 # get the compiler
 compiler = Compiler(program_version='sequential')
