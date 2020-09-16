@@ -13,7 +13,7 @@ time = 3000
 vel = Data(shape=shape)
 
 # get the density model
-density = Data(shape=vel.shape(), constant=1)
+#density = Data(shape=vel.shape(), constant=1)
 
 # get the compiler
 compiler = Compiler(program_version='sequential')
@@ -28,8 +28,7 @@ solver = AcousticSolver(
     #density = density,
     compiler = compiler,
     spacing = spacing,
-    progatation_time = time,
-    #print_steps = 10
+    progatation_time = time
 )
 
 wavefield, exec_time = solver.forward()

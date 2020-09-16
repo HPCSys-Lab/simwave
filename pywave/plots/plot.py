@@ -9,8 +9,9 @@ def plot(wavefield, file_name = 'wavefield'):
     # create the destination dir
     os.makedirs('plots', exist_ok=True)
 
-    # process data e generate the plot
+    # process data and generate the plot
     plt.imshow(wavefield)
+    #plt.colorbar()
     plt.savefig('plots/{}.png'.format(file_name), format='png')
 
     print("Plot saved in plots/{}.png".format(file_name))
