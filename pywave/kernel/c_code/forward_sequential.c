@@ -32,7 +32,7 @@ void save_grid(int iteration, int rows, int cols, float *matrix){
     fclose(file);
 }
 
-double forward_2D_constant_density(float *grid, float *vel_base, size_t nz, size_t nx, size_t timesteps, float dz, float dx, float dt, int print_every){
+double forward_2D_constant_density(float *grid, float *vel_base, float *src, size_t nz, size_t nx, size_t timesteps, float dz, float dx, float dt, int print_every){
 
     float *swap;
     float value = 0.0;
@@ -82,6 +82,10 @@ double forward_2D_constant_density(float *grid, float *vel_base, size_t nz, size
                 value *= dtSquared * vel_base[current] * vel_base[current];
 
                 next_base[current] = 2.0 * prev_base[current] - next_base[current] + value;
+
+                if( i == 256 && j == 256 )
+                    next_base[current] += dtSquared * vel_base[current] * vel_base[current] * src[n];
+
             }
         }
 

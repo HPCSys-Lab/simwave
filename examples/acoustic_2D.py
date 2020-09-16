@@ -20,15 +20,16 @@ compiler = Compiler(program_version='sequential')
 
 # create a grid
 grid = Grid(shape=vel.shape())
-grid.add_source()
+#grid.add_source()
 
 solver = AcousticSolver(
     grid = grid,
     velocity_model = vel,
-    density = density,
+    #density = density,
     compiler = compiler,
     spacing = spacing,
-    progatation_time = time
+    progatation_time = time,
+    #print_steps = 10
 )
 
 wavefield, exec_time = solver.forward()

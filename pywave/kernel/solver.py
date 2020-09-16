@@ -103,6 +103,7 @@ class AcousticSolver(Solver):
         self.forward.argtypes = [
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ctypes.c_size_t,
             ctypes.c_size_t,
             ctypes.c_size_t,
@@ -118,6 +119,7 @@ class AcousticSolver(Solver):
         self.elapsed_time = self.forward(
             self.grid.wavefield,
             self.velocity_model.model,
+            self.source,
             nz,
             nx,
             self.timesteps,
@@ -243,6 +245,19 @@ class AcousticSolver(Solver):
         self.__apply_cfl_conditions()
 
         self.__print_params()
+
+        # **************************
+        sigma = 0.011
+        t0 = self.dt
+        t = t0
+
+        self.source = np.zeros(self.timesteps, dtype=np.float32)
+
+        for i in range(self.timesteps):
+            f = (1.0 - ((t-t0)**2)/(sigma**2)) * np.exp(-((t-t0)**2)/(2*(sigma**2))) / (np.sqrt(2 * np.pi) * (sigma**3))
+            t += self.dt
+            self.source[i] = f
+        # **************************
 
         print("Computing forward...")
 
