@@ -4,10 +4,10 @@ from pywave import *
 shape = (512, 512)
 
 # spacing
-spacing = (20.0, 20.0)
+spacing = (10.0, 10.0)
 
 # propagation time
-time = 3000
+time = 1500
 
 # get the velocity model
 vel = Data(shape=shape)
@@ -24,11 +24,12 @@ grid = Grid(shape=vel.shape())
 model = Model(
     grid = grid,
     velocity = vel,
-    origin = (1, 1),
+    origin = (256, 256),
     #density = density,
     spacing = spacing,
     progatation_time = time,
-    frequency = 5.0
+    frequency = 11.0,
+    space_order = 8
 )
 
 solver = AcousticSolver(

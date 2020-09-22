@@ -60,6 +60,8 @@ class AcousticSolver(Solver):
             ctypes.c_size_t,
             ctypes.c_size_t,
             ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
             ctypes.c_float,
             ctypes.c_float,
             ctypes.c_float,
@@ -68,11 +70,14 @@ class AcousticSolver(Solver):
 
         nz, nx = self.model.grid.shape()
         dz, dx = self.model.spacing
+        origin_z, origin_x = self.model.origin
 
         self.elapsed_time = self.forward(
             self.model.grid.wavefield,
             self.model.velocity.model,
             self.model.wavelet,
+            origin_z,
+            origin_x,
             nz,
             nx,
             self.model.timesteps,

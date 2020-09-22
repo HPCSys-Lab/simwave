@@ -88,5 +88,4 @@ class Model():
     # calcute a ricker source
     def __calc_source(self):
         src = RickerSource(frequency=self.frequency, time_values=self.time_values)
-        self.wavelet = src.wavelet()
-        src.show()
+        self.wavelet = src.wavelet()       

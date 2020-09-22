@@ -11,7 +11,7 @@ def plot(wavefield, file_name = 'wavefield'):
 
     # process data and generate the plot
     plt.imshow(wavefield)
-    #plt.colorbar()
+    plt.colorbar()
     plt.savefig('plots/{}.png'.format(file_name), format='png')
 
     print("Plot saved in plots/{}.png".format(file_name))
