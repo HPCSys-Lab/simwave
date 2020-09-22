@@ -47,6 +47,10 @@ class Model():
         # calc ricker source
         self.__calc_source()
 
+        # get coefficients for variable density
+        self.coeff = cfl.get_vd_coefficients(self.space_order, self.spacing)
+        print("self.coeff=",self.coeff)
+
     def __validate_dimensions(self):
 
         if self.density is None:
@@ -88,4 +92,4 @@ class Model():
     # calcute a ricker source
     def __calc_source(self):
         src = RickerSource(frequency=self.frequency, time_values=self.time_values)
-        self.wavelet = src.wavelet()       
+        self.wavelet = src.wavelet()

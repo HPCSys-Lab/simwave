@@ -13,7 +13,7 @@ time = 1500
 vel = Data(shape=shape)
 
 # get the density model
-#density = Data(shape=vel.shape(), constant=1)
+density = Data(shape=vel.shape(), constant=1)
 
 # get the compiler
 compiler = Compiler(program_version='sequential')
@@ -25,11 +25,11 @@ model = Model(
     grid = grid,
     velocity = vel,
     origin = (256, 256),
-    #density = density,
+    density = density,
     spacing = spacing,
     progatation_time = time,
     frequency = 11.0,
-    space_order = 8
+    space_order = 2
 )
 
 solver = AcousticSolver(

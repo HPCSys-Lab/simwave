@@ -99,15 +99,21 @@ class AcousticSolver(Solver):
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ctypes.c_size_t,
             ctypes.c_size_t,
+            ctypes.c_float,
+            ctypes.c_float,
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ctypes.c_size_t,
+            ctypes.c_size_t,
             ctypes.c_size_t,
             ctypes.c_float,
-            ctypes.c_float,
-            ctypes.c_float,
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ctypes.c_size_t,
             ctypes.c_int
         ]
 
         nz, nx = self.model.grid.shape()
         dz, dx = self.model.spacing
+        origin_z, origin_x = self.model.origin
 
         self.elapsed_time = self.forward(
             self.model.grid.wavefield,
@@ -115,10 +121,15 @@ class AcousticSolver(Solver):
             self.model.density.model,
             nz,
             nx,
-            self.model.timesteps,
             dz,
             dx,
+            self.model.wavelet,
+            origin_z,
+            origin_x,
+            self.model.timesteps,
             self.model.dt,
+            self.model.coeff,
+            self.model.space_order,
             0
         )
 
