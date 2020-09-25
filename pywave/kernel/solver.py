@@ -56,16 +56,17 @@ class AcousticSolver(Solver):
         self.forward.argtypes = [
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_float,
+            ctypes.c_float,
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ctypes.c_size_t,
             ctypes.c_size_t,
             ctypes.c_size_t,
-            ctypes.c_size_t,
-            ctypes.c_size_t,
             ctypes.c_float,
-            ctypes.c_float,
-            ctypes.c_float,
-            ctypes.c_int
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ctypes.c_size_t
         ]
 
         nz, nx = self.model.grid.shape()
@@ -75,16 +76,17 @@ class AcousticSolver(Solver):
         self.elapsed_time = self.forward(
             self.model.grid.wavefield,
             self.model.velocity.model,
+            nz,
+            nx,
+            dz,
+            dx,
             self.model.wavelet,
             origin_z,
             origin_x,
-            nz,
-            nx,
             self.model.timesteps,
-            dz,
-            dx,
             self.model.dt,
-            0
+            self.model.coeff,
+            self.model.space_order
         )
 
     def __forward_2D_variable_density(self):
@@ -107,8 +109,7 @@ class AcousticSolver(Solver):
             ctypes.c_size_t,
             ctypes.c_float,
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
-            ctypes.c_size_t,
-            ctypes.c_int
+            ctypes.c_size_t
         ]
 
         nz, nx = self.model.grid.shape()
@@ -129,8 +130,7 @@ class AcousticSolver(Solver):
             self.model.timesteps,
             self.model.dt,
             self.model.coeff,
-            self.model.space_order,
-            0
+            self.model.space_order
         )
 
     def __forward_3D_constant_density(self):
@@ -149,8 +149,7 @@ class AcousticSolver(Solver):
             ctypes.c_float,
             ctypes.c_float,
             ctypes.c_float,
-            ctypes.c_float,
-            ctypes.c_int
+            ctypes.c_float
         ]
 
         nz, nx, ny = self.model.grid.shape()
@@ -166,8 +165,7 @@ class AcousticSolver(Solver):
             dz,
             dx,
             dy,
-            self.model.dt,
-            0
+            self.model.dt
         )
 
     def __forward_3D_variable_density(self):
@@ -187,8 +185,7 @@ class AcousticSolver(Solver):
             ctypes.c_float,
             ctypes.c_float,
             ctypes.c_float,
-            ctypes.c_float,
-            ctypes.c_int
+            ctypes.c_float
         ]
 
         nz, nx, ny = self.model.grid.shape()
@@ -205,8 +202,7 @@ class AcousticSolver(Solver):
             dz,
             dx,
             dy,
-            self.model.dt,
-            0
+            self.model.dt
         )
 
     def forward(self):

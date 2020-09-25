@@ -1,5 +1,5 @@
 import numpy as np
-from pywave.kernel import cfl, RickerSource
+from pywave.kernel import fd, RickerSource
 
 class Model():
     """
@@ -47,9 +47,8 @@ class Model():
         # calc ricker source
         self.__calc_source()
 
-        # get coefficients for variable density
-        self.coeff = cfl.get_vd_coefficients(self.space_order, self.spacing)
-        print("self.coeff=",self.coeff)
+        # get coefficients for FD
+        self.coeff = fd.get_right_side_coefficients(self.space_order)
 
     def __validate_dimensions(self):
 
@@ -77,14 +76,14 @@ class Model():
     # apply CFL conditions
     def __apply_cfl_conditions(self):
 
-        self.dt = cfl.calc_dt(
+        self.dt = fd.calc_dt(
             dimension = self.dimension,
             space_order = self.space_order,
             spacing = self.spacing,
             vel_model = self.velocity.model
         )
 
-        self.timesteps = cfl.calc_num_timesteps(self.progatation_time, self.dt)
+        self.timesteps = fd.calc_num_timesteps(self.progatation_time, self.dt)
 
         # calculate the time values
         self.__calc_time_values()
