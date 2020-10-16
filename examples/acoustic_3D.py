@@ -4,10 +4,10 @@ from pywave import *
 shape = (256, 256, 256)
 
 # spacing
-spacing = (20.0, 20.0, 20.0)
+spacing = (10.0, 10.0, 10.0)
 
 # propagation time
-time = 1000
+time = 900
 
 # get the velocity model
 vel = Data(shape=shape)
@@ -20,19 +20,28 @@ compiler = Compiler(program_version='sequential')
 
 # create a grid
 grid = Grid(shape=vel.shape())
-grid.add_source()
+
+model = Model(
+    grid = grid,
+    velocity = vel,
+    density = density,
+    origin = (128, 128, 128),
+    spacing = spacing,
+    progatation_time = time,
+    frequency = 11.0
+)
 
 solver = AcousticSolver(
-    grid = grid,
-    velocity_model = vel,
-    density = density,
-    compiler = compiler,
-    spacing = spacing,
-    progatation_time = time
+    model = model,
+    compiler = compiler
 )
 
 wavefield, exec_time = solver.forward()
 
 print("Forward execution time: %f seconds" % exec_time)
 
-plot(wavefield[128,:,:])
+#import pyvista as pv
+#data = pv.wrap(wavefield)
+#data.plot(volume=True) # Volume render
+
+plot(wavefield[:,:,128])

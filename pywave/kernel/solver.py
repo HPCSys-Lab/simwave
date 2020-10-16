@@ -145,15 +145,22 @@ class AcousticSolver(Solver):
             ctypes.c_size_t,
             ctypes.c_size_t,
             ctypes.c_size_t,
+            ctypes.c_float,
+            ctypes.c_float,
+            ctypes.c_float,
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
             ctypes.c_size_t,
             ctypes.c_float,
-            ctypes.c_float,
-            ctypes.c_float,
-            ctypes.c_float
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ctypes.c_size_t
         ]
 
         nz, nx, ny = self.model.grid.shape()
         dz, dx, dy = self.model.spacing
+        origin_z, origin_x, origin_y = self.model.origin
 
         self.elapsed_time = self.forward(
             self.model.grid.wavefield,
@@ -161,11 +168,17 @@ class AcousticSolver(Solver):
             nz,
             nx,
             ny,
-            self.model.timesteps,
             dz,
             dx,
             dy,
-            self.model.dt
+            self.model.wavelet,
+            origin_z,
+            origin_x,
+            origin_y,
+            self.model.timesteps,
+            self.model.dt,
+            self.model.coeff,
+            self.model.space_order
         )
 
     def __forward_3D_variable_density(self):
@@ -181,15 +194,22 @@ class AcousticSolver(Solver):
             ctypes.c_size_t,
             ctypes.c_size_t,
             ctypes.c_size_t,
+            ctypes.c_float,
+            ctypes.c_float,
+            ctypes.c_float,
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
             ctypes.c_size_t,
             ctypes.c_float,
-            ctypes.c_float,
-            ctypes.c_float,
-            ctypes.c_float
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ctypes.c_size_t
         ]
 
         nz, nx, ny = self.model.grid.shape()
         dz, dx, dy = self.model.spacing
+        origin_z, origin_x, origin_y = self.model.origin
 
         self.elapsed_time = self.forward(
             self.model.grid.wavefield,
@@ -198,11 +218,17 @@ class AcousticSolver(Solver):
             nz,
             nx,
             ny,
-            self.model.timesteps,
             dz,
             dx,
             dy,
-            self.model.dt
+            self.model.wavelet,
+            origin_z,
+            origin_x,
+            origin_y,
+            self.model.timesteps,
+            self.model.dt,
+            self.model.coeff,
+            self.model.space_order
         )
 
     def forward(self):

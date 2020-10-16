@@ -33,6 +33,8 @@ class Compiler():
         self.flags.remove('-fPIC')
         self.flags.remove('-Wall')
 
+        self.flags += ['-gencode arch=compute_75,code=sm_75', '-Xcompiler -fPIC']
+
     def config_openmp(self):
         self.cc = 'clang'
 
@@ -71,7 +73,7 @@ class Compiler():
 
         object_dir = working_dir + '/tmp/'
         object_name = "lib_c_wave_{}.so".format(self.version.lower())
-        program_dir = current_dir + '/c_code/'
+        program_dir = current_dir + '/c_code/fixed_spatial_order/'
 
         if self.version == 'sequential':
             self.config_sequential()
