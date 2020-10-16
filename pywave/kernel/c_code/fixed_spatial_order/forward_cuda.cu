@@ -3,7 +3,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-double forward_2D_constant_density(float *grid, float *vel_base,
+extern "C" double forward_2D_constant_density(float *grid, float *vel_base,
                                    size_t nz, size_t nx, float dz, float dx,
                                    float *src, size_t origin_z, size_t origin_x,
                                    size_t timesteps,  float dt,
@@ -95,7 +95,7 @@ double forward_2D_constant_density(float *grid, float *vel_base,
 }
 
 
-double forward_2D_variable_density(float *grid, float *vel_base, float *density,
+extern "C" double forward_2D_variable_density(float *grid, float *vel_base, float *density,
                                    size_t nz, size_t nx, float dz, float dx,
                                    float *src, size_t origin_z, size_t origin_x,
                                    size_t timesteps, float dt,
@@ -188,7 +188,7 @@ double forward_2D_variable_density(float *grid, float *vel_base, float *density,
 }
 
 
-double forward_3D_constant_density(float *grid, float *vel_base,
+extern "C" double forward_3D_constant_density(float *grid, float *vel_base,
                                    size_t nz, size_t nx, size_t ny,
                                    float dz, float dx, float dy,
                                    float *src, size_t origin_z, size_t origin_x, size_t origin_y,
@@ -290,7 +290,7 @@ double forward_3D_constant_density(float *grid, float *vel_base,
 
 }
 
-double forward_3D_variable_density(float *grid, float *vel_base, float *density,
+extern "C" double forward_3D_variable_density(float *grid, float *vel_base, float *density,
                                    size_t nz, size_t nx, size_t ny,
                                    float dz, float dx, float dy,
                                    float *src, size_t origin_z, size_t origin_x, size_t origin_y,
