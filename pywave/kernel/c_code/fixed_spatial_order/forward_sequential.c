@@ -60,11 +60,12 @@ double forward_2D_constant_density(float *grid, float *vel_base,
 
                 next_base[current] = 2.0 * prev_base[current] - next_base[current] + value;
 
-                if( i == origin_z && j == origin_x )
-                    next_base[current] += dtSquared * vel_base[current] * vel_base[current] * src[n];
-
             }
         }
+
+        // add source term
+        current = origin_z * nx + origin_x;
+        next_base[current] += dtSquared * vel_base[current] * vel_base[current] * src[n];
 
         //swap arrays for next iteration
         swap = next_base;
@@ -153,11 +154,12 @@ double forward_2D_variable_density(float *grid, float *vel_base, float *density,
 
                 value = dtSquared * vel_base[current] * vel_base[current] * (term_z + term_x);
                 next_base[current] = 2.0 * prev_base[current] - next_base[current] + value;
-
-                if( i == origin_z && j == origin_x )
-                    next_base[current] += dtSquared * vel_base[current] * vel_base[current] * src[n];
             }
         }
+
+        // add source term
+        current = origin_z * nx + origin_x;
+        next_base[current] += dtSquared * vel_base[current] * vel_base[current] * src[n];
 
         //swap arrays for next iteration
         swap = next_base;
@@ -254,12 +256,13 @@ double forward_3D_constant_density(float *grid, float *vel_base,
                     value *= dtSquared * vel_base[current] * vel_base[current];
 
                     next_base[current] = 2.0 * prev_base[current] - next_base[current] + value;
-
-                    if( i == origin_z && j == origin_x && k == origin_y)
-                        next_base[current] += dtSquared * vel_base[current] * vel_base[current] * src[n];
                 }
             }
         }
+
+        // add source term
+        current = (origin_z * nx + origin_x) * ny + origin_y;
+        next_base[current] += dtSquared * vel_base[current] * vel_base[current] * src[n];
 
         //swap arrays for next iteration
         swap = next_base;
@@ -361,12 +364,13 @@ double forward_3D_variable_density(float *grid, float *vel_base, float *density,
                     value = dtSquared * vel_base[current] * vel_base[current] * (term_z + term_x + term_y);
                     next_base[current] = 2.0 * prev_base[current] - next_base[current] + value;
 
-                    if( i == origin_z && j == origin_x && k == origin_y)
-                        next_base[current] += dtSquared * vel_base[current] * vel_base[current] * src[n];
-
                 }
             }
         }
+
+        // add source term
+        current = (origin_z * nx + origin_x) * ny + origin_y;
+        next_base[current] += dtSquared * vel_base[current] * vel_base[current] * src[n];
 
         //swap arrays for next iteration
         swap = next_base;

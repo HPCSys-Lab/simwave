@@ -24,7 +24,7 @@ grid = Grid(shape=vel.shape())
 model = Model(
     grid = grid,
     velocity = vel,
-    density = density,
+    #density = density,
     origin = (128, 128, 128),
     spacing = spacing,
     progatation_time = time,
