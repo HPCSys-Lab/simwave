@@ -23,10 +23,12 @@ class Model():
         Propagation time in miliseconds
     frequency: float
         Peak frequency for Ricker wavelet in Hz
+    nbl: int
+        Number of boundary layers
     """
     def __init__(self, grid=None, velocity=None, density=None,
                  spacing=None, space_order=2, origin=None,
-                 progatation_time=1000, frequency=10):
+                 progatation_time=1000, frequency=10, nbl=10):
 
         self.grid = grid
         self.velocity = velocity
@@ -36,6 +38,7 @@ class Model():
         self.origin = origin
         self.progatation_time = progatation_time
         self.frequency = frequency
+        self.nbl = nbl
         self.dimension = len(self.grid.shape())
 
         # validate dimensions
@@ -49,6 +52,9 @@ class Model():
 
         # get coefficients for FD
         self.coeff = fd.get_right_side_coefficients(self.space_order)
+
+        # calculate padding
+        self.__data_padding()
 
     def __validate_dimensions(self):
 
@@ -92,3 +98,28 @@ class Model():
     def __calc_source(self):
         src = RickerSource(frequency=self.frequency, time_values=self.time_values)
         self.wavelet = src.wavelet()
+
+    def __data_padding(self):
+
+        stencil_radius = self.space_order // 2
+
+        num_layers = self.nbl + stencil_radius
+
+        if len(self.grid.shape()) == 2:
+            padding_size = ((stencil_radius, num_layers), (num_layers, num_layers))
+        else:
+            padding_size = ((stencil_radius, num_layers), (num_layers, num_layers), (num_layers, num_layers))
+
+        # create damp grid
+        damp_grid = np.zeros(self.grid.shape(), dtype=np.float32)
+        self.damp = np.pad(damp_grid, padding_size, mode='linear_ramp', end_values=0.5)
+
+        # pad grid
+        self.grid.wavefield = np.pad(self.grid.wavefield, padding_size)
+
+        # pad velocity model
+        self.velocity.model = np.pad(self.velocity.model, padding_size, mode='edge')
+
+        # pad density model
+        if self.density:
+            self.density.model = np.pad(self.density.model, padding_size, mode='edge')

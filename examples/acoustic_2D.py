@@ -7,7 +7,7 @@ shape = (512, 512)
 spacing = (10.0, 10.0)
 
 # propagation time
-time = 1500
+time = 2000
 
 # get the velocity model
 vel = Data(shape=shape)
@@ -25,10 +25,11 @@ model = Model(
     grid = grid,
     velocity = vel,
     #density = density,
-    origin = (256, 256),
+    origin = (256+1, 256+101),
     spacing = spacing,
     progatation_time = time,
-    frequency = 11.0
+    frequency = 10.0,
+    nbl = 100
 )
 
 solver = AcousticSolver(
@@ -40,4 +41,6 @@ wavefield, exec_time = solver.forward()
 
 print("Forward execution time: %f seconds" % exec_time)
 
-plot(wavefield)
+plot(wavefield[1:512,101:612])
+
+#plot(wavefield)

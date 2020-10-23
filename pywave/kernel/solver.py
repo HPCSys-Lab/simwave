@@ -56,6 +56,7 @@ class AcousticSolver(Solver):
         self.forward.argtypes = [
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ctypes.c_size_t,
             ctypes.c_size_t,
             ctypes.c_float,
@@ -76,6 +77,7 @@ class AcousticSolver(Solver):
         self.elapsed_time = self.forward(
             self.model.grid.wavefield,
             self.model.velocity.model,
+            self.model.damp,
             nz,
             nx,
             dz,
