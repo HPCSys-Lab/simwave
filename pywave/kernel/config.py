@@ -1,9 +1,9 @@
 import numpy as np
-from pywave.kernel import fd, RickerSource
+from pywave.kernel import fd, Wavelet
 
-class Model():
+class Setup():
     """
-    Implement a model of the execution
+    Define the parameters and configuration for the solver
 
     Parameters
     ----------
@@ -25,10 +25,13 @@ class Model():
         Peak frequency for Ricker wavelet in Hz
     nbl: int
         Number of boundary layers
+    compiler: object
+        Object that represents the compiler
     """
     def __init__(self, grid=None, velocity=None, density=None,
                  spacing=None, space_order=2, origin=None,
-                 progatation_time=1000, frequency=10, nbl=10):
+                 progatation_time=1000, frequency=10, nbl=10,
+                 compiler=None):
 
         self.grid = grid
         self.velocity = velocity
@@ -39,6 +42,7 @@ class Model():
         self.progatation_time = progatation_time
         self.frequency = frequency
         self.nbl = nbl
+        self.compiler = compiler
         self.dimension = len(self.grid.shape())
 
         # validate dimensions
@@ -96,8 +100,8 @@ class Model():
 
     # calcute a ricker source
     def __calc_source(self):
-        src = RickerSource(frequency=self.frequency, time_values=self.time_values)
-        self.wavelet = src.wavelet()
+        src = Wavelet(frequency=self.frequency, time_values=self.time_values)
+        self.wavelet = src.ricker()
 
     def __data_padding(self):
 
@@ -107,12 +111,26 @@ class Model():
 
         if len(self.grid.shape()) == 2:
             padding_size = ((stencil_radius, num_layers), (num_layers, num_layers))
+
+            # update the origin
+            self.origin = (
+                self.origin[0] + stencil_radius,
+                self.origin[1] + stencil_radius + self.nbl
+            )
         else:
             padding_size = ((stencil_radius, num_layers), (num_layers, num_layers), (num_layers, num_layers))
 
+            # update the origin
+            self.origin = (
+                self.origin[0] + stencil_radius,
+                self.origin[1] + stencil_radius + self.nbl,
+                self.origin[2] + stencil_radius + self.nbl
+            )
+
         # create damp grid
         damp_grid = np.zeros(self.grid.shape(), dtype=np.float32)
-        self.damp = np.pad(damp_grid, padding_size, mode='linear_ramp', end_values=0.5)
+        self.damp = np.pad(damp_grid, padding_size, mode='linear_ramp', end_values=self.nbl)
+        self.damp = (self.damp ** 3) * 0.0001
 
         # pad grid
         self.grid.wavefield = np.pad(self.grid.wavefield, padding_size)

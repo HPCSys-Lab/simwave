@@ -1,14 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-class RickerSource():
+class Wavelet():
     """
-    Implement a ricker source
+    Implement a wavelet for the source
 
     Parameters
     ----------
     frequency: float
-        Peak frequency for Ricker wavelet in Hz
+        Peak frequency for the wavelet in Hz
     amplitude: float
         Amplitude of the wavelet
     time_values: list
@@ -19,13 +19,13 @@ class RickerSource():
         self.amplitude = amplitude
         self.time_values = time_values
 
-    def wavelet(self):
-        t0 = 1 / self.frequency        
+    def ricker(self):
+        t0 = 1 / self.frequency
         r = (np.pi * self.frequency * (self.time_values - t0))
         return self.amplitude * (1-2.*r**2)*np.exp(-r**2)
 
-    def show(self):
-        plt.plot(self.time_values, self.wavelet())
+    def show(self, pulse):
+        plt.plot(self.time_values, pulse)
         plt.xlabel('Time (s)')
         plt.ylabel('Amplitude')
         plt.tick_params()

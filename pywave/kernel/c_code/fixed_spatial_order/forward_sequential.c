@@ -6,7 +6,8 @@
 double forward_2D_constant_density(float *grid, float *vel_base, float *damp,
                                    size_t nz, size_t nx, float dz, float dx,
                                    float *src, size_t origin_z, size_t origin_x,
-                                   size_t timesteps,  float dt,
+                                   size_t hop, float dt,
+                                   size_t begin_timestep, size_t end_timestep,
                                    float *coeff, size_t space_order){
 
     size_t stencil_radius = space_order / 2;
@@ -40,12 +41,8 @@ double forward_2D_constant_density(float *grid, float *vel_base, float *damp,
     // get the start time
     gettimeofday(&time_start, NULL);
 
-    // fix source position
-    //origin_z = origin_z + stencil_radius;
-    //origin_x = origin_x + stencil_radius + nbl;
-
     // wavefield modeling
-    for(size_t n = 0; n < timesteps; n++) {
+    for(size_t n = begin_timestep; n < end_timestep; n++) {
         // interior of the domain
         for(size_t i = stencil_radius; i < nz - stencil_radius; i++) {
             for(size_t j = stencil_radius; j < nx - stencil_radius; j++) {
@@ -61,11 +58,12 @@ double forward_2D_constant_density(float *grid, float *vel_base, float *damp,
                 //neighbors in the vertical direction
                 value += (prev_base[current + nx] - 2.0 * prev_base[current] + prev_base[current - nx]) / dzSquared;
 
+                //nominator with damp coefficient
                 nominator = (1.0 + damp[current] * dt);
+
                 value *= (dtSquared * vel_base[current] * vel_base[current]) / nominator;
 
                 next_base[current] = 2.0 / nominator * prev_base[current] - ((1.0 - damp[current] * dt) / nominator) * next_base[current] + value;
-
             }
         }
 
@@ -101,8 +99,8 @@ double forward_2D_constant_density(float *grid, float *vel_base, float *damp,
 
 }
 
-
-double forward_2D_variable_density(float *grid, float *vel_base, float *density,
+/*
+double forward_2D_variable_density(float *grid, float *vel_base, float *density, float *damp,
                                    size_t nz, size_t nx, float dz, float dx,
                                    float *src, size_t origin_z, size_t origin_x,
                                    size_t timesteps, float dt,
@@ -111,7 +109,7 @@ double forward_2D_variable_density(float *grid, float *vel_base, float *density,
     size_t stencil_radius = space_order / 2;
 
     float *swap;
-    float value = 0.0;
+    float value = 0.0, nominator = 0.0;
     int current;
 
     float dzSquared = dz * dz;
@@ -158,8 +156,11 @@ double forward_2D_variable_density(float *grid, float *vel_base, float *density,
                 z2 = ((prev_base[current] - prev_base[current - nx]) * (density[current] + density[current - nx])) / density[current - nx];
                 term_z = (z1 - z2) / (2 * dzSquared);
 
-                value = dtSquared * vel_base[current] * vel_base[current] * (term_z + term_x);
-                next_base[current] = 2.0 * prev_base[current] - next_base[current] + value;
+                //nominator with damp coefficient
+                nominator = (1.0 + damp[current] * dt);
+
+                value = dtSquared * vel_base[current] * vel_base[current] * (term_z + term_x) / nominator;
+                next_base[current] = 2.0 / nominator * prev_base[current] - ((1.0 - damp[current] * dt) / nominator) * next_base[current] + value;
             }
         }
 
@@ -406,3 +407,4 @@ double forward_3D_variable_density(float *grid, float *vel_base, float *density,
     return exec_time;
 
 }
+*/

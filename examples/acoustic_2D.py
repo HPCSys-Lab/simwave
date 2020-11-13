@@ -1,13 +1,13 @@
 from pywave import *
 
 # shape of the grid
-shape = (512, 512)
+shape = (100, 100)
 
 # spacing
-spacing = (10.0, 10.0)
+spacing = (5.0, 5.0)
 
 # propagation time
-time = 2000
+time = 200
 
 # get the velocity model
 vel = Data(shape=shape)
@@ -21,26 +21,24 @@ compiler = Compiler(program_version='sequential')
 # create a grid
 grid = Grid(shape=vel.shape())
 
-model = Model(
+setup = Setup(
     grid = grid,
     velocity = vel,
     #density = density,
-    origin = (256+1, 256+101),
+    origin = (50, 50),
     spacing = spacing,
     progatation_time = time,
-    frequency = 10.0,
-    nbl = 100
-)
-
-solver = AcousticSolver(
-    model = model,
+    frequency = 15.0,
+    nbl = 10,
     compiler = compiler
 )
+
+solver = AcousticSolver(setup = setup)
 
 wavefield, exec_time = solver.forward()
 
 print("Forward execution time: %f seconds" % exec_time)
 
-plot(wavefield[1:512,101:612])
+#plot(wavefield[1:512,damp+1:512+damp])
 
-#plot(wavefield)
+plot(wavefield)
