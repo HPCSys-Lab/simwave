@@ -3,12 +3,14 @@
 #include <time.h>
 #include <sys/time.h>
 
-double forward_2D_constant_density(float *grid, float *vel_base, float *damp,
+double forward_2D_constant_density(float *grid, float *vel_base,
+                                   float *damp, float *wavelet,
+                                   size_t *src_points_interval, float *src_points_values,
+                                   size_t *rec_points_interval, float *rec_points_values,
+                                   float *receivers, size_t num_receivers,
                                    size_t nz, size_t nx, float dz, float dx,
-                                   float *src, size_t origin_z, size_t origin_x,
                                    size_t hop, float dt,
-                                   size_t begin_timestep, size_t end_timestep,
-                                   float *coeff, size_t space_order){
+                                   size_t begin_timestep, size_t end_timestep, size_t space_order){
 
     size_t stencil_radius = space_order / 2;
 
@@ -43,7 +45,11 @@ double forward_2D_constant_density(float *grid, float *vel_base, float *damp,
 
     // wavefield modeling
     for(size_t n = begin_timestep; n < end_timestep; n++) {
-        // interior of the domain
+
+        /*
+            Section 1: update the wavefield according to the acoustic wave equation
+        */
+
         for(size_t i = stencil_radius; i < nz - stencil_radius; i++) {
             for(size_t j = stencil_radius; j < nx - stencil_radius; j++) {
                 // index of the current point in the grid
@@ -67,14 +73,137 @@ double forward_2D_constant_density(float *grid, float *vel_base, float *damp,
             }
         }
 
-        // add source term
-        current = origin_z * nx + origin_x;
-        next_base[current] += dtSquared * vel_base[current] * vel_base[current] * src[n];
+        /*
+            Section 2: add the source term
+        */
+
+        // interval of grid points of the source in the Z axis
+        size_t src_z_begin = src_points_interval[0];
+        size_t src_z_end = src_points_interval[1];
+
+        // interval of grid points of the source in the X axis
+        size_t src_x_begin = src_points_interval[2];
+        size_t src_x_end = src_points_interval[3];
+
+        // number of grid points of the source in each axis
+        size_t src_z_num_points = src_z_end - src_z_begin + 1;
+
+        // index of the Kaiser windowed sinc value of the source point
+        size_t kws_index_z = 0;
+        size_t kws_index_x = src_z_num_points;
+
+        // for each source point in the Z axis
+        for(size_t i = src_z_begin; i <= src_z_end; i++){
+            kws_index_x = src_z_num_points;
+
+            // for each source point in the X axis
+            for(size_t j = src_x_begin; j <= src_x_end; j++){
+
+                float kws = src_points_values[kws_index_z] * src_points_values[kws_index_x];
+
+                // current source point in the grid
+                current = i * nx + j;
+                next_base[current] += dtSquared * vel_base[current] * vel_base[current] * kws * wavelet[n];
+
+                kws_index_x++;
+            }
+            kws_index_z++;
+        }
+
+        /*
+            Section 3: add null dirichlet (left, right, bottom) and null neumann (top) boundary conditions
+        */
+
+        // dirichlet on the left and right
+        for(size_t i = stencil_radius; i < nz - stencil_radius; i++){
+            // dirichlet on the left (first column)
+            current = i * nx + 1;
+            next_base[current] = 0.0;
+
+            // dirichlet on the right (last column)
+            current = i * nx + (nx - stencil_radius - 1);
+            next_base[current] = 0.0;
+        }
+
+        // dirichlet on the bottom and neumann on the top
+        for(size_t j = stencil_radius; j < nx - stencil_radius; j++){
+            // dirichlet on the bottom (last row)
+            current = (nz - stencil_radius - 1) * nx + j;
+            next_base[current] = 0.0;
+
+            // neumann on the top (top row in halo zone)
+            size_t top_halo = 0 * nx + j;
+            current = 2 * nx + j;
+            next_base[top_halo] = next_base[current];
+        }
+
+        /*
+            Section 4: compute the receivers
+        */
+
+        // for each receiver
+        for(size_t rec = 0; rec < num_receivers; rec++){
+
+            float sum = 0.0;
+
+            // each receiver has 4 (z_b, z_e, x_b, x_e) point intervals
+            size_t offset_rec = rec * 4;
+
+            // interval of grid points of the receiver in the Z axis
+            size_t rec_z_begin = rec_points_interval[offset_rec + 0];
+            size_t rec_z_end = rec_points_interval[offset_rec + 1];
+
+            // interval of grid points of the receiver in the X axis
+            size_t rec_x_begin = rec_points_interval[offset_rec + 2];
+            size_t rec_x_end = rec_points_interval[offset_rec + 3];
+
+            // number of grid points of the receiver in each axis
+            size_t rec_z_num_points = rec_z_end - rec_z_begin + 1;
+            size_t rec_x_num_points = rec_x_end - rec_x_begin + 1;
+
+            // index of the Kaiser windowed sinc value of the receiver point
+            offset_rec = rec * (rec_z_num_points + rec_x_num_points);
+            size_t kws_index_z = offset_rec;
+            size_t kws_index_x = offset_rec + rec_z_num_points;
+
+            // for each receiver point in the Z axis
+            for(size_t i = rec_z_begin; i <= rec_z_end; i++){
+                kws_index_x = offset_rec + rec_z_num_points;
+
+                // for each receiver point in the X axis
+                for(size_t j = rec_x_begin; j <= rec_x_end; j++){
+
+                    float kws = rec_points_values[kws_index_z] * rec_points_values[kws_index_x];
+
+                    // current receiver point in the grid
+                    current = i * nx + j;
+                    sum += prev_base[current] * kws;
+
+                    kws_index_x++;
+                }
+                kws_index_z++;
+            }
+
+            size_t current_rec_n = n * num_receivers + rec;
+            receivers[current_rec_n] = sum;
+        }
+
 
         //swap arrays for next iteration
         swap = next_base;
         next_base = prev_base;
         prev_base = swap;
+
+        // save wavefield
+        /*
+        for(size_t i = 0; i < nz; i++){
+            size_t offset_local = i * nx;
+            size_t offset_global = (n * nz + i) * nx;
+
+            for(size_t j = 0; j < nx; j++){
+                grid[offset_global + j] = next_base[offset_local + j];
+            }
+        }*/
     }
 
     // get the end time
@@ -96,7 +225,6 @@ double forward_2D_constant_density(float *grid, float *vel_base, float *damp,
     free(next_base);
 
     return exec_time;
-
 }
 
 /*

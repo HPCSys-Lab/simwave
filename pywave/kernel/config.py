@@ -1,5 +1,5 @@
 import numpy as np
-from pywave.kernel import fd, Wavelet
+from pywave.kernel import fd, Wavelet, kws
 
 class Setup():
     """
@@ -31,7 +31,10 @@ class Setup():
     def __init__(self, grid=None, velocity=None, density=None,
                  spacing=None, space_order=2, origin=None,
                  progatation_time=1000, frequency=10, nbl=10,
-                 compiler=None):
+                 compiler=None,
+                 src_points_interval=None, src_points_values=None,
+                 rec_points_interval=None, rec_points_values=None,
+                 receivers=None, num_receivers=1):
 
         self.grid = grid
         self.velocity = velocity
@@ -45,11 +48,21 @@ class Setup():
         self.compiler = compiler
         self.dimension = len(self.grid.shape())
 
+        #----------
+        self.src_points_interval = src_points_interval
+        self.src_points_values = src_points_values
+        self.rec_points_interval = rec_points_interval
+        self.rec_points_values = rec_points_values
+        self.receivers = receivers
+        self.num_receivers = num_receivers
+        #----------
+
         # validate dimensions
         self.__validate_dimensions()
 
         # apply CFL conditions
         self.__apply_cfl_conditions()
+        self.receivers = np.zeros(shape=(self.timesteps, self.num_receivers), dtype=np.float32)
 
         # calc ricker source
         self.__calc_source()

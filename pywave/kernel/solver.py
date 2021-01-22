@@ -54,18 +54,21 @@ class AcousticSolver(Solver):
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
-            ctypes.c_size_t,
-            ctypes.c_size_t,
-            ctypes.c_float,
-            ctypes.c_float,
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ndpointer(ctypes.c_size_t, flags="C_CONTIGUOUS"),
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ndpointer(ctypes.c_size_t, flags="C_CONTIGUOUS"),
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ctypes.c_size_t,
             ctypes.c_size_t,
             ctypes.c_size_t,
             ctypes.c_float,
+            ctypes.c_float,
+            ctypes.c_size_t,
+            ctypes.c_float,
             ctypes.c_size_t,
             ctypes.c_size_t,
-            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ctypes.c_size_t
         ]
 
@@ -73,24 +76,32 @@ class AcousticSolver(Solver):
         dz, dx = self.setup.spacing
         origin_z, origin_x = self.setup.origin
 
+        #self.wavefields = np.zeros((self.setup.timesteps, nz, nx), dtype=np.float32)
+
         self.elapsed_time = self.forward(
+            #self.wavefields,
             self.setup.grid.wavefield,
             self.setup.velocity.model,
             self.setup.damp,
+            self.setup.wavelet,
+            self.setup.src_points_interval,
+            self.setup.src_points_values,
+            self.setup.rec_points_interval,
+            self.setup.rec_points_values,
+            self.setup.receivers,
+            self.setup.num_receivers,
             nz,
             nx,
             dz,
             dx,
-            self.setup.wavelet,
-            origin_z,
-            origin_x,
             1,
             self.setup.dt,
             0,
             self.setup.timesteps,
-            self.setup.coeff,
             self.setup.space_order
         )
+
+
 
     """
     def __forward_2D_variable_density(self):
@@ -258,4 +269,5 @@ class AcousticSolver(Solver):
         else:
             raise Exception("Grid dimension {} not supported".format(self.setup.dimension))
 
-        return self.setup.grid.wavefield, self.elapsed_time
+        return self.setup.grid.wavefield, self.setup.receivers, self.elapsed_time
+        #return self.wavefields, self.elapsed_time
