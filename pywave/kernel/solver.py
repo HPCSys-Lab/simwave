@@ -101,6 +101,66 @@ class AcousticSolver(Solver):
             self.setup.space_order
         )
 
+    def __forward_3D_constant_density(self):
+
+        self.forward = self.library.forward_3D_constant_density
+
+        self.forward.restype = ctypes.c_double
+
+        self.forward.argtypes = [
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ndpointer(ctypes.c_size_t, flags="C_CONTIGUOUS"),
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ndpointer(ctypes.c_size_t, flags="C_CONTIGUOUS"),
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_float,
+            ctypes.c_float,
+            ctypes.c_float,
+            ctypes.c_size_t,
+            ctypes.c_float,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_size_t
+        ]
+
+        nz, nx, ny = self.setup.grid.shape()
+        dz, dx, dy  = self.setup.spacing
+        origin_z, origin_x, origin_y = self.setup.origin
+
+        #self.wavefields = np.zeros((self.setup.timesteps, nz, nx), dtype=np.float32)
+
+        self.elapsed_time = self.forward(
+            #self.wavefields,
+            self.setup.grid.wavefield,
+            self.setup.velocity.model,
+            self.setup.damp,
+            self.setup.wavelet,
+            self.setup.src_points_interval,
+            self.setup.src_points_values,
+            self.setup.rec_points_interval,
+            self.setup.rec_points_values,
+            self.setup.receivers,
+            self.setup.num_receivers,
+            nz,
+            nx,
+            ny,
+            dz,
+            dx,
+            dy,
+            1,
+            self.setup.dt,
+            0,
+            self.setup.timesteps,
+            self.setup.space_order
+        )
 
 
     """
