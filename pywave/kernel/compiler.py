@@ -21,13 +21,13 @@ class Compiler():
         self.cc = 'gcc'
 
         if not self.c_code:
-            self.c_code = 'forward_sequential.c'
+            self.c_code = 'general/forward_sequential.c'
 
     def config_cuda(self):
         self.cc = 'nvcc'
 
         if not self.c_code:
-            self.c_code = 'forward_cuda.cu'
+            self.c_code = 'general/forward_cuda.cu'
 
         self.flags.remove('-std=c99')
         self.flags.remove('-fPIC')
@@ -39,7 +39,7 @@ class Compiler():
         self.cc = 'clang'
 
         if not self.c_code:
-            self.c_code = 'forward_openmp.c'
+            self.c_code = 'general/forward_openmp.c'
 
         self.flags.remove('-std=c99')
         self.flags += ['-fopenmp', '-fopenmp-targets=nvptx64-nvidia-cuda', '-Xopenmp-target', '-march=sm_75', '-lm']
@@ -48,7 +48,7 @@ class Compiler():
         self.cc = 'pgcc'
 
         if not self.c_code:
-            self.c_code = 'forward_openacc.c'
+            self.c_code = 'general/forward_openacc.c'
 
         self.flags.remove('-std=c99')
         self.flags.remove('-O3')
