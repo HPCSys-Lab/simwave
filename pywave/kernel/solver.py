@@ -4,14 +4,13 @@ from numpy.ctypeslib import ndpointer
 import time
 
 class Solver():
-
     """
-    Implement the operators for the solver
+    Implement the operators for the solver.
 
     Parameters
     ----------
-    setup: object
-        Define the configuration for the execution
+    setup : object
+        Define the configuration for the execution.
     """
     def __init__(self, setup=None):
 
@@ -31,11 +30,11 @@ class Solver():
         print("Dimension: %dD" % self.setup.dimension)
         print("Shape:", self.setup.grid.shape())
         print("Spacing:", self.setup.spacing)
-        print("Density:", ("constant" if self.setup.density is None else "variable") )
+        print("Density:", ("constant" if self.setup.density_model is None else "variable") )
         print("Space Order:", self.setup.space_order)
-        print("Propagation time: %d miliseconds " % self.setup.progatation_time)
+        print("Propagation time: %d miliseconds " % self.setup.propagation_time)
         print("DT: %f seconds" % self.setup.dt)
-        print("Frequency: %0.1f Hz" % self.setup.frequency)
+        print("Frequency: %0.1f Hz" % self.setup.sources.wavelet.frequency)
         print("Timesteps:", self.setup.timesteps)
 
 class AcousticSolver(Solver):
@@ -63,6 +62,7 @@ class AcousticSolver(Solver):
             ctypes.c_size_t,
             ctypes.c_size_t,
             ctypes.c_size_t,
+            ctypes.c_size_t,
             ctypes.c_float,
             ctypes.c_float,
             ctypes.c_size_t,
@@ -74,27 +74,27 @@ class AcousticSolver(Solver):
 
         nz, nx = self.setup.grid.shape()
         dz, dx = self.setup.spacing
-        origin_z, origin_x = self.setup.origin
 
         #self.wavefields = np.zeros((self.setup.timesteps, nz, nx), dtype=np.float32)
 
         self.elapsed_time = self.forward(
             #self.wavefields,
-            self.setup.grid.wavefield,
-            self.setup.velocity.model,
+            self.setup.grid.data,
+            self.setup.velocity_model.data,
             self.setup.damp,
             self.setup.wavelet,
             self.setup.src_points_interval,
             self.setup.src_points_values,
             self.setup.rec_points_interval,
             self.setup.rec_points_values,
-            self.setup.receivers,
-            self.setup.num_receivers,
+            self.setup.shot_record,
+            self.setup.sources.count(),
+            self.setup.receivers.count(),
             nz,
             nx,
             dz,
             dx,
-            1,
+            self.setup.jumps,
             self.setup.dt,
             0,
             self.setup.timesteps,
@@ -121,6 +121,7 @@ class AcousticSolver(Solver):
             ctypes.c_size_t,
             ctypes.c_size_t,
             ctypes.c_size_t,
+            ctypes.c_size_t,
             ctypes.c_float,
             ctypes.c_float,
             ctypes.c_float,
@@ -133,29 +134,29 @@ class AcousticSolver(Solver):
 
         nz, nx, ny = self.setup.grid.shape()
         dz, dx, dy  = self.setup.spacing
-        origin_z, origin_x, origin_y = self.setup.origin
 
         #self.wavefields = np.zeros((self.setup.timesteps, nz, nx), dtype=np.float32)
 
         self.elapsed_time = self.forward(
             #self.wavefields,
-            self.setup.grid.wavefield,
-            self.setup.velocity.model,
+            self.setup.grid.data,
+            self.setup.velocity_model.data,
             self.setup.damp,
             self.setup.wavelet,
             self.setup.src_points_interval,
             self.setup.src_points_values,
             self.setup.rec_points_interval,
             self.setup.rec_points_values,
-            self.setup.receivers,
-            self.setup.num_receivers,
+            self.setup.shot_record,
+            self.setup.sources.count(),
+            self.setup.receivers.count(),
             nz,
             nx,
             ny,
             dz,
             dx,
             dy,
-            1,
+            self.setup.jumps,
             self.setup.dt,
             0,
             self.setup.timesteps,
@@ -316,18 +317,18 @@ class AcousticSolver(Solver):
 
         if self.setup.dimension == 2:
             # constant density
-            if self.setup.density is None:
+            if self.setup.density_model is None:
                 self.__forward_2D_constant_density()
             else:
                 self.__forward_2D_variable_density()
         elif self.setup.dimension == 3:
             # constant density
-            if self.setup.density is None:
+            if self.setup.density_model is None:
                 self.__forward_3D_constant_density()
             else:
                 self.__forward_3D_variable_density()
         else:
             raise Exception("Grid dimension {} not supported".format(self.setup.dimension))
 
-        return self.setup.grid.wavefield, self.setup.receivers, self.elapsed_time
+        return self.setup.grid.data, self.setup.shot_record, self.elapsed_time
         #return self.wavefields, self.elapsed_time

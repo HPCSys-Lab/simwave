@@ -6,16 +6,16 @@ class Grid():
 
     Parameters
     ----------
-    shape : (int, ...)
-        Size of the grid along each axis (Z, X, Y)
+    shape : tuple(int, ...)
+        Size of the grid along each axis (Z, X [, Y])
     """
     def __init__(self, shape):
-        self.wavefield = np.zeros(shape, dtype=np.float32)
+        self.data = np.zeros(shape, dtype=np.float32)
 
     def shape(self):
-        return self.wavefield.shape
+        return self.data.shape
 
-    def add_source(self):
+    def add_center_source(self):
 
         if len(self.shape()) == 2:
 
@@ -26,7 +26,7 @@ class Grid():
             for s in range(11,0,-1):
                 for i in range (self.shape()[0]//2 - s, self.shape()[0]//2 + s - 1, 1):
                     for j in range (self.shape()[1]//2 - s, self.shape()[1]//2 + s -1, 1):
-                        self.wavefield[i,j] = wavelet[s]
+                        self.data[i,j] = wavelet[s]
 
         else:
             val = 1.0;
@@ -34,5 +34,5 @@ class Grid():
                 for i in range (self.shape()[0]//2 - s, self.shape()[0]//2 + s - 1, 1):
                     for j in range (self.shape()[1]//2 - s, self.shape()[1]//2 + s -1, 1):
                         for k in range (self.shape()[2]//2 - s, self.shape()[2]//2 + s -1, 1):
-                            self.wavefield[i,j,k] = val;
+                            self.data[i,j,k] = val;
                 val *= 10;

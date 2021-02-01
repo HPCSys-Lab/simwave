@@ -4,17 +4,17 @@ import warnings
 
 def get_kaiser_half_width(half_width):
     """
-        Get the optimal b parameter of the kaiser windowing function according to the window half-width.
+    Get the optimal b parameter of the kaiser windowing function according to the window half-width.
 
-        Parameters
-        ----------
-        half_width: int
-            Window half-width of the kaiser windowing function.
+    Parameters
+    ----------
+    half_width: int
+        Window half-width of the kaiser windowing function.
 
-        Returns
-        ----------
-        float
-            Value of b parameter for the window half-width.
+    Returns
+    ----------
+    float
+        Value of b parameter for the window half-width.
     """
 
     # half-width options are limited from 1 to 10
@@ -39,28 +39,27 @@ def get_kaiser_half_width(half_width):
 
 def kaiser_windowing_sinc(num_points, source_point, half_width):
     """
-        Calculate the Kaiser windowed sinc function of a source/receiver grid point position.
+    Calculate the Kaiser windowed sinc function of a source/receiver grid point position.
 
-        Based on Hicks, Graham J. (2002) Arbitrary source and receiver positioning
-        in finite-difference schemes using Kaiser windowed sinc functions.
+    Based on Hicks, Graham J. (2002) Arbitrary source and receiver positioning
+    in finite-difference schemes using Kaiser windowed sinc functions.
 
-        Parameters
-        ----------
-        num_points: int
-            Number of grid points along the axis.
+    Parameters
+    ----------
+    num_points: int
+        Number of grid points along the axis.
 
-        source_point: float
-            Source position (in grid points) in the axis.
+    source_point: float
+        Source position (in grid points) in the axis.
 
-        half_width: int
-            Window half-width of the kaiser windowing function.
+    half_width: int
+        Window half-width of the kaiser windowing function.
 
-        Returns
-        ----------
-        ndarray
-            1D numpy array with the source kaiser windowed sinc value on each point.
-            In the points outside the window, the value is NaN.
-
+    Returns
+    ----------
+    ndarray
+        1D numpy array with the source kaiser windowed sinc value on each point.
+        In the points outside the window, the value is NaN.
     """
 
     x = np.linspace(start=0, stop=num_points-1, num=num_points, dtype=np.float32)
@@ -91,22 +90,22 @@ def kaiser_windowing_sinc(num_points, source_point, half_width):
 
 def get_kws_valid_points(kaiser_windowed_array):
     """
-        Given a kaiser windowed array, returns the valid (non-NaN)
-        values and points of the source/receiver location.
+    Given a kaiser windowed array, returns the valid (non-NaN)
+    values and points of the source/receiver location.
 
-        Parameters
-        ----------
-        kaiser_windwed_array: ndarray
-            1D numpy array with the source kaiser windowed sinc values on all points of the axis.
+    Parameters
+    ----------
+    kaiser_windwed_array: ndarray
+        1D numpy array with the source kaiser windowed sinc values on all points of the axis.
 
-        Returns
-        ----------
-        int
-            index of first valid point.
-        int
-            index of last valid point.
-        ndarray
-            Numpy array with valid (non-NaN) values.
+    Returns
+    ----------
+    int
+        index of first valid point.
+    int
+        index of last valid point.
+    ndarray
+        Numpy array with valid (non-NaN) values.
     """
 
     indexes = []
@@ -129,23 +128,23 @@ def get_kws_valid_points(kaiser_windowed_array):
 
 def get_source_points(grid_shape, source_location, half_width=4):
     """
-        Return the point interval of a source/receiver and ther values.
+    Return the point interval of a source/receiver and ther values.
 
-        Parameters
-        ----------
-        grid_shape: tuple(int,...)
-            Number of grid points in each grid axis.
-        source_location: tuple(float,...)
-            Source/receiver location (in grid points) in each axis.
-        half_width: int
-            Window half-width of the kaiser windowing function.
+    Parameters
+    ----------
+    grid_shape: tuple(int,...)
+        Number of grid points in each grid axis.
+    source_location: tuple(float,...)
+        Source/receiver location (in grid points) in each axis.
+    half_width: int
+        Window half-width of the kaiser windowing function.
 
-        Returns
-        ----------
-        ndarray
-            1D Numpy array with [begin_point_axis1, end_point_axis1, .., begin_point_axisN, end_point_axisN].
-        ndarray
-            1D Numpy array with [source_values_axis1, .., source_values_axisN].
+    Returns
+    ----------
+    ndarray
+        1D Numpy array with [begin_point_axis1, end_point_axis1, .., begin_point_axisN, end_point_axisN].
+    ndarray
+        1D Numpy array with [source_values_axis1, .., source_values_axisN].
     """
 
     # check with grid and source location have the same dimension

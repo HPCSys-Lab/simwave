@@ -5,6 +5,16 @@ def read_2D_segy(file):
     """
     Build a 2D velocity model from a SEG-Y format.
     It uses the 'segyio' from https://github.com/equinor/segyio
+
+    Parameters
+    ----------
+    file : str
+        Path to the velocity/density model file.
+
+    Returns
+    ----------
+    ndarray
+        2D velocity model.
     """
     with segyio.open(file, ignore_geometry=True) as f:
         n_samples = len(f.samples)

@@ -1,156 +1,158 @@
 import numpy as np
-from pywave.kernel import fd, Wavelet, kws
+from pywave.data import Grid
+from pywave.kernel import fd
 
 class Setup():
     """
-    Define the parameters and configuration for the solver
+    Define the parameters and configuration for the solver.
 
     Parameters
     ----------
-    grid : object
-        Object that represents the grid
-    velocity: object
-        Object that represents the velocity model
-    density: object
-        Object that represents the density model
-    spacing: tuple
-        Spacing along each axis
-    space_order: int
-        Define spatial order
-    origin: tuple
-        Source coordinates
-    progatation_time: int
-        Propagation time in miliseconds
-    frequency: float
-        Peak frequency for Ricker wavelet in Hz
-    nbl: int
-        Number of boundary layers
-    compiler: object
-        Object that represents the compiler
+    velocity_model : object
+        Velocity model object.
+    sources : object
+        Object that represents the set of sources.
+    receivers : object
+        Object that represents the set of receivers.
+    domain_extension : object
+        Object that holds the domain extension configuration.
+    spacing : tuple(int,...)
+        Spacing along each axis.
+    progatation_time : int
+        Propagation time in miliseconds.
+    space_order : int, optional
+        Define spatial order. Defaut is 2.
+    jumps : int, optional
+        Number of jumps in the wavefiels saving. Default is 1.
+    compiler : object, optional
+        Object that represents the compiler.
+    density: object, optional
+        Density model object.
     """
-    def __init__(self, grid=None, velocity=None, density=None,
-                 spacing=None, space_order=2, origin=None,
-                 progatation_time=1000, frequency=10, nbl=10,
-                 compiler=None,
-                 src_points_interval=None, src_points_values=None,
-                 rec_points_interval=None, rec_points_values=None,
-                 receivers=None, num_receivers=1):
+    def __init__(self, velocity_model, sources, receivers, domain_extension,
+                 spacing, propagation_time, space_order=2, jumps=1,
+                 compiler=None, density_model=None):
 
-        self.grid = grid
-        self.velocity = velocity
-        self.density  = density
+        self.velocity_model = velocity_model
+        self.density_model  = density_model
+        self.sources = sources
+        self.receivers = receivers
+        self.compiler = compiler
+        self.domain_extension = domain_extension
         self.spacing = spacing
         self.space_order = space_order
-        self.origin = origin
-        self.progatation_time = progatation_time
-        self.frequency = frequency
-        self.nbl = nbl
-        self.compiler = compiler
-        self.dimension = len(self.grid.shape())
+        self.propagation_time = propagation_time
+        self.jumps = jumps
 
-        #----------
-        self.src_points_interval = src_points_interval
-        self.src_points_values = src_points_values
-        self.rec_points_interval = rec_points_interval
-        self.rec_points_values = rec_points_values
-        self.receivers = receivers
-        self.num_receivers = num_receivers
-        #----------
+        # create a finite differences grid
+        self.grid = Grid(shape=self.velocity_model.shape())
+
+        # get the grid/velocity_model dimension
+        self.dimension = len(self.grid.shape())
 
         # validate dimensions
         self.__validate_dimensions()
 
         # apply CFL conditions
-        self.__apply_cfl_conditions()
-        self.receivers = np.zeros(shape=(self.timesteps, self.num_receivers), dtype=np.float32)
+        self.dt, self.timesteps = self.__apply_cfl_conditions()
 
-        # calc ricker source
-        self.__calc_source()
+        # calculate the time values
+        self.time_values = self.__calc_time_values()
+
+        # calculate the wavelet
+        self.wavelet = self.sources.wavelet.ricker(time_values=self.time_values)
+
+        # extend the domain
+        self.__extend_domain()
+
+        # calcute the sources and receveivers interpolation
+        self.__source_receiver_interpolation()
+
+        # shot record
+        self.shot_record = np.zeros(shape=(self.timesteps, self.receivers.count()), dtype=np.float32)
 
         # get coefficients for FD
-        self.coeff = fd.get_right_side_coefficients(self.space_order)
-
-        # calculate padding
-        self.__data_padding()
+        #self.coeff = fd.get_right_side_coefficients(self.space_order)
 
     def __validate_dimensions(self):
+        """
+        Verify if the velocity model, density model, grid and spacing have the same dimension.
+        Raise an exception otherwise.
+        """
 
-        if self.density is None:
-            if self.grid.shape() != self.velocity.shape():
+        if self.density_model is None:
+            if self.grid.shape() != self.velocity_model.shape():
                 raise Exception("Grid and Velocity Model must have the same dimensions")
         else:
-            if (self.grid.shape() != self.velocity.shape()) or (self.grid.shape() != self.density.shape()):
+            if (self.grid.shape() != self.velocity_model.shape()) or (self.grid.shape() != self.density_model.shape()):
                raise Exception("Grid, Velocity Model and Density Model must have the same dimensions")
 
         if self.dimension != len(self.spacing):
             raise Exception("Spacing must have {} values".format(self.dimension))
 
-        if self.dimension != len(self.origin):
-            raise Exception("Origin must have {} values".format(self.dimension))
-
-    # calculate the list of time values
     def __calc_time_values(self):
-        self.time_values = np.zeros(self.timesteps, dtype=np.float32)
+        """
+        Calculate the list of time values (current time in each timestep).
+
+        Returns
+        ----------
+        ndarray
+            Numpy array of time values.
+        """
+        time_values = np.zeros(self.timesteps, dtype=np.float32)
         t = 0
         for i in range(self.timesteps):
-            self.time_values[i] = t
+            time_values[i] = t
             t += self.dt
 
-    # apply CFL conditions
-    def __apply_cfl_conditions(self):
+        return time_values
 
-        self.dt = fd.calc_dt(
+    def __apply_cfl_conditions(self):
+        """
+        Apply CFL conditions to calculte dt and timesteps.
+
+        Returns
+        ----------
+        float
+            Dt (timestep variation).
+        int
+            Number of timesteps.
+        """
+        dt = fd.calc_dt(
             dimension = self.dimension,
             space_order = self.space_order,
             spacing = self.spacing,
-            vel_model = self.velocity.model
+            vel_model = self.velocity_model.data
         )
 
-        self.timesteps = fd.calc_num_timesteps(self.progatation_time, self.dt)
+        timesteps = fd.calc_num_timesteps(self.propagation_time, dt)
 
-        # calculate the time values
-        self.__calc_time_values()
+        return dt, timesteps
 
-    # calcute a ricker source
-    def __calc_source(self):
-        src = Wavelet(frequency=self.frequency, time_values=self.time_values)
-        self.wavelet = src.ricker()
+    def __extend_domain(self):
+        """
+        Extend the domain (grid, velocity model, density model) and generate the damping mask.
+        """
+        self.damp = self.domain_extension.get_damping_mask(grid_shape=self.grid.shape())
+        self.grid = self.domain_extension.extend_grid(grid=self.grid)
+        self.velocity_model = self.domain_extension.extend_model(model=self.velocity_model)
 
-    def __data_padding(self):
+        if self.density_model is not None:
+            self.density_model = self.domain_extension.extend_model(model=self.density_model)
 
-        stencil_radius = self.space_order // 2
+    def __source_receiver_interpolation(self):
+        """
+        Apply source/receiver interpolation and get list of points and values of it.
+        """
 
-        num_layers = self.nbl + stencil_radius
+        # sources
+        points, values = self.sources.get_interpolated_points_and_values(grid_shape=self.grid.shape(),
+                                                                         extension=self.domain_extension)
+        self.src_points_interval = points
+        self.src_points_values = values
 
-        if len(self.grid.shape()) == 2:
-            padding_size = ((stencil_radius, num_layers), (num_layers, num_layers))
-
-            # update the origin
-            self.origin = (
-                self.origin[0] + stencil_radius,
-                self.origin[1] + stencil_radius + self.nbl
-            )
-        else:
-            padding_size = ((stencil_radius, num_layers), (num_layers, num_layers), (num_layers, num_layers))
-
-            # update the origin
-            self.origin = (
-                self.origin[0] + stencil_radius,
-                self.origin[1] + stencil_radius + self.nbl,
-                self.origin[2] + stencil_radius + self.nbl
-            )
-
-        # create damp grid
-        damp_grid = np.zeros(self.grid.shape(), dtype=np.float32)
-        self.damp = np.pad(damp_grid, padding_size, mode='linear_ramp', end_values=self.nbl)
-        self.damp = (self.damp ** 3) * 0.0001
-
-        # pad grid
-        self.grid.wavefield = np.pad(self.grid.wavefield, padding_size)
-
-        # pad velocity model
-        self.velocity.model = np.pad(self.velocity.model, padding_size, mode='edge')
-
-        # pad density model
-        if self.density:
-            self.density.model = np.pad(self.density.model, padding_size, mode='edge')
+        # receivers
+        points, values = self.receivers.get_interpolated_points_and_values(grid_shape=self.grid.shape(),
+                                                                           extension=self.domain_extension)
+        self.rec_points_interval = points
+        self.rec_points_values = values

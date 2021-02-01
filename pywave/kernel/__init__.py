@@ -4,4 +4,5 @@ from .kws import get_source_points
 from .fd import *
 from .wavelet import Wavelet
 from .config import Setup
-from .utils import *
+from .domain_extension import DomainExtension
+from .source import Source, Receiver

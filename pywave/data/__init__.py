@@ -1,3 +1,3 @@
 from .io import *
-from .data import *
+from .model import *
 from .grid import *

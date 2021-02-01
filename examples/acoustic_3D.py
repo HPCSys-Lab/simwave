@@ -2,58 +2,50 @@ from pywave import *
 import numpy as np
 
 # shape of the grid
-shape = (256, 256, 256)
+shape = (128, 128, 128)
 
 # spacing
 spacing = (15.0, 15.0, 15.0)
 
 # propagation time
-time = 1000
+time = 800
 
-# get the velocity model
-vel = Data(shape=shape)
+# Velocity model
+vel = np.zeros(shape, dtype=np.float32)
+vel[:] = 1500.0
+velModel = Model(ndarray=vel)
 
-# get the density model
-density = Data(shape=vel.shape(), constant=1)
-
-# get the compiler
+# Compiler
 compiler = Compiler(program_version='sequential')
 
-# create a grid
-grid = Grid(shape=vel.shape())
+# domain extension (damping + spatial order halo)
+extension = DomainExtension(nbl=10, degree=3, alpha=0.0001)
 
-#-----------------------------------------------
-src_points, src_values = get_source_points(grid_shape=shape,source_location=(30,128,128),half_width=4)
+# Wavelet
+wavelet = Wavelet(frequency=10.0)
 
-rec_points = np.array([], dtype=np.uint)
+# Source
+source = Source(kws_half_width=1, wavelet=wavelet)
+source.add(position=(30,64,64))
 
-rec_values = np.array([], dtype=np.float32)
+# receivers
+receivers = Receiver(kws_half_width=1)
 
-for i in range(256):
-    points, values = get_source_points(grid_shape=shape,source_location=(30,i,i),half_width=4)
-
-    rec_points = np.append(rec_points, points)
-    rec_values = np.append(rec_values, values)
-#-----------------------------------------------
+for i in range(128):
+    receivers.add(position=(15,i,i))
 
 setup = Setup(
-    grid = grid,
-    velocity = vel,
-    #density = density,
-    origin = (30,128,128),
-    spacing = spacing,
-    progatation_time = time,
-    frequency = 5.0,
-    nbl = 0,
-    compiler = compiler,
-    src_points_interval = src_points,
-    src_points_values = src_values,
-    rec_points_interval = rec_points,
-    rec_points_values = rec_values,
-    num_receivers=255
+    velocity_model=velModel,
+    sources=source,
+    receivers=receivers,
+    domain_extension=extension,
+    spacing=spacing,
+    propagation_time=time,
+    jumps=1,
+    compiler=compiler
 )
 
-solver = AcousticSolver(setup = setup)
+solver = AcousticSolver(setup=setup)
 
 wavefields, rec, exec_time = solver.forward()
 
