@@ -22,6 +22,7 @@ def plot_wavefield(wavefield, file_name = 'wavefield', colorbar=True, cmap="gray
         plt.colorbar(plot, cax=cax)
 
     plt.savefig('plots/{}.png'.format(file_name), format='png')
+    plt.show()
     plt.close()
 
     print("Final wavefield saved in plots/{}.png".format(file_name))
@@ -50,6 +51,28 @@ def plot_shotrecord(rec, file_name = 'shotrecord', colorbar = True):
     # create the destination dir
     os.makedirs('plots', exist_ok=True)
     plt.savefig('plots/{}.png'.format(file_name), format='png')
+    plt.show()
     plt.close()
 
     print("Shotrecord saved in plots/{}.png".format(file_name))
+
+def plot_velocity_model(model, file_name = 'velocity_model', colorbar=True, cmap="jet"):
+
+    # create the destination dir
+    os.makedirs('plots', exist_ok=True)
+
+    # process data and generate the plot
+    plot = plt.imshow(model.data, cmap=cmap)
+
+    # Create aligned colorbar on the right
+    if colorbar:
+        ax = plt.gca()
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+        plt.colorbar(plot, cax=cax)
+
+    plt.savefig('plots/{}.png'.format(file_name), format='png')
+    plt.show()
+    plt.close()
+
+    print("Velocity mode saved in plots/{}.png".format(file_name))
