@@ -12,5 +12,5 @@ pywave simulates the propagation of the acoustic wave in a isotropic medium usin
 
 ## How to use
 
-A few examples are available in the [examples](https://github.com/HPCSys-Lab/pywave/tree/master/examples) folder.
+A few examples are available in the [examples](https://github.com/HPCSys-Lab/pywave/tree/master/examples) folder, and a tutorial [here](https://github.com/HPCSys-Lab/pywave/tree/master/tutorial).
 
