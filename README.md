@@ -1,6 +1,6 @@
 # pywave
 
-pywave simulates the propagation of the acoustic wave in a isotropic medium using finite differences method. The interfaces are written in Python for easy integration with several scientific and engineering libraries, while the simulation kernel is written in C for high performance.    
+`pywave` is a Python package to simulate the propagation of the acoustic wave in a isotropic medium using the finite difference method. Finite difference kernsl are written in C for performance and compiled a run time. These kernsl are called via a user-friendly Python interface for easy integration with several scientific and engineering libraries.
 
 ## Installation:
 
@@ -23,7 +23,7 @@ To contribute to the software:
 2. Clone the forked repository, add your contributions and push the changes to your fork.
 3. Create a [Pull request](https://github.com/HPCSys-Lab/pywave/pulls)
 
-Before creating the pull request, make sure that the tests pass by running
+Before creating the pull request, make sure that the tests pass by running 
 ```
 tox
 ```
