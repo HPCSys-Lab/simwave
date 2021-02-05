@@ -1,6 +1,6 @@
 # pywave
 
-`pywave` is a Python package to simulate the propagation of the acoustic wave in a isotropic medium using the finite difference method. Finite difference kernsl are written in C for performance and compiled a run time. These kernsl are called via a user-friendly Python interface for easy integration with several scientific and engineering libraries.
+`pywave` is a Python package to simulate the propagation of the constant or variable density acoustic wave in a isotropic 2D/3D medium using the finite difference method. Finite difference kernels of aribtrary spatial order (up to 16th order) are written in C for performance and compiled at run time. These kernels are called via a user-friendly Python interface for easy integration with several scientific and engineering libraries to, for example perform full-waveform inversion. 
 
 ## Installation:
 
@@ -110,3 +110,7 @@ print("Forward execution time: %f seconds" % exec_time)
 plot_wavefield(wavefields)
 plot_shotrecord(rec)
 ```
+
+## Performance 
+
+- TO DO 
