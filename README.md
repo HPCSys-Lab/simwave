@@ -1,6 +1,6 @@
 # pywave
 
-`pywave` is a Python package to simulate the propagation of the constant or variable density acoustic wave in a isotropic 2D/3D medium using the finite difference method. Finite difference kernels of aribtrary spatial order (up to 16th order) are written in C for performance and compiled at run time. These kernels are called via a user-friendly Python interface for easy integration with several scientific and engineering libraries to, for example perform full-waveform inversion. 
+`pywave` is a Python package to simulate the propagation of the constant or variable density acoustic wave in an isotropic 2D/3D medium using the finite difference method. Finite difference kernels of aribtrary spatial order (up to 16th order) are written in C for performance and compiled at run time. These kernels are called via a user-friendly Python interface for easy integration with several scientific and engineering libraries to, for example perform full-waveform inversion. 
 
 ## Installation:
 
@@ -15,7 +15,7 @@ For installation, `pywave` needs only scipy, numpy, and segyio. See `requirement
 
 ## Contributing
 
-All contributions are welcome!
+All contributions are welcome.
 
 To contribute to the software:
 
@@ -43,7 +43,7 @@ If something isn't working as it should or you'd like to recommend a new additio
 Examples
 ========
 
-Simulation with `pywave` is simple! Jupyter notebooks with tutorials can be found here [here](https://github.com/HPCSys-Lab/pywave/tree/master/tutorial).
+Simulation with `pywave` is simple and can be accomplished in a dozen or so lines of Python! Jupyter notebooks with tutorials can be found here [here](https://github.com/HPCSys-Lab/pywave/tree/master/tutorial).
 
 Here we show how to simulate the constant density acoustic wave equation on a simple two layer velocity model. 
 ```python
