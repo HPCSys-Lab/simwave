@@ -1,6 +1,6 @@
 import numpy as np
 
-class DomainExtension():
+class DomainPad():
     """
     Implement a domain extension configuration according to the absorbing layers (damping) and spatial order.
 
@@ -12,17 +12,17 @@ class DomainExtension():
     space_order : int, optional
         Finite differences spatial order.
         Default is order 2.
-    degree : int, optional
+    damping_polynomial_degree : int, optional
         Degree of the polynomial in the extension function.
         Default is 1 (linear)
     alpha : float, optional
         Constant parameter of the extension function.
         Default is 0.0001
     """
-    def __init__(self, nbl=0, space_order=2, degree=1, alpha=0.0001):
+    def __init__(self, nbl=0, space_order=2, damping_polynomial_degree=1, alpha=0.0001):
         self.nbl = nbl
         self.space_order = space_order
-        self.degree = degree
+        self.damping_polynomial_degree = damping_polynomial_degree
         self.alpha = alpha
 
     def get_damping_padding(self, dimension):
@@ -96,7 +96,7 @@ class DomainExtension():
         damp_mask = np.pad(damp_mask, self.get_damping_padding(dimension), mode='linear_ramp', end_values=self.nbl)
 
         # change the damping values (coefficients) according to a function
-        damp_mask = (damp_mask ** self.degree) * self.alpha
+        damp_mask = (damp_mask ** self.damping_polynomial_degree) * self.alpha
 
         # damp mask in the halo region
         # The values in this extended region is zero

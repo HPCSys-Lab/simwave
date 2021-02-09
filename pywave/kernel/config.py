@@ -14,7 +14,7 @@ class Setup():
         Object that represents the set of sources.
     receivers : object
         Object that represents the set of receivers.
-    domain_extension : object
+    domain_pad : object
         Object that holds the domain extension configuration.
     spacing : tuple(int,...)
         Spacing along each axis.
@@ -23,13 +23,13 @@ class Setup():
     space_order : int, optional
         Define spatial order. Defaut is 2.
     jumps : int, optional
-        Number of jumps in the wavefiels saving. Default is 1.
+        Skipping factor when saving the wavefields. Default is 1.
     compiler : object, optional
         Object that represents the compiler.
     density: object, optional
         Density model object.
     """
-    def __init__(self, velocity_model, sources, receivers, domain_extension,
+    def __init__(self, velocity_model, sources, receivers, domain_pad,
                  spacing, propagation_time, space_order=2, jumps=1,
                  compiler=None, density_model=None):
 
@@ -38,7 +38,7 @@ class Setup():
         self.sources = sources
         self.receivers = receivers
         self.compiler = compiler
-        self.domain_extension = domain_extension
+        self.domain_pad = domain_pad
         self.spacing = spacing
         self.space_order = space_order
         self.propagation_time = propagation_time
@@ -133,12 +133,12 @@ class Setup():
         """
         Extend the domain (grid, velocity model, density model) and generate the damping mask.
         """
-        self.damp = self.domain_extension.get_damping_mask(grid_shape=self.grid.shape())
-        self.grid = self.domain_extension.extend_grid(grid=self.grid)
-        self.velocity_model = self.domain_extension.extend_model(model=self.velocity_model)
+        self.damp = self.domain_pad.get_damping_mask(grid_shape=self.grid.shape())
+        self.grid = self.domain_pad.extend_grid(grid=self.grid)
+        self.velocity_model = self.domain_pad.extend_model(model=self.velocity_model)
 
         if self.density_model is not None:
-            self.density_model = self.domain_extension.extend_model(model=self.density_model)
+            self.density_model = self.domain_pad.extend_model(model=self.density_model)
 
     def __source_receiver_interpolation(self):
         """
@@ -147,12 +147,12 @@ class Setup():
 
         # sources
         points, values = self.sources.get_interpolated_points_and_values(grid_shape=self.grid.shape(),
-                                                                         extension=self.domain_extension)
+                                                                         extension=self.domain_pad)
         self.src_points_interval = points
         self.src_points_values = values
 
         # receivers
         points, values = self.receivers.get_interpolated_points_and_values(grid_shape=self.grid.shape(),
-                                                                           extension=self.domain_extension)
+                                                                           extension=self.domain_pad)
         self.rec_points_interval = points
         self.rec_points_values = values

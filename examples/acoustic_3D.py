@@ -19,7 +19,7 @@ velModel = Model(ndarray=vel)
 compiler = Compiler(program_version='sequential')
 
 # domain extension (damping + spatial order halo)
-extension = DomainExtension(nbl=10, degree=3, alpha=0.0001)
+extension = DomainPad(nbl=10, damping_polynomial_degree=3, alpha=0.0001)
 
 # Wavelet
 wavelet = Wavelet(frequency=10.0)
@@ -38,7 +38,7 @@ setup = Setup(
     velocity_model=velModel,
     sources=source,
     receivers=receivers,
-    domain_extension=extension,
+    domain_pad=extension,
     spacing=spacing,
     propagation_time=time,
     jumps=1,
