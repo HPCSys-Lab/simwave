@@ -6,7 +6,7 @@ import os
 from matplotlib import cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-def plot_wavefield(wavefield, file_name = 'wavefield', colorbar=True, cmap="gray"):
+def plot_wavefield(wavefield, file_name='wavefield', colorbar=True, cmap="gray", show=False):
 
     # create the destination dir
     os.makedirs('plots', exist_ok=True)
@@ -22,12 +22,15 @@ def plot_wavefield(wavefield, file_name = 'wavefield', colorbar=True, cmap="gray
         plt.colorbar(plot, cax=cax)
 
     plt.savefig('plots/{}.png'.format(file_name), format='png')
-    plt.show()
+
+    if show:
+        plt.show()
+        
     plt.close()
 
     print("Final wavefield saved in plots/{}.png".format(file_name))
 
-def plot_shotrecord(rec, file_name = 'shotrecord', colorbar = True):
+def plot_shotrecord(rec, file_name='shotrecord', colorbar=True, show=False):
     """
     Plot a shot record (receiver values over time).
 
@@ -51,12 +54,15 @@ def plot_shotrecord(rec, file_name = 'shotrecord', colorbar = True):
     # create the destination dir
     os.makedirs('plots', exist_ok=True)
     plt.savefig('plots/{}.png'.format(file_name), format='png')
-    plt.show()
+
+    if show:
+        plt.show()
+
     plt.close()
 
     print("Shotrecord saved in plots/{}.png".format(file_name))
 
-def plot_velocity_model(model, file_name = 'velocity_model', colorbar=True, cmap="jet"):
+def plot_velocity_model(model, file_name='velocity_model', colorbar=True, cmap="jet", show=False):
 
     # create the destination dir
     os.makedirs('plots', exist_ok=True)
@@ -72,7 +78,10 @@ def plot_velocity_model(model, file_name = 'velocity_model', colorbar=True, cmap
         plt.colorbar(plot, cax=cax)
 
     plt.savefig('plots/{}.png'.format(file_name), format='png')
-    plt.show()
+
+    if show:
+        plt.show()
+
     plt.close()
 
     print("Velocity mode saved in plots/{}.png".format(file_name))
