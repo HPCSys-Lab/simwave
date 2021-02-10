@@ -6,8 +6,10 @@ class DomainPad():
 
     Parameters
     ----------
-    nbl : int, optional
-        Number of boundary layers (grid points) along sides of the grid (except top).
+    nbl : {sequence, int}, optional
+        Number of grid points (boundary layers) padded to the edges of each axis (Z,X,[Y]).
+        ((before_1, after_1), … (before_N, after_N)) unique pad widths for each side of each axis.
+        Int is a shortcut for before = after = pad width for all axes.
         Default is 0 points.
     space_order : int, optional
         Finite differences spatial order.
@@ -40,9 +42,28 @@ class DomainPad():
             Number of points to pad along each side of the numpy array.
         """
         if dimension == 2:
-            padding = ((0, self.nbl), (self.nbl, self.nbl))
+            if isinstance(self.nbl, int):
+                padding = ((self.nbl, self.nbl), (self.nbl, self.nbl))
+
+            elif len(self.nbl) == 2 and len(self.nbl[0]) == 2 and len(self.nbl[1]) == 2:
+                padding = ((self.nbl[0][0], self.nbl[0][1]), (self.nbl[1][0], self.nbl[1][1]))
+
+            else:
+                raise Exception("nbl should have the ((int,int),(int,int)) format.")
         else:
-            padding = ((0, self.nbl), (self.nbl, self.nbl), (self.nbl, self.nbl))
+            if isinstance(self.nbl, int):
+                padding = ((self.nbl, self.nbl), (self.nbl, self.nbl), (self.nbl, self.nbl))
+
+            elif len(self.nbl) == 3 and len(self.nbl[0]) == 2 and len(self.nbl[1]) == 2 \
+                 and len(self.nbl[2]) == 2:
+                padding = (
+                            (self.nbl[0][0], self.nbl[0][1]),
+                            (self.nbl[1][0], self.nbl[1][1]),
+                            (self.nbl[2][0], self.nbl[2][1])
+                          )
+
+            else:
+                raise Exception("nbl should have the ((int,int),(int,int),(int,int)) format.")
 
         return padding
 
@@ -171,19 +192,28 @@ class DomainPad():
 
         dimension = len(position)
 
+        padding = self.get_damping_padding(dimension)
+
         # stencil_radius
         stencil_radius = self.space_order // 2
 
         if dimension == 2:
+            z_pad = padding[0][0]
+            x_pad = padding[1][0]
+
             source_position = (
-                position[0] + stencil_radius,
-                position[1] + stencil_radius + self.nbl
+                position[0] + stencil_radius + z_pad,
+                position[1] + stencil_radius + x_pad
             )
         else:
+            z_pad = padding[0][0]
+            x_pad = padding[1][0]
+            y_pad = padding[2][0]
+
             source_position = (
-                position[0] + stencil_radius,
-                position[1] + stencil_radius + self.nbl,
-                position[2] + stencil_radius + self.nbl
+                position[0] + stencil_radius + z_pad,
+                position[1] + stencil_radius + x_pad,
+                position[2] + stencil_radius + y_pad
             )
 
         return source_position

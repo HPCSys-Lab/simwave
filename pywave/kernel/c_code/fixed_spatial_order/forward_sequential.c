@@ -404,7 +404,7 @@ double forward_3D_constant_density(float *grid, float *vel_base,
             }
         }
 
-        // dirichlet on the bottom and neumann on the top
+        // dirichlet on the bottom and neumann on the top (fixed on Z)
         for(size_t j = stencil_radius; j < nx - stencil_radius; j++){
             for(size_t k = stencil_radius; k < ny - stencil_radius; k++){
                 // dirichlet on the bottom (last row)
