@@ -72,7 +72,7 @@ class Setup():
         self.shot_record = np.zeros(shape=(self.timesteps, self.receivers.count()), dtype=np.float32)
 
         # get coefficients for FD
-        #self.coeff = fd.get_right_side_coefficients(self.space_order)
+        self.coeff = fd.get_right_side_coefficients(self.space_order)
 
     def __validate_dimensions(self):
         """
@@ -133,12 +133,12 @@ class Setup():
         """
         Extend the domain (grid, velocity model, density model) and generate the damping mask.
         """
-        self.damp = self.domain_pad.get_damping_mask(grid_shape=self.grid.shape())
-        self.grid = self.domain_pad.extend_grid(grid=self.grid)
-        self.velocity_model = self.domain_pad.extend_model(model=self.velocity_model)
+        self.damp = self.domain_pad.get_damping_mask(grid_shape=self.grid.shape(), space_order=self.space_order)
+        self.grid = self.domain_pad.extend_grid(grid=self.grid, space_order=self.space_order)
+        self.velocity_model = self.domain_pad.extend_model(model=self.velocity_model, space_order=self.space_order)
 
         if self.density_model is not None:
-            self.density_model = self.domain_pad.extend_model(model=self.density_model)
+            self.density_model = self.domain_pad.extend_model(model=self.density_model, space_order=self.space_order)
 
     def __source_receiver_interpolation(self):
         """
@@ -147,12 +147,14 @@ class Setup():
 
         # sources
         points, values = self.sources.get_interpolated_points_and_values(grid_shape=self.grid.shape(),
-                                                                         extension=self.domain_pad)
+                                                                         extension=self.domain_pad,
+                                                                         space_order=self.space_order)
         self.src_points_interval = points
         self.src_points_values = values
 
         # receivers
         points, values = self.receivers.get_interpolated_points_and_values(grid_shape=self.grid.shape(),
-                                                                           extension=self.domain_pad)
+                                                                           extension=self.domain_pad,
+                                                                           space_order=self.space_order)
         self.rec_points_interval = points
         self.rec_points_values = values

@@ -56,7 +56,7 @@ class SourceReceiver():
         """
         return len(self.locations)
 
-    def get_adjusted_positions(self, extension):
+    def get_adjusted_positions(self, extension, space_order):
         """
         Get all source/receive positions adjusted according to the domain extension.
 
@@ -64,17 +64,19 @@ class SourceReceiver():
         ----------
         extension : object
             Domain extension object.
+        space_order: int
+            Spatial order.
 
         Returns
         ----------
         list
             List of all source/receiver adjusted positions.
         """
-        adjusted_list = [extension.adjust_source_position(i) for i in self.locations]
+        adjusted_list = [extension.adjust_source_position(i, space_order) for i in self.locations]
 
         return adjusted_list
 
-    def get_interpolated_points_and_values(self, grid_shape, extension):
+    def get_interpolated_points_and_values(self, grid_shape, extension, space_order):
         """
         Return the point interval of a source/receiver and ther values.
 
@@ -84,6 +86,8 @@ class SourceReceiver():
             Number of grid points in each grid axis of the extended domain.
         extension : object
             Domain extension object.
+        space_order : int
+            Spatial order.
 
         Returns
         ----------
@@ -94,7 +98,7 @@ class SourceReceiver():
         """
 
         # adjust the positions
-        adjusted_list = self.get_adjusted_positions(extension)
+        adjusted_list = self.get_adjusted_positions(extension, space_order)
 
         points = np.array([], dtype=np.uint)
         values = np.array([], dtype=np.float32)

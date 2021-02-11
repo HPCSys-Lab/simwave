@@ -19,20 +19,20 @@ velModel = Model(ndarray=vel)
 compiler = Compiler(program_version='sequential')
 
 # domain extension (damping + spatial order halo)
-extension = DomainPad(nbl=10, damping_polynomial_degree=3, alpha=0.0001)
+extension = DomainPad(nbl=0, damping_polynomial_degree=3, alpha=0.0001)
 
 # Wavelet
-wavelet = Wavelet(frequency=10.0)
+wavelet = Wavelet(frequency=15.0)
 
 # Source
 source = Source(kws_half_width=1, wavelet=wavelet)
-source.add(position=(30,64,64))
+source.add(position=(64,64,64))
 
 # receivers
 receivers = Receiver(kws_half_width=1)
 
 for i in range(128):
-    receivers.add(position=(15,i,i))
+    receivers.add(position=(64,i,i))
 
 setup = Setup(
     velocity_model=velModel,
@@ -42,7 +42,8 @@ setup = Setup(
     spacing=spacing,
     propagation_time=time,
     jumps=1,
-    compiler=compiler
+    compiler=compiler,
+    space_order=4
 )
 
 solver = AcousticSolver(setup=setup)
@@ -60,6 +61,6 @@ print("Forward execution time: %f seconds" % exec_time)
 
 #plot(wavefield[1:512,damp+1:512+damp])
 
-plot_wavefield(wavefields[5,:,:])
+plot_wavefield(wavefields[64,:,:])
 #plot_wavefield(wavefields[:,:,128])
 plot_shotrecord(rec)

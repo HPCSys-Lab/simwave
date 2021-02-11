@@ -20,8 +20,25 @@ class Solver():
         self.__load_lib()
 
     def __load_lib(self):
+
+        # dimension
+        dimension='{}d'.format(self.setup.dimension)
+
+        # constant or variable density
+        if self.setup.density_model and self.setup.space_order == 2:
+            density = 'variable_density'
+        else:
+            density = 'constant_density'
+
+        # space order mode
+        space_order_mode = 'multiple_space_order'
+
         # compile the code
-        shared_object = self.setup.compiler.compile()
+        shared_object = self.setup.compiler.compile(
+                            dimension = dimension,
+                            density = density,
+                            space_order_mode = space_order_mode,
+                        )
 
         # load the library
         self.library = ctypes.cdll.LoadLibrary(shared_object)
@@ -50,6 +67,7 @@ class AcousticSolver(Solver):
         self.forward.restype = ctypes.c_double
 
         self.forward.argtypes = [
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
@@ -83,6 +101,7 @@ class AcousticSolver(Solver):
             self.setup.velocity_model.data,
             self.setup.damp,
             self.setup.wavelet,
+            self.setup.coeff,
             self.setup.src_points_interval,
             self.setup.src_points_values,
             self.setup.rec_points_interval,
@@ -108,6 +127,7 @@ class AcousticSolver(Solver):
         self.forward.restype = ctypes.c_double
 
         self.forward.argtypes = [
+            ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
@@ -143,6 +163,7 @@ class AcousticSolver(Solver):
             self.setup.velocity_model.data,
             self.setup.damp,
             self.setup.wavelet,
+            self.setup.coeff,
             self.setup.src_points_interval,
             self.setup.src_points_values,
             self.setup.rec_points_interval,

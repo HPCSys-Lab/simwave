@@ -21,13 +21,13 @@ class Compiler():
         self.cc = 'gcc'
 
         if not self.c_code:
-            self.c_code = 'forward_sequential.c'
+            self.c_code = 'sequential.c'
 
     def config_cuda(self):
         self.cc = 'nvcc'
 
         if not self.c_code:
-            self.c_code = 'forward_cuda.cu'
+            self.c_code = 'cuda.cu'
 
         self.flags.remove('-std=c99')
         self.flags.remove('-fPIC')
@@ -39,7 +39,7 @@ class Compiler():
         self.cc = 'clang'
 
         if not self.c_code:
-            self.c_code = 'forward_openmp.c'
+            self.c_code = 'openmp.c'
 
         self.flags.remove('-std=c99')
         self.flags += ['-fopenmp', '-fopenmp-targets=nvptx64-nvidia-cuda', '-Xopenmp-target', '-march=sm_75', '-lm']
@@ -48,22 +48,34 @@ class Compiler():
         self.cc = 'pgcc'
 
         if not self.c_code:
-            self.c_code = 'forward_openacc.c'
+            self.c_code = 'openacc.c'
 
         self.flags.remove('-std=c99')
         self.flags.remove('-O3')
         self.flags.remove('-Wall')
         self.flags += ['-fast', '-Minfo', '-ta=tesla:managed' '-acc']
 
-    """
-    Compile the program
+    def compile(self, dimension='2d', density='constant_density', space_order_mode='multiple_space_order', operator='forward'):
+        """
+        Compile the program.
 
-    Returns
-    ----------
-    str
-        Path to the compiled shared object
-    """
-    def compile(self):
+        Parameters
+        ----------
+        dimension : str
+            Grid dimension. 2d or 3d.
+        density : str
+            Consider density or not. Options: constant (without density) or variable (consider density).
+            Default is constant.
+        space_order_mode: str
+            Compile the version with multiple spatial orders (multiple) or the fixed second order version (fixed).
+        operator : str
+            Operator implementation. Only forward operator available at the moment.
+
+        Returns
+        ----------
+        str
+            Path to the compiled shared object
+        """
 
         # get the working dir
         working_dir = os.getcwd()
@@ -71,9 +83,13 @@ class Compiler():
         # get the dir of the compiler.py file
         current_dir = os.path.dirname(os.path.realpath(__file__))
 
+        # program dir
+        program_dir = current_dir + '/c_code/{}/{}/{}/{}/'.format(
+            operator, space_order_mode, density, dimension
+        )
+
         object_dir = working_dir + '/tmp/'
         object_name = "lib_c_wave_{}.so".format(self.version.lower())
-        program_dir = current_dir + '/c_code/fixed_spatial_order/'
 
         if self.version == 'sequential':
             self.config_sequential()

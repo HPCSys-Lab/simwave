@@ -8,7 +8,7 @@ shape = (512, 512)
 spacing = (15.0, 15.0)
 
 # propagation time
-time = 1000
+time = 1500
 
 # Velocity model
 vel = np.zeros(shape, dtype=np.float32)
@@ -20,20 +20,20 @@ velModel = Model(ndarray=vel)
 compiler = Compiler(program_version='sequential')
 
 # domain extension (damping + spatial order halo)
-extension = DomainPad(nbl=0, damping_polynomial_degree=3, alpha=0.0001)
+extension = DomainPad(nbl=0, damping_polynomial_degree=3, alpha=0)
 
 # Wavelet
 wavelet = Wavelet(frequency=5.0)
 
 # Source
 source = Source(kws_half_width=1, wavelet=wavelet)
-source.add(position=(30,255.5))
+source.add(position=(255.5,255.5))
 
 # receivers
 receivers = Receiver(kws_half_width=1)
 
 for i in range(512):
-    receivers.add(position=(15,i))
+    receivers.add(position=(255.5,i))
 
 setup = Setup(
     velocity_model=velModel,
@@ -43,7 +43,8 @@ setup = Setup(
     spacing=spacing,
     propagation_time=time,
     jumps=1,
-    compiler=compiler
+    compiler=compiler,
+    space_order=2
 )
 
 solver = AcousticSolver(setup=setup)

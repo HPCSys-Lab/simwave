@@ -11,9 +11,6 @@ class DomainPad():
         ((before_1, after_1), … (before_N, after_N)) unique pad widths for each side of each axis.
         Int is a shortcut for before = after = pad width for all axes.
         Default is 0 points.
-    space_order : int, optional
-        Finite differences spatial order.
-        Default is order 2.
     damping_polynomial_degree : int, optional
         Degree of the polynomial in the extension function.
         Default is 1 (linear)
@@ -21,9 +18,8 @@ class DomainPad():
         Constant parameter of the extension function.
         Default is 0.0001
     """
-    def __init__(self, nbl=0, space_order=2, damping_polynomial_degree=1, alpha=0.0001):
+    def __init__(self, nbl=0, damping_polynomial_degree=1, alpha=0.0001):
         self.nbl = nbl
-        self.space_order = space_order
         self.damping_polynomial_degree = damping_polynomial_degree
         self.alpha = alpha
 
@@ -67,7 +63,7 @@ class DomainPad():
 
         return padding
 
-    def get_spatial_order_padding(self, dimension):
+    def get_spatial_order_padding(self, dimension, space_order):
         """
         Calcute the number of space order radius points (halo) to extend the domain on each side.
 
@@ -75,6 +71,8 @@ class DomainPad():
         ----------
         dimension : int
             Dimension of the domain (2d or 3d).
+        space_order : int
+            Spatial order.
 
         Returns
         ----------
@@ -82,7 +80,7 @@ class DomainPad():
             Number of points to pad along each side of the numpy array.
         """
         # stencil radius
-        radius = self.space_order // 2
+        radius = space_order // 2
 
         if dimension == 2:
             padding = ((radius, radius), (radius, radius))
@@ -91,7 +89,7 @@ class DomainPad():
 
         return padding
 
-    def get_damping_mask(self, grid_shape):
+    def get_damping_mask(self, grid_shape, space_order):
         """
         Calcute the damping mask (numpy array) of a grid.
         Damping value is zero inside the original domain, while in the extended region it grows according to a function.
@@ -100,6 +98,8 @@ class DomainPad():
         ----------
         grid_shape : tuple(int,..)
             Shape of the grid.
+        space_order : int
+            Spatial order.
 
         Returns
         ----------
@@ -121,11 +121,11 @@ class DomainPad():
 
         # damp mask in the halo region
         # The values in this extended region is zero
-        damp_mask = np.pad(damp_mask, self.get_spatial_order_padding(dimension))
+        damp_mask = np.pad(damp_mask, self.get_spatial_order_padding(dimension, space_order))
 
         return damp_mask
 
-    def extend_grid(self, grid):
+    def extend_grid(self, grid, space_order):
         """
         Extend the grid.
 
@@ -133,6 +133,8 @@ class DomainPad():
         ----------
         grid : object
             The finite differences grid object.
+        space_order : int
+            Spatial order.
 
         Returns
         ----------
@@ -146,11 +148,11 @@ class DomainPad():
         grid.data = np.pad(grid.data, self.get_damping_padding(dimension))
 
         # extension to the spatial order halo
-        grid.data = np.pad(grid.data, self.get_spatial_order_padding(dimension))
+        grid.data = np.pad(grid.data, self.get_spatial_order_padding(dimension, space_order))
 
         return grid
 
-    def extend_model(self, model):
+    def extend_model(self, model, space_order):
         """
         Extend the velocity/density model.
 
@@ -158,6 +160,8 @@ class DomainPad():
         ----------
         model : object
             Velocity or density model object.
+        space_order : int
+            Spatial order.
 
         Returns
         ----------
@@ -171,11 +175,11 @@ class DomainPad():
         model.data = np.pad(model.data, self.get_damping_padding(dimension), mode='edge')
 
         # extension to the spatial order halo
-        model.data = np.pad(model.data, self.get_spatial_order_padding(dimension), mode='edge')
+        model.data = np.pad(model.data, self.get_spatial_order_padding(dimension, space_order), mode='edge')
 
         return model
 
-    def adjust_source_position(self, position):
+    def adjust_source_position(self, position, space_order):
         """
         Adjust the position of a source/receiver in the extend domain.
 
@@ -183,6 +187,8 @@ class DomainPad():
         ----------
         position : tuple(float,...)
             Source/receiver position (in grid points) along each axis.
+        space_order : int
+            Spatial order.
 
         Returns
         ----------
@@ -195,7 +201,7 @@ class DomainPad():
         padding = self.get_damping_padding(dimension)
 
         # stencil_radius
-        stencil_radius = self.space_order // 2
+        stencil_radius = space_order // 2
 
         if dimension == 2:
             z_pad = padding[0][0]
