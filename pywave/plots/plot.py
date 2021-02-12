@@ -58,7 +58,7 @@ def plot_shotrecord(rec, file_name='shotrecord', colorbar=True, show=False):
 
     plt.close()
 
-    print("Shotrecord saved in plots/{}.png".format(file_name))
+    print("Shot record saved in plots/{}.png".format(file_name))
 
 def plot_velocity_model(model, file_name='velocity_model', colorbar=True, cmap="jet", show=False):
 
@@ -82,4 +82,4 @@ def plot_velocity_model(model, file_name='velocity_model', colorbar=True, cmap="
 
     plt.close()
 
-    print("Velocity mode saved in plots/{}.png".format(file_name))
+    print("Velocity model saved in plots/{}.png".format(file_name))
