@@ -3,8 +3,8 @@
 #include <time.h>
 #include <sys/time.h>
 
-double forward_2D_constant_density(float *grid, float *vel_base,
-                                   float *damp, float *wavelet, float *coeff,
+double forward_2D_constant_density(float *grid, float *vel_base, float *damp,
+                                   float *wavelet, float *coeff, size_t *boundary_conditions,
                                    size_t *src_points_interval, float *src_points_values,
                                    size_t *rec_points_interval, float *rec_points_values,
                                    float *receivers, size_t num_sources, size_t num_receivers,
@@ -127,30 +127,80 @@ double forward_2D_constant_density(float *grid, float *vel_base,
         }
 
         /*
-            Section 3: add null dirichlet (left, right, bottom) and null neumann (top) boundary conditions
+            Section 3: add boundary conditions (z_before, z_after, x_before, x_after)
+            0 - no boundary condition
+            1 - null dirichlet
+            2 - null neumann
         */
+        size_t z_before = boundary_conditions[0];
+        size_t z_after = boundary_conditions[1];
+        size_t x_before = boundary_conditions[2];
+        size_t x_after = boundary_conditions[3];
 
-        // dirichlet on the left and right
+        // boundary conditions on the left and right (fixed in X)
         for(size_t i = stencil_radius; i < nz - stencil_radius; i++){
-            // dirichlet on the left (first column)
-            current = i * nx + 1;
-            next_base[current] = 0.0;
 
-            // dirichlet on the right (last column)
-            current = i * nx + (nx - stencil_radius - 1);
-            next_base[current] = 0.0;
+            // null dirichlet on the left
+            if(x_before == 1){
+                current = i * nx + stencil_radius;
+                next_base[current] = 0.0;
+            }
+
+            // null neumann on the left
+            if(x_before == 2){
+                for(int ir = 1; ir <= stencil_radius; ir++){
+                    current = i * nx + stencil_radius;
+                    next_base[current - ir] = next_base[current + ir];
+                }
+            }
+
+            // null dirichlet on the right
+            if(x_after == 1){
+                current = i * nx + (nx - stencil_radius - 1);
+                next_base[current] = 0.0;
+            }
+
+            // null neumann on the right
+            if(x_after == 2){
+                for(int ir = 1; ir <= stencil_radius; ir++){
+                    current = i * nx + (nx - stencil_radius - 1);
+                    next_base[current + ir] = next_base[current - ir];
+                }
+            }
+
         }
 
-        // dirichlet on the bottom and neumann on the top
+        // boundary conditions on the top and bottom (fixed in Z)
         for(size_t j = stencil_radius; j < nx - stencil_radius; j++){
-            // dirichlet on the bottom (last row)
-            current = (nz - stencil_radius - 1) * nx + j;
-            next_base[current] = 0.0;
 
-            // neumann on the top (top row in halo zone)
-            size_t top_halo = 0 * nx + j;
-            current = 2 * nx + j;
-            next_base[top_halo] = next_base[current];
+            // null dirichlet on the top
+            if(z_before == 1){
+                current = stencil_radius * nx + j;
+                next_base[current] = 0.0;
+            }
+
+            // null neumann on the top
+            if(z_before == 2){
+                for(int ir = 1; ir <= stencil_radius; ir++){
+                    current = stencil_radius * nx + j;
+                    next_base[current - (ir * nx)] = next_base[current + (ir * nx)];
+                }
+            }
+
+            // null dirichlet on the bottom
+            if(z_after == 1){
+                current = (nz - stencil_radius - 1) * nx + j;
+                next_base[current] = 0.0;
+            }
+
+            // null neumann on the bottom
+            if(z_after == 2){
+                for(int ir = 1; ir <= stencil_radius; ir++){
+                    current = (nz - stencil_radius - 1) * nx + j;
+                    next_base[current + (ir * nx)] = next_base[current - (ir * nx)];
+                }
+            }
+
         }
 
         /*

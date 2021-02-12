@@ -20,7 +20,8 @@ velModel = Model(ndarray=vel)
 compiler = Compiler(program_version='sequential')
 
 # domain extension (damping + spatial order halo)
-extension = DomainPad(nbl=0, damping_polynomial_degree=3, alpha=0)
+extension = DomainPad(nbl=50, boundary_condition=(('NN','NN'),('NN','NN')),
+                      damping_polynomial_degree=3, alpha=0)
 
 # Wavelet
 wavelet = Wavelet(frequency=5.0)
@@ -44,7 +45,7 @@ setup = Setup(
     propagation_time=time,
     jumps=1,
     compiler=compiler,
-    space_order=2
+    space_order=4
 )
 
 solver = AcousticSolver(setup=setup)

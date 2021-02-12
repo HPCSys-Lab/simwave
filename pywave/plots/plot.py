@@ -1,7 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-import argparse
 import os
 from matplotlib import cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -25,7 +23,7 @@ def plot_wavefield(wavefield, file_name='wavefield', colorbar=True, cmap="gray",
 
     if show:
         plt.show()
-        
+
     plt.close()
 
     print("Final wavefield saved in plots/{}.png".format(file_name))

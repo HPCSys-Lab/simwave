@@ -73,6 +73,7 @@ class AcousticSolver(Solver):
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_size_t, flags="C_CONTIGUOUS"),
+            ndpointer(ctypes.c_size_t, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_size_t, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
@@ -92,6 +93,7 @@ class AcousticSolver(Solver):
 
         nz, nx = self.setup.grid.shape()
         dz, dx = self.setup.spacing
+        bc = self.setup.domain_pad.get_boundary_conditions(self.setup.dimension)
 
         #self.wavefields = np.zeros((self.setup.timesteps, nz, nx), dtype=np.float32)
 
@@ -102,6 +104,7 @@ class AcousticSolver(Solver):
             self.setup.damp,
             self.setup.wavelet,
             self.setup.coeff,
+            bc,
             self.setup.src_points_interval,
             self.setup.src_points_values,
             self.setup.rec_points_interval,
@@ -133,6 +136,7 @@ class AcousticSolver(Solver):
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_size_t, flags="C_CONTIGUOUS"),
+            ndpointer(ctypes.c_size_t, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_size_t, flags="C_CONTIGUOUS"),
             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
@@ -154,6 +158,7 @@ class AcousticSolver(Solver):
 
         nz, nx, ny = self.setup.grid.shape()
         dz, dx, dy  = self.setup.spacing
+        bc = self.setup.domain_pad.get_boundary_conditions(self.setup.dimension)
 
         #self.wavefields = np.zeros((self.setup.timesteps, nz, nx), dtype=np.float32)
 
@@ -164,6 +169,7 @@ class AcousticSolver(Solver):
             self.setup.damp,
             self.setup.wavelet,
             self.setup.coeff,
+            bc,
             self.setup.src_points_interval,
             self.setup.src_points_values,
             self.setup.rec_points_interval,

@@ -9,8 +9,14 @@ class DomainPad():
     nbl : {sequence, int}, optional
         Number of grid points (boundary layers) padded to the edges of each axis (Z,X,[Y]).
         ((before_1, after_1), … (before_N, after_N)) unique pad widths for each side of each axis.
-        Int is a shortcut for before = after = pad width for all axes.
+        Int is a shortcut for before = after for all axes.
         Default is 0 points.
+    boundary_condition : {sequence, str}
+        Boundary condition implementation on the edges of each axis (Z,X,[Y]).
+        ((before_1, after_1), … (before_N, after_N)) unique boundary condition for each side of each axis.
+        Str is a shortcut for before = after width for all axes.
+        Available options include: 'NN' (null neumann), 'ND' (null dirichlet) and 'N' (none).
+        Default is N (no boundaray condition).
     damping_polynomial_degree : int, optional
         Degree of the polynomial in the extension function.
         Default is 1 (linear)
@@ -18,10 +24,63 @@ class DomainPad():
         Constant parameter of the extension function.
         Default is 0.0001
     """
-    def __init__(self, nbl=0, damping_polynomial_degree=1, alpha=0.0001):
+    def __init__(self, nbl=0, boundary_condition='N', damping_polynomial_degree=1, alpha=0.0001):
         self.nbl = nbl
+        self.boundary_condition = boundary_condition
         self.damping_polynomial_degree = damping_polynomial_degree
         self.alpha = alpha
+
+    def get_boundary_conditions(self, dimension):
+        """
+        Return the boundary conditions on each edge of each axis.
+        0 is 'N' (no boundary condition).
+        1 is 'ND' (null dirichlet)
+        2 is 'NN' (null neumann)
+
+        Parameters
+        ----------
+        dimension : int
+            Dimension of the domain (2d or 3d).
+
+        Returns
+        ----------
+        ndarray
+            List of boundary conditions respectively [z_before, z_after, x_before, x_after, [y_before, y_after]]
+        """
+
+        bc = {'N' : 0, 'ND' : 1, 'NN' : 2}
+
+        if dimension == 2:
+            if isinstance(self.boundary_condition, str):
+                 all_bc = [bc[self.boundary_condition]] * 4
+
+            elif len(self.boundary_condition) == 2 and len(self.boundary_condition[0]) == 2 \
+                 and len(self.boundary_condition[1]) == 2:
+
+                all_bc = [
+                            bc[self.boundary_condition[0][0]], bc[self.boundary_condition[0][1]],
+                            bc[self.boundary_condition[1][0]], bc[self.boundary_condition[1][1]]
+                         ]
+            else:
+                raise Exception("boundary_conditon should have the ((str,str),(str,str)) format.")
+
+        else:
+            if isinstance(self.boundary_condition, str):
+                all_bc = [bc[self.boundary_condition]] * 6
+
+            elif len(self.boundary_condition) == 3 and len(self.boundary_condition[0]) == 2 \
+                 and len(self.boundary_condition[1]) == 2 and len(self.boundary_condition[2]) == 2:
+
+                all_bc = [
+                            bc[self.boundary_condition[0][0]], bc[self.boundary_condition[0][1]],
+                            bc[self.boundary_condition[1][0]], bc[self.boundary_condition[1][1]],
+                            bc[self.boundary_condition[2][0]], bc[self.boundary_condition[2][1]]
+                         ]
+
+            else:
+                raise Exception("boundary_conditon should have the ((str,str),(str,str),(str,str)) format.")
+
+        return np.array(all_bc, dtype=np.uint)
 
     def get_damping_padding(self, dimension):
         """

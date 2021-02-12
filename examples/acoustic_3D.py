@@ -8,7 +8,7 @@ shape = (128, 128, 128)
 spacing = (15.0, 15.0, 15.0)
 
 # propagation time
-time = 800
+time = 600
 
 # Velocity model
 vel = np.zeros(shape, dtype=np.float32)
@@ -19,7 +19,8 @@ velModel = Model(ndarray=vel)
 compiler = Compiler(program_version='sequential')
 
 # domain extension (damping + spatial order halo)
-extension = DomainPad(nbl=0, damping_polynomial_degree=3, alpha=0.0001)
+extension = DomainPad(nbl=0, boundary_condition=(('NN','NN'),('NN','NN'),('NN','NN')),
+                    damping_polynomial_degree=3, alpha=0.0001)
 
 # Wavelet
 wavelet = Wavelet(frequency=15.0)
