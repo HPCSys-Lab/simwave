@@ -16,6 +16,12 @@ vel[:] = 1500.0
 vel[200:] = 2000.0
 velModel = Model(ndarray=vel)
 
+# Density model
+density = np.zeros(shape, dtype=np.float32)
+density[:] = 1.0
+denModel = Model(ndarray=density)
+
+
 # Compiler
 compiler = Compiler(program_version='sequential')
 
@@ -38,6 +44,7 @@ for i in range(512):
 
 setup = Setup(
     velocity_model=velModel,
+    density_model=denModel,
     sources=source,
     receivers=receivers,
     domain_pad=extension,
@@ -45,7 +52,7 @@ setup = Setup(
     propagation_time=time,
     jumps=1,
     compiler=compiler,
-    space_order=4
+    space_order=2
 )
 
 solver = AcousticSolver(setup=setup)
