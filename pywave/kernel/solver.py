@@ -35,7 +35,6 @@ class Solver():
         else:
             density = 'constant_density'
             space_order_mode = 'multiple_space_order'
-            space_order_mode = 'fixed_space_order'
 
         # compile the code
         shared_object = self.setup.compiler.compile(

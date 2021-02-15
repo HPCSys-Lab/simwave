@@ -14,8 +14,6 @@ double forward_2D_variable_density(float *grid, float *vel_base, float *density,
 
     size_t stencil_radius = space_order / 2;
 
-    printf("Esse respresenta!\n");
-
     float *swap;
     int current;
 

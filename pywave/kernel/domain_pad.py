@@ -1,4 +1,5 @@
 import numpy as np
+from pywave.data import Model
 
 class DomainPad():
     """
@@ -213,7 +214,7 @@ class DomainPad():
 
     def extend_model(self, model, space_order):
         """
-        Extend the velocity/density model.
+        Extend the velocity/density model. The original model remains unchanged.
 
         Parameters
         ----------
@@ -231,12 +232,12 @@ class DomainPad():
         dimension = len(model.shape())
 
         # extension to the damping region
-        model.data = np.pad(model.data, self.get_damping_padding(dimension), mode='edge')
+        data = np.pad(model.data, self.get_damping_padding(dimension), mode='edge')
 
         # extension to the spatial order halo
-        model.data = np.pad(model.data, self.get_spatial_order_padding(dimension, space_order), mode='edge')
+        data = np.pad(data, self.get_spatial_order_padding(dimension, space_order), mode='edge')
 
-        return model
+        return Model(ndarray=data)
 
     def adjust_source_position(self, position, space_order):
         """
