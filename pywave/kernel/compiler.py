@@ -53,7 +53,7 @@ class Compiler():
         self.flags.remove('-std=c99')
         self.flags.remove('-O3')
         self.flags.remove('-Wall')
-        self.flags += ['-fast', '-Minfo', '-ta=tesla:managed' '-acc']
+        self.flags += ['-fast', '-Minfo=all', '-ta=tesla']
 
     def compile(self, dimension='2d', density='constant_density', space_order_mode='multiple_space_order', operator='forward'):
         """
