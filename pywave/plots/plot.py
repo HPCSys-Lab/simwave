@@ -26,7 +26,7 @@ def plot_wavefield(wavefield, file_name='wavefield', colorbar=True, cmap="gray",
 
     plt.close()
 
-    print("Final wavefield saved in plots/{}.png".format(file_name))
+    print("Wavefield saved in plots/{}.png".format(file_name))
 
 def plot_shotrecord(rec, file_name='shotrecord', colorbar=True, show=False):
     """

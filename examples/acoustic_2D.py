@@ -44,13 +44,13 @@ for i in range(512):
 
 setup = Setup(
     velocity_model=velModel,
-    density_model=denModel,
+    #density_model=denModel,
     sources=source,
     receivers=receivers,
     domain_pad=extension,
     spacing=spacing,
     propagation_time=time,
-    jumps=1,
+    jumps=10,
     compiler=compiler,
     space_order=2
 )
@@ -59,16 +59,18 @@ solver = AcousticSolver(setup=setup)
 
 wavefields, rec, exec_time = solver.forward()
 
-'''
-count=0
-for wavefield in wavefields:
-    plot(wavefield, file_name="arq-"+str(count))
-    count += 1
-'''
+print(wavefields.shape)
+
+if len(wavefields.shape) > 2:
+    count=0
+    for wavefield in wavefields:
+        plot_wavefield(wavefield, file_name="arq-"+str(count))
+        count += 1
+else:
+    plot_wavefield(wavefields)
 
 print("Forward execution time: %f seconds" % exec_time)
 
 #plot(wavefield[1:512,damp+1:512+damp])
 
-plot_wavefield(wavefields)
 plot_shotrecord(rec)

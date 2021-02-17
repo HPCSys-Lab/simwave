@@ -94,14 +94,11 @@ class AcousticSolver(Solver):
             ctypes.c_size_t
         ]
 
-        nz, nx = self.setup.grid.shape()
+        nz, nx = self.setup.velocity_model.shape()
         dz, dx = self.setup.spacing
         bc = self.setup.domain_pad.get_boundary_conditions(self.setup.dimension)
 
-        #self.wavefields = np.zeros((self.setup.timesteps, nz, nx), dtype=np.float32)
-
         self.elapsed_time = self.forward(
-            #self.wavefields,
             self.setup.grid.data,
             self.setup.velocity_model.data,
             self.setup.damp,
@@ -159,14 +156,11 @@ class AcousticSolver(Solver):
             ctypes.c_size_t
         ]
 
-        nz, nx, ny = self.setup.grid.shape()
+        nz, nx, ny = self.setup.velocity_model.shape()
         dz, dx, dy  = self.setup.spacing
         bc = self.setup.domain_pad.get_boundary_conditions(self.setup.dimension)
 
-        #self.wavefields = np.zeros((self.setup.timesteps, nz, nx), dtype=np.float32)
-
         self.elapsed_time = self.forward(
-            #self.wavefields,
             self.setup.grid.data,
             self.setup.velocity_model.data,
             self.setup.damp,
@@ -225,14 +219,11 @@ class AcousticSolver(Solver):
             ctypes.c_size_t
         ]
 
-        nz, nx = self.setup.grid.shape()
+        nz, nx = self.setup.velocity_model.shape()
         dz, dx = self.setup.spacing
         bc = self.setup.domain_pad.get_boundary_conditions(self.setup.dimension)
 
-        #self.wavefields = np.zeros((self.setup.timesteps, nz, nx), dtype=np.float32)
-
         self.elapsed_time = self.forward(
-            #self.wavefields,
             self.setup.grid.data,
             self.setup.velocity_model.data,
             self.setup.density_model.data,
@@ -292,14 +283,11 @@ class AcousticSolver(Solver):
             ctypes.c_size_t
         ]
 
-        nz, nx, ny = self.setup.grid.shape()
+        nz, nx, ny = self.setup.velocity_model.shape()
         dz, dx, dy  = self.setup.spacing
         bc = self.setup.domain_pad.get_boundary_conditions(self.setup.dimension)
 
-        #self.wavefields = np.zeros((self.setup.timesteps, nz, nx), dtype=np.float32)
-
         self.elapsed_time = self.forward(
-            #self.wavefields,
             self.setup.grid.data,
             self.setup.velocity_model.data,
             self.setup.density_model.data,
@@ -349,4 +337,3 @@ class AcousticSolver(Solver):
             raise Exception("Grid dimension {} not supported".format(self.setup.dimension))
 
         return self.setup.grid.data, self.setup.shot_record, self.elapsed_time
-        #return self.wavefields, self.elapsed_time

@@ -2,7 +2,7 @@ from pywave import *
 import numpy as np
 
 # shape of the grid
-shape = (128, 128, 128)
+shape = (100, 100, 100)
 
 # spacing
 spacing = (15.0, 15.0, 15.0)
@@ -32,17 +32,17 @@ wavelet = Wavelet(frequency=15.0)
 
 # Source
 source = Source(kws_half_width=1, wavelet=wavelet)
-source.add(position=(64,64,64))
+source.add(position=(50,50,50))
 
 # receivers
 receivers = Receiver(kws_half_width=1)
 
-for i in range(128):
-    receivers.add(position=(64,i,i))
+for i in range(100):
+    receivers.add(position=(50,i,i))
 
 setup = Setup(
     velocity_model=velModel,
-    density_model=denModel,
+    #density_model=denModel,
     sources=source,
     receivers=receivers,
     domain_pad=extension,
@@ -57,17 +57,22 @@ solver = AcousticSolver(setup=setup)
 
 wavefields, rec, exec_time = solver.forward()
 
-'''
-count=0
-for wavefield in wavefields:
-    plot(wavefield, file_name="arq-"+str(count))
-    count += 1
-'''
+print(wavefields.shape)
+
+if len(wavefields.shape) > 3:
+    count=0
+    for wavefield in wavefields:
+        plot_wavefield(wavefield[50,:,:], file_name="arq-"+str(count))
+        count += 1
+else:
+    plot_wavefield(wavefields[50,:,:])
+
+
 
 print("Forward execution time: %f seconds" % exec_time)
 
 #plot(wavefield[1:512,damp+1:512+damp])
 
-plot_wavefield(wavefields[64,:,:])
+#plot_wavefield(wavefields[64,:,:])
 #plot_wavefield(wavefields[:,:,128])
 plot_shotrecord(rec)

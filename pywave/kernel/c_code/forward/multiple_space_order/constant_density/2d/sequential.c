@@ -16,6 +16,7 @@ double forward_2D_constant_density(float *grid, float *vel_base, float *damp,
 
     float *swap;
     size_t current;
+    size_t wavefield_count = 0;
 
     float dzSquared = dz * dz;
     float dxSquared = dx * dx;
@@ -259,32 +260,29 @@ double forward_2D_constant_density(float *grid, float *vel_base, float *damp,
         next_base = prev_base;
         prev_base = swap;
 
-        // save wavefield
         /*
-        for(size_t i = 0; i < nz; i++){
-            size_t offset_local = i * nx;
-            size_t offset_global = (n * nz + i) * nx;
+            Section 5: save the wavefields
+        */
+        if( (jumps && (n % jumps) == 0) || (n == end_timestep - 1) ){
 
-            for(size_t j = 0; j < nx; j++){
-                grid[offset_global + j] = next_base[offset_local + j];
+            for(size_t i = 0; i < nz; i++){
+                size_t offset_local = i * nx;
+                size_t offset_global = (wavefield_count * nz + i) * nx;
+
+                for(size_t j = 0; j < nx; j++){
+                    grid[offset_global + j] = next_base[offset_local + j];
+                }
             }
-        }*/
+
+            wavefield_count++;
+        }
+
     }
 
     // get the end time
     gettimeofday(&time_end, NULL);
 
     double exec_time = (double) (time_end.tv_sec - time_start.tv_sec) + (double) (time_end.tv_usec - time_start.tv_usec) / 1000000.0;
-
-    // save final result
-    for(size_t i = 0; i < nz; i++){
-
-        size_t offset = i * nx;
-
-        for(size_t j = 0; j < nx; j++){
-            grid[offset + j] = next_base[offset + j];
-        }
-    }
 
     free(prev_base);
     free(next_base);

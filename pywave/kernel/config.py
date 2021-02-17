@@ -23,14 +23,14 @@ class Setup():
     space_order : int, optional
         Define spatial order. Defaut is 2.
     jumps : int, optional
-        Skipping factor when saving the wavefields. Default is 1.
+        Skipping factor when saving the wavefields. If jumps is 0, only the last wavefield is saved. Default is 0.
     compiler : object, optional
         Object that represents the compiler.
     density: object, optional
         Density model object.
     """
     def __init__(self, velocity_model, sources, receivers, domain_pad,
-                 spacing, propagation_time, space_order=2, jumps=1,
+                 spacing, propagation_time, space_order=2, jumps=0,
                  compiler=None, density_model=None):
 
         self.velocity_model = velocity_model
@@ -47,8 +47,8 @@ class Setup():
         # create a finite differences grid
         self.grid = Grid(shape=self.velocity_model.shape())
 
-        # get the grid/velocity_model dimension
-        self.dimension = len(self.grid.shape())
+        # get the velocity_model dimension
+        self.dimension = len(self.velocity_model.shape())
 
         # validate dimensions
         self.__validate_dimensions()
@@ -71,21 +71,54 @@ class Setup():
         # shot record
         self.shot_record = np.zeros(shape=(self.timesteps, self.receivers.count()), dtype=np.float32)
 
+        # replicate the extended grid for all timesteps
+        self.__replicate_grid_for_timesteps()
+
         # get coefficients for FD
         self.coeff = fd.get_right_side_coefficients(self.space_order)
 
-    def __validate_dimensions(self):
+    def get_skipped_timesteps_indexes(self):
         """
-        Verify if the velocity model, density model, grid and spacing have the same dimension.
-        Raise an exception otherwise.
+        Return a list for timesteps indexes according to the number of jumps.
+
+        Returns
+        ----------
+        list
+            List of timesteps indexes.
+        """
+        timesteps_indexes = list(range(0, self.timesteps, self.jumps))
+
+        # always add the last timestep
+        if timesteps_indexes[-1] != self.timesteps-1:
+            timesteps_indexes.append(self.timesteps-1)
+
+        return timesteps_indexes
+
+    def __replicate_grid_for_timesteps(self):
+        """
+        Replicate the the grid to save all (or less according to jump) wavefields.
         """
 
-        if self.density_model is None:
-            if self.grid.shape() != self.velocity_model.shape():
-                raise Exception("Grid and Velocity Model must have the same dimensions")
-        else:
-            if (self.grid.shape() != self.velocity_model.shape()) or (self.grid.shape() != self.density_model.shape()):
-               raise Exception("Grid, Velocity Model and Density Model must have the same dimensions")
+        if self.jumps < 0 or self.jumps > self.timesteps:
+            raise Exception("jumps can not be less than zero or greater than the number of timesteps.")
+
+        if self.jumps > 0:
+
+            timesteps_indexes = self.get_skipped_timesteps_indexes()
+
+            num_wavefields = len(timesteps_indexes)
+
+            # replicate grid
+            self.grid.replicate_for_timesteps(num_wavefields)
+
+    def __validate_dimensions(self):
+        """
+        Verify if the velocity model, density model, and spacing have the same dimension.
+        Raise an exception otherwise.
+        """
+        if self.density_model is not None:
+            if (self.velocity_model.shape() != self.density_model.shape()):
+                raise Exception("Velocity Model and Density Model must have the same dimensions")
 
         if self.dimension != len(self.spacing):
             raise Exception("Spacing must have {} values".format(self.dimension))
