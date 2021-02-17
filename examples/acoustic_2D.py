@@ -16,14 +16,8 @@ vel[:] = 1500.0
 vel[200:] = 2000.0
 velModel = Model(ndarray=vel)
 
-# Density model
-density = np.zeros(shape, dtype=np.float32)
-density[:] = 1.0
-denModel = Model(ndarray=density)
-
-
 # Compiler
-compiler = Compiler(program_version='sequential')
+compiler = Compiler(cc='gcc', cflags='-O3 -shared')
 
 # domain extension (damping + spatial order halo)
 extension = DomainPad(nbl=50, boundary_condition=(('NN','NN'),('NN','NN')),
@@ -44,13 +38,12 @@ for i in range(512):
 
 setup = Setup(
     velocity_model=velModel,
-    #density_model=denModel,
     sources=source,
     receivers=receivers,
     domain_pad=extension,
     spacing=spacing,
     propagation_time=time,
-    jumps=10,
+    jumps=0,
     compiler=compiler,
     space_order=2
 )

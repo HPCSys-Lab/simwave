@@ -1,6 +1,6 @@
 import numpy as np
 from pywave.data import Grid
-from pywave.kernel import fd
+from pywave.kernel import fd, Compiler
 
 class Setup():
     """
@@ -31,7 +31,7 @@ class Setup():
     """
     def __init__(self, velocity_model, sources, receivers, domain_pad,
                  spacing, propagation_time, space_order=2, jumps=0,
-                 compiler=None, density_model=None):
+                 compiler=Compiler(), density_model=None):
 
         self.velocity_model = velocity_model
         self.density_model  = density_model

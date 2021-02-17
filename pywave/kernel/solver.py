@@ -22,7 +22,7 @@ class Solver():
     def __load_lib(self):
 
         # dimension
-        dimension='{}d'.format(self.setup.dimension)
+        dimension=self.setup.dimension
 
         # constant or variable density
         if self.setup.density_model:

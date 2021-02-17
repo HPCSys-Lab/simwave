@@ -15,13 +15,8 @@ vel = np.zeros(shape, dtype=np.float32)
 vel[:] = 1500.0
 velModel = Model(ndarray=vel)
 
-# Density model
-density = np.zeros(shape, dtype=np.float32)
-density[:] = 1.0
-denModel = Model(ndarray=density)
-
 # Compiler
-compiler = Compiler(program_version='sequential')
+compiler = Compiler()
 
 # domain extension (damping + spatial order halo)
 extension = DomainPad(nbl=0, boundary_condition=(('NN','NN'),('NN','NN'),('NN','NN')),
@@ -42,13 +37,12 @@ for i in range(100):
 
 setup = Setup(
     velocity_model=velModel,
-    #density_model=denModel,
     sources=source,
     receivers=receivers,
     domain_pad=extension,
     spacing=spacing,
     propagation_time=time,
-    jumps=1,
+    jumps=0,
     compiler=compiler,
     space_order=2
 )
@@ -71,8 +65,4 @@ else:
 
 print("Forward execution time: %f seconds" % exec_time)
 
-#plot(wavefield[1:512,damp+1:512+damp])
-
-#plot_wavefield(wavefields[64,:,:])
-#plot_wavefield(wavefields[:,:,128])
 plot_shotrecord(rec)
