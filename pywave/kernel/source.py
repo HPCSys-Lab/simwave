@@ -2,7 +2,8 @@ from pywave.kernel import kws
 from pywave.kernel.wavelet import Wavelet
 import numpy as np
 
-class SourceReceiver():
+
+class SourceReceiver:
     """
     Implement a parent class for both sources and receivers
 
@@ -11,6 +12,7 @@ class SourceReceiver():
     kws_half_width : int
         Window half-width of the kaiser windowing function.
     """
+
     def __init__(self, kws_half_width):
         self.kws_half_width = kws_half_width
 
@@ -72,7 +74,9 @@ class SourceReceiver():
         list
             List of all source/receiver adjusted positions.
         """
-        adjusted_list = [extension.adjust_source_position(i, space_order) for i in self.locations]
+        adjusted_list = [
+            extension.adjust_source_position(i, space_order) for i in self.locations
+        ]
 
         return adjusted_list
 
@@ -105,11 +109,16 @@ class SourceReceiver():
 
         for position in adjusted_list:
             # apply kasier window to interpolate the source/receiver in a region of grid points
-            p, v = kws.get_source_points(grid_shape=grid_shape,source_location=position,half_width=self.kws_half_width)
+            p, v = kws.get_source_points(
+                grid_shape=grid_shape,
+                source_location=position,
+                half_width=self.kws_half_width,
+            )
             points = np.append(points, p)
             values = np.append(values, v)
 
         return points, values
+
 
 class Source(SourceReceiver):
     """
@@ -122,6 +131,7 @@ class Source(SourceReceiver):
     wavelet : object, optional
         Wavelet for the source
     """
+
     def __init__(self, kws_half_width=4, wavelet=None):
         super().__init__(kws_half_width)
 
@@ -130,6 +140,7 @@ class Source(SourceReceiver):
             wavelet = Wavelet()
 
         self.wavelet = wavelet
+
 
 class Receiver(SourceReceiver):
     """
@@ -140,5 +151,6 @@ class Receiver(SourceReceiver):
     kws_half_width : int, optional
         Window half-width of the kaiser windowing function.
     """
+
     def __init__(self, kws_half_width=4):
         super().__init__(kws_half_width)

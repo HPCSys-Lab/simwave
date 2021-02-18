@@ -2,6 +2,7 @@ from scipy.special import i0
 import numpy as np
 import warnings
 
+
 def get_kaiser_half_width(half_width):
     """
     Get the optimal b parameter of the kaiser windowing function according to the window half-width.
@@ -18,20 +19,22 @@ def get_kaiser_half_width(half_width):
     """
 
     # half-width options are limited from 1 to 10
-    if not half_width in list(range(1,11)):
-        raise Exception("Kaiser windowing half-width {} not supported".format(half_width))
+    if not half_width in list(range(1, 11)):
+        raise Exception(
+            "Kaiser windowing half-width {} not supported".format(half_width)
+        )
 
     kaiser_b = {
-        1:  1.24,
-        2:  2.94,
-        3:  4.53,
-        4:  6.31,
-        5:  7.91,
-        6:  9.42,
-        7:  10.95,
-        8:  12.53,
-        9:  14.09,
-        10: 14.18
+        1: 1.24,
+        2: 2.94,
+        3: 4.53,
+        4: 6.31,
+        5: 7.91,
+        6: 9.42,
+        7: 10.95,
+        8: 12.53,
+        9: 14.09,
+        10: 14.18,
     }
 
     return kaiser_b[half_width]
@@ -62,7 +65,7 @@ def kaiser_windowing_sinc(num_points, source_point, half_width):
         In the points outside the window, the value is NaN.
     """
 
-    x = np.linspace(start=0, stop=num_points-1, num=num_points, dtype=np.float32)
+    x = np.linspace(start=0, stop=num_points - 1, num=num_points, dtype=np.float32)
 
     # calculate the distance (in grid points) of each point of the axis
     # to the point of the source/receiver
@@ -70,8 +73,8 @@ def kaiser_windowing_sinc(num_points, source_point, half_width):
 
     # calculate the square root term of the kaiser windowing function
     with warnings.catch_warnings():
-        warnings.simplefilter('ignore')
-        sqrt = np.sqrt(1 - (x / half_width)**2)
+        warnings.simplefilter("ignore")
+        sqrt = np.sqrt(1 - (x / half_width) ** 2)
 
     # get the b term value
     b = get_kaiser_half_width(half_width)
@@ -111,7 +114,7 @@ def get_kws_valid_points(kaiser_windowed_array):
     indexes = []
     values = []
 
-    for index,value in enumerate(kaiser_windowed_array):
+    for index, value in enumerate(kaiser_windowed_array):
         if not np.isnan(value):
             indexes.append(index)
             values.append(value)
@@ -149,7 +152,9 @@ def get_source_points(grid_shape, source_location, half_width=4):
 
     # check with grid and source location have the same dimension
     if len(grid_shape) != len(source_location):
-        raise Exception("Grid and source/receiver location must have the same dimension.")
+        raise Exception(
+            "Grid and source/receiver location must have the same dimension."
+        )
 
     source_points = []
     source_values = np.array([], dtype=np.float32)

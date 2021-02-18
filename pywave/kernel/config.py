@@ -2,7 +2,8 @@ import numpy as np
 from pywave.data import Grid
 from pywave.kernel import fd, Compiler
 
-class Setup():
+
+class Setup:
     """
     Define the parameters and configuration for the solver.
 
@@ -29,12 +30,23 @@ class Setup():
     density: object, optional
         Density model object.
     """
-    def __init__(self, velocity_model, sources, receivers, domain_pad,
-                 spacing, propagation_time, space_order=2, jumps=0,
-                 compiler=Compiler(), density_model=None):
+
+    def __init__(
+        self,
+        velocity_model,
+        sources,
+        receivers,
+        domain_pad,
+        spacing,
+        propagation_time,
+        space_order=2,
+        jumps=0,
+        compiler=Compiler(),
+        density_model=None,
+    ):
 
         self.velocity_model = velocity_model
-        self.density_model  = density_model
+        self.density_model = density_model
         self.sources = sources
         self.receivers = receivers
         self.compiler = compiler
@@ -69,7 +81,9 @@ class Setup():
         self.__source_receiver_interpolation()
 
         # shot record
-        self.shot_record = np.zeros(shape=(self.timesteps, self.receivers.count()), dtype=np.float32)
+        self.shot_record = np.zeros(
+            shape=(self.timesteps, self.receivers.count()), dtype=np.float32
+        )
 
         # replicate the extended grid for all timesteps
         self.__replicate_grid_for_timesteps()
@@ -89,8 +103,8 @@ class Setup():
         timesteps_indexes = list(range(0, self.timesteps, self.jumps))
 
         # always add the last timestep
-        if timesteps_indexes[-1] != self.timesteps-1:
-            timesteps_indexes.append(self.timesteps-1)
+        if timesteps_indexes[-1] != self.timesteps - 1:
+            timesteps_indexes.append(self.timesteps - 1)
 
         return timesteps_indexes
 
@@ -100,7 +114,9 @@ class Setup():
         """
 
         if self.jumps < 0 or self.jumps > self.timesteps:
-            raise Exception("jumps can not be less than zero or greater than the number of timesteps.")
+            raise Exception(
+                "jumps can not be less than zero or greater than the number of timesteps."
+            )
 
         if self.jumps > 0:
 
@@ -117,8 +133,10 @@ class Setup():
         Raise an exception otherwise.
         """
         if self.density_model is not None:
-            if (self.velocity_model.shape() != self.density_model.shape()):
-                raise Exception("Velocity Model and Density Model must have the same dimensions")
+            if self.velocity_model.shape() != self.density_model.shape():
+                raise Exception(
+                    "Velocity Model and Density Model must have the same dimensions"
+                )
 
         if self.dimension != len(self.spacing):
             raise Exception("Spacing must have {} values".format(self.dimension))
@@ -152,10 +170,10 @@ class Setup():
             Number of timesteps.
         """
         dt = fd.calc_dt(
-            dimension = self.dimension,
-            space_order = self.space_order,
-            spacing = self.spacing,
-            vel_model = self.velocity_model.data
+            dimension=self.dimension,
+            space_order=self.space_order,
+            spacing=self.spacing,
+            vel_model=self.velocity_model.data,
         )
 
         timesteps = fd.calc_num_timesteps(self.propagation_time, dt)
@@ -166,12 +184,20 @@ class Setup():
         """
         Extend the domain (grid, velocity model, density model) and generate the damping mask.
         """
-        self.damp = self.domain_pad.get_damping_mask(grid_shape=self.grid.shape(), space_order=self.space_order)
-        self.grid = self.domain_pad.extend_grid(grid=self.grid, space_order=self.space_order)
-        self.velocity_model = self.domain_pad.extend_model(model=self.velocity_model, space_order=self.space_order)
+        self.damp = self.domain_pad.get_damping_mask(
+            grid_shape=self.grid.shape(), space_order=self.space_order
+        )
+        self.grid = self.domain_pad.extend_grid(
+            grid=self.grid, space_order=self.space_order
+        )
+        self.velocity_model = self.domain_pad.extend_model(
+            model=self.velocity_model, space_order=self.space_order
+        )
 
         if self.density_model is not None:
-            self.density_model = self.domain_pad.extend_model(model=self.density_model, space_order=self.space_order)
+            self.density_model = self.domain_pad.extend_model(
+                model=self.density_model, space_order=self.space_order
+            )
 
     def __source_receiver_interpolation(self):
         """
@@ -179,15 +205,19 @@ class Setup():
         """
 
         # sources
-        points, values = self.sources.get_interpolated_points_and_values(grid_shape=self.grid.shape(),
-                                                                         extension=self.domain_pad,
-                                                                         space_order=self.space_order)
+        points, values = self.sources.get_interpolated_points_and_values(
+            grid_shape=self.grid.shape(),
+            extension=self.domain_pad,
+            space_order=self.space_order,
+        )
         self.src_points_interval = points
         self.src_points_values = values
 
         # receivers
-        points, values = self.receivers.get_interpolated_points_and_values(grid_shape=self.grid.shape(),
-                                                                           extension=self.domain_pad,
-                                                                           space_order=self.space_order)
+        points, values = self.receivers.get_interpolated_points_and_values(
+            grid_shape=self.grid.shape(),
+            extension=self.domain_pad,
+            space_order=self.space_order,
+        )
         self.rec_points_interval = points
         self.rec_points_values = values

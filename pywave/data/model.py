@@ -2,7 +2,8 @@ from pywave.data import *
 import numpy as np
 import segyio
 
-class Model():
+
+class Model:
     """
     Base class to implement the velocity model in m/s or density model.
 
@@ -13,6 +14,7 @@ class Model():
     file : str, optional
         Path to the velocity/density model file.
     """
+
     def __init__(self, ndarray=None, file=None):
 
         # create a velocity model from array

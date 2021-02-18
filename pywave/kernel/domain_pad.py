@@ -1,9 +1,11 @@
 import numpy as np
 from pywave.data import Model
 
-class DomainPad():
+
+class BoundaryProcedures:
     """
     Implement a domain extension configuration according to the absorbing layers (damping) and spatial order.
+    Also config the boundary conditions.
 
     Parameters
     ----------
@@ -25,7 +27,10 @@ class DomainPad():
         Constant parameter of the extension function.
         Default is 0.0001
     """
-    def __init__(self, nbl=0, boundary_condition='N', damping_polynomial_degree=1, alpha=0.0001):
+
+    def __init__(
+        self, nbl=0, boundary_condition="N", damping_polynomial_degree=1, alpha=0.0001
+    ):
         self.nbl = nbl
         self.boundary_condition = boundary_condition
         self.damping_polynomial_degree = damping_polynomial_degree
@@ -49,37 +54,53 @@ class DomainPad():
             List of boundary conditions respectively [z_before, z_after, x_before, x_after, [y_before, y_after]]
         """
 
-        bc = {'N' : 0, 'ND' : 1, 'NN' : 2}
+        bc = {"N": 0, "ND": 1, "NN": 2}
 
         if dimension == 2:
             if isinstance(self.boundary_condition, str):
-                 all_bc = [bc[self.boundary_condition]] * 4
+                all_bc = [bc[self.boundary_condition]] * 4
 
-            elif len(self.boundary_condition) == 2 and len(self.boundary_condition[0]) == 2 \
-                 and len(self.boundary_condition[1]) == 2:
+            elif (
+                len(self.boundary_condition) == 2
+                and len(self.boundary_condition[0]) == 2
+                and len(self.boundary_condition[1]) == 2
+            ):
 
                 all_bc = [
-                            bc[self.boundary_condition[0][0]], bc[self.boundary_condition[0][1]],
-                            bc[self.boundary_condition[1][0]], bc[self.boundary_condition[1][1]]
-                         ]
+                    bc[self.boundary_condition[0][0]],
+                    bc[self.boundary_condition[0][1]],
+                    bc[self.boundary_condition[1][0]],
+                    bc[self.boundary_condition[1][1]],
+                ]
             else:
-                raise Exception("boundary_conditon should have the ((str,str),(str,str)) format.")
+                raise Exception(
+                    "boundary_conditon should have the ((str,str),(str,str)) format."
+                )
 
         else:
             if isinstance(self.boundary_condition, str):
                 all_bc = [bc[self.boundary_condition]] * 6
 
-            elif len(self.boundary_condition) == 3 and len(self.boundary_condition[0]) == 2 \
-                 and len(self.boundary_condition[1]) == 2 and len(self.boundary_condition[2]) == 2:
+            elif (
+                len(self.boundary_condition) == 3
+                and len(self.boundary_condition[0]) == 2
+                and len(self.boundary_condition[1]) == 2
+                and len(self.boundary_condition[2]) == 2
+            ):
 
                 all_bc = [
-                            bc[self.boundary_condition[0][0]], bc[self.boundary_condition[0][1]],
-                            bc[self.boundary_condition[1][0]], bc[self.boundary_condition[1][1]],
-                            bc[self.boundary_condition[2][0]], bc[self.boundary_condition[2][1]]
-                         ]
+                    bc[self.boundary_condition[0][0]],
+                    bc[self.boundary_condition[0][1]],
+                    bc[self.boundary_condition[1][0]],
+                    bc[self.boundary_condition[1][1]],
+                    bc[self.boundary_condition[2][0]],
+                    bc[self.boundary_condition[2][1]],
+                ]
 
             else:
-                raise Exception("boundary_conditon should have the ((str,str),(str,str),(str,str)) format.")
+                raise Exception(
+                    "boundary_conditon should have the ((str,str),(str,str),(str,str)) format."
+                )
 
         return np.array(all_bc, dtype=np.uint)
 
@@ -102,24 +123,37 @@ class DomainPad():
                 padding = ((self.nbl, self.nbl), (self.nbl, self.nbl))
 
             elif len(self.nbl) == 2 and len(self.nbl[0]) == 2 and len(self.nbl[1]) == 2:
-                padding = ((self.nbl[0][0], self.nbl[0][1]), (self.nbl[1][0], self.nbl[1][1]))
+                padding = (
+                    (self.nbl[0][0], self.nbl[0][1]),
+                    (self.nbl[1][0], self.nbl[1][1]),
+                )
 
             else:
                 raise Exception("nbl should have the ((int,int),(int,int)) format.")
         else:
             if isinstance(self.nbl, int):
-                padding = ((self.nbl, self.nbl), (self.nbl, self.nbl), (self.nbl, self.nbl))
-
-            elif len(self.nbl) == 3 and len(self.nbl[0]) == 2 and len(self.nbl[1]) == 2 \
-                 and len(self.nbl[2]) == 2:
                 padding = (
-                            (self.nbl[0][0], self.nbl[0][1]),
-                            (self.nbl[1][0], self.nbl[1][1]),
-                            (self.nbl[2][0], self.nbl[2][1])
-                          )
+                    (self.nbl, self.nbl),
+                    (self.nbl, self.nbl),
+                    (self.nbl, self.nbl),
+                )
+
+            elif (
+                len(self.nbl) == 3
+                and len(self.nbl[0]) == 2
+                and len(self.nbl[1]) == 2
+                and len(self.nbl[2]) == 2
+            ):
+                padding = (
+                    (self.nbl[0][0], self.nbl[0][1]),
+                    (self.nbl[1][0], self.nbl[1][1]),
+                    (self.nbl[2][0], self.nbl[2][1]),
+                )
 
             else:
-                raise Exception("nbl should have the ((int,int),(int,int),(int,int)) format.")
+                raise Exception(
+                    "nbl should have the ((int,int),(int,int),(int,int)) format."
+                )
 
         return padding
 
@@ -174,14 +208,21 @@ class DomainPad():
 
         # damp mask in the damping extention
         # use the perpendicular distance from the point to the boundary between original and extended domain
-        damp_mask = np.pad(damp_mask, self.get_damping_padding(dimension), mode='linear_ramp', end_values=self.nbl)
+        damp_mask = np.pad(
+            damp_mask,
+            self.get_damping_padding(dimension),
+            mode="linear_ramp",
+            end_values=self.nbl,
+        )
 
         # change the damping values (coefficients) according to a function
         damp_mask = (damp_mask ** self.damping_polynomial_degree) * self.alpha
 
         # damp mask in the halo region
         # The values in this extended region is zero
-        damp_mask = np.pad(damp_mask, self.get_spatial_order_padding(dimension, space_order))
+        damp_mask = np.pad(
+            damp_mask, self.get_spatial_order_padding(dimension, space_order)
+        )
 
         return damp_mask
 
@@ -208,7 +249,9 @@ class DomainPad():
         grid.data = np.pad(grid.data, self.get_damping_padding(dimension))
 
         # extension to the spatial order halo
-        grid.data = np.pad(grid.data, self.get_spatial_order_padding(dimension, space_order))
+        grid.data = np.pad(
+            grid.data, self.get_spatial_order_padding(dimension, space_order)
+        )
 
         return grid
 
@@ -232,10 +275,12 @@ class DomainPad():
         dimension = len(model.shape())
 
         # extension to the damping region
-        data = np.pad(model.data, self.get_damping_padding(dimension), mode='edge')
+        data = np.pad(model.data, self.get_damping_padding(dimension), mode="edge")
 
         # extension to the spatial order halo
-        data = np.pad(data, self.get_spatial_order_padding(dimension, space_order), mode='edge')
+        data = np.pad(
+            data, self.get_spatial_order_padding(dimension, space_order), mode="edge"
+        )
 
         return Model(ndarray=data)
 
@@ -269,7 +314,7 @@ class DomainPad():
 
             source_position = (
                 position[0] + stencil_radius + z_pad,
-                position[1] + stencil_radius + x_pad
+                position[1] + stencil_radius + x_pad,
             )
         else:
             z_pad = padding[0][0]
@@ -279,7 +324,7 @@ class DomainPad():
             source_position = (
                 position[0] + stencil_radius + z_pad,
                 position[1] + stencil_radius + x_pad,
-                position[2] + stencil_radius + y_pad
+                position[2] + stencil_radius + y_pad,
             )
 
         return source_position

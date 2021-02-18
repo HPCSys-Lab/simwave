@@ -3,7 +3,8 @@ import numpy as np
 from numpy.ctypeslib import ndpointer
 import time
 
-class Solver():
+
+class Solver:
     """
     Implement the operators for the solver.
 
@@ -12,6 +13,7 @@ class Solver():
     setup : object
         Define the configuration for the execution.
     """
+
     def __init__(self, setup=None):
 
         self.setup = setup
@@ -22,26 +24,28 @@ class Solver():
     def __load_lib(self):
 
         # dimension
-        dimension=self.setup.dimension
+        dimension = self.setup.dimension
 
         # constant or variable density
         if self.setup.density_model:
 
             if self.setup.space_order > 2:
-                raise Exception("Variable density implementation only available for spatial order 2.")
+                raise Exception(
+                    "Variable density implementation only available for spatial order 2."
+                )
 
-            density = 'variable_density'
-            space_order_mode = 'fixed_space_order'
+            density = "variable_density"
+            space_order_mode = "fixed_space_order"
         else:
-            density = 'constant_density'
-            space_order_mode = 'multiple_space_order'
+            density = "constant_density"
+            space_order_mode = "multiple_space_order"
 
         # compile the code
         shared_object = self.setup.compiler.compile(
-                            dimension = dimension,
-                            density = density,
-                            space_order_mode = space_order_mode,
-                        )
+            dimension=dimension,
+            density=density,
+            space_order_mode=space_order_mode,
+        )
 
         # load the library
         self.library = ctypes.cdll.LoadLibrary(shared_object)
@@ -50,15 +54,17 @@ class Solver():
         print("Dimension: %dD" % self.setup.dimension)
         print("Shape:", self.setup.grid.shape())
         print("Spacing:", self.setup.spacing)
-        print("Density:", ("constant" if self.setup.density_model is None else "variable") )
+        print(
+            "Density:", ("constant" if self.setup.density_model is None else "variable")
+        )
         print("Space Order:", self.setup.space_order)
         print("Propagation time: %d miliseconds " % self.setup.propagation_time)
         print("DT: %f seconds" % self.setup.dt)
         print("Frequency: %0.1f Hz" % self.setup.sources.wavelet.frequency)
         print("Timesteps:", self.setup.timesteps)
 
-class AcousticSolver(Solver):
 
+class AcousticSolver(Solver):
     def __print_params(self):
         print("Model: Acoustic")
         super(AcousticSolver, self)._print_params()
@@ -91,7 +97,7 @@ class AcousticSolver(Solver):
             ctypes.c_float,
             ctypes.c_size_t,
             ctypes.c_size_t,
-            ctypes.c_size_t
+            ctypes.c_size_t,
         ]
 
         nz, nx = self.setup.velocity_model.shape()
@@ -120,7 +126,7 @@ class AcousticSolver(Solver):
             self.setup.dt,
             0,
             self.setup.timesteps,
-            self.setup.space_order
+            self.setup.space_order,
         )
 
     def __forward_3D_constant_density(self):
@@ -153,11 +159,11 @@ class AcousticSolver(Solver):
             ctypes.c_float,
             ctypes.c_size_t,
             ctypes.c_size_t,
-            ctypes.c_size_t
+            ctypes.c_size_t,
         ]
 
         nz, nx, ny = self.setup.velocity_model.shape()
-        dz, dx, dy  = self.setup.spacing
+        dz, dx, dy = self.setup.spacing
         bc = self.setup.domain_pad.get_boundary_conditions(self.setup.dimension)
 
         self.elapsed_time = self.forward(
@@ -184,7 +190,7 @@ class AcousticSolver(Solver):
             self.setup.dt,
             0,
             self.setup.timesteps,
-            self.setup.space_order
+            self.setup.space_order,
         )
 
     def __forward_2D_variable_density(self):
@@ -216,7 +222,7 @@ class AcousticSolver(Solver):
             ctypes.c_float,
             ctypes.c_size_t,
             ctypes.c_size_t,
-            ctypes.c_size_t
+            ctypes.c_size_t,
         ]
 
         nz, nx = self.setup.velocity_model.shape()
@@ -246,7 +252,7 @@ class AcousticSolver(Solver):
             self.setup.dt,
             0,
             self.setup.timesteps,
-            self.setup.space_order
+            self.setup.space_order,
         )
 
     def __forward_3D_variable_density(self):
@@ -280,11 +286,11 @@ class AcousticSolver(Solver):
             ctypes.c_float,
             ctypes.c_size_t,
             ctypes.c_size_t,
-            ctypes.c_size_t
+            ctypes.c_size_t,
         ]
 
         nz, nx, ny = self.setup.velocity_model.shape()
-        dz, dx, dy  = self.setup.spacing
+        dz, dx, dy = self.setup.spacing
         bc = self.setup.domain_pad.get_boundary_conditions(self.setup.dimension)
 
         self.elapsed_time = self.forward(
@@ -312,7 +318,7 @@ class AcousticSolver(Solver):
             self.setup.dt,
             0,
             self.setup.timesteps,
-            self.setup.space_order
+            self.setup.space_order,
         )
 
     def forward(self):
@@ -334,6 +340,8 @@ class AcousticSolver(Solver):
             else:
                 self.__forward_3D_variable_density()
         else:
-            raise Exception("Grid dimension {} not supported".format(self.setup.dimension))
+            raise Exception(
+                "Grid dimension {} not supported".format(self.setup.dimension)
+            )
 
         return self.setup.grid.data, self.setup.shot_record, self.elapsed_time
