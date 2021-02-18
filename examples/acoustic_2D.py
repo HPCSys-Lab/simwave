@@ -24,7 +24,7 @@ extension = BoundaryProcedures(
     nbl=50,
     boundary_condition=(("NN", "NN"), ("NN", "NN")),
     damping_polynomial_degree=3,
-    alpha=0,
+    alpha=0.0001,
 )
 
 # Wavelet
@@ -44,7 +44,7 @@ setup = Setup(
     velocity_model=velModel,
     sources=source,
     receivers=receivers,
-    domain_pad=extension,
+    boundary_config=extension,
     spacing=spacing,
     propagation_time=time,
     jumps=0,

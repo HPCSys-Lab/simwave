@@ -15,7 +15,7 @@ class Setup:
         Object that represents the set of sources.
     receivers : object
         Object that represents the set of receivers.
-    domain_pad : object
+    boundary_config : object
         Object that holds the domain extension configuration.
     spacing : tuple(int,...)
         Spacing along each axis.
@@ -36,7 +36,7 @@ class Setup:
         velocity_model,
         sources,
         receivers,
-        domain_pad,
+        boundary_config,
         spacing,
         propagation_time,
         space_order=2,
@@ -50,7 +50,7 @@ class Setup:
         self.sources = sources
         self.receivers = receivers
         self.compiler = compiler
-        self.domain_pad = domain_pad
+        self.boundary_config = boundary_config
         self.spacing = spacing
         self.space_order = space_order
         self.propagation_time = propagation_time
@@ -184,13 +184,13 @@ class Setup:
         """
         Extend the domain (grid, velocity model, density model) and generate the damping mask.
         """
-        self.damp = self.domain_pad.get_damping_mask(
+        self.damp = self.boundary_config.get_damping_mask(
             grid_shape=self.grid.shape(), space_order=self.space_order
         )
-        self.grid = self.domain_pad.extend_grid(
+        self.grid = self.boundary_config.extend_grid(
             grid=self.grid, space_order=self.space_order
         )
-        self.velocity_model = self.domain_pad.extend_model(
+        self.velocity_model = self.boundary_config.extend_model(
             model=self.velocity_model, space_order=self.space_order
         )
 
@@ -207,7 +207,7 @@ class Setup:
         # sources
         points, values = self.sources.get_interpolated_points_and_values(
             grid_shape=self.grid.shape(),
-            extension=self.domain_pad,
+            extension=self.boundary_config,
             space_order=self.space_order,
         )
         self.src_points_interval = points
@@ -216,7 +216,7 @@ class Setup:
         # receivers
         points, values = self.receivers.get_interpolated_points_and_values(
             grid_shape=self.grid.shape(),
-            extension=self.domain_pad,
+            extension=self.boundary_config,
             space_order=self.space_order,
         )
         self.rec_points_interval = points

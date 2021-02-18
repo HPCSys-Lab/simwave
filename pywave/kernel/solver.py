@@ -102,7 +102,7 @@ class AcousticSolver(Solver):
 
         nz, nx = self.setup.velocity_model.shape()
         dz, dx = self.setup.spacing
-        bc = self.setup.domain_pad.get_boundary_conditions(self.setup.dimension)
+        bc = self.setup.boundary_config.get_boundary_conditions(self.setup.dimension)
 
         self.elapsed_time = self.forward(
             self.setup.grid.data,
@@ -164,7 +164,7 @@ class AcousticSolver(Solver):
 
         nz, nx, ny = self.setup.velocity_model.shape()
         dz, dx, dy = self.setup.spacing
-        bc = self.setup.domain_pad.get_boundary_conditions(self.setup.dimension)
+        bc = self.setup.boundary_config.get_boundary_conditions(self.setup.dimension)
 
         self.elapsed_time = self.forward(
             self.setup.grid.data,
@@ -227,7 +227,7 @@ class AcousticSolver(Solver):
 
         nz, nx = self.setup.velocity_model.shape()
         dz, dx = self.setup.spacing
-        bc = self.setup.domain_pad.get_boundary_conditions(self.setup.dimension)
+        bc = self.setup.boundary_config.get_boundary_conditions(self.setup.dimension)
 
         self.elapsed_time = self.forward(
             self.setup.grid.data,
@@ -291,7 +291,7 @@ class AcousticSolver(Solver):
 
         nz, nx, ny = self.setup.velocity_model.shape()
         dz, dx, dy = self.setup.spacing
-        bc = self.setup.domain_pad.get_boundary_conditions(self.setup.dimension)
+        bc = self.setup.boundary_config.get_boundary_conditions(self.setup.dimension)
 
         self.elapsed_time = self.forward(
             self.setup.grid.data,
