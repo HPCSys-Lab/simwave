@@ -195,7 +195,7 @@ class Setup:
         )
 
         if self.density_model is not None:
-            self.density_model = self.domain_pad.extend_model(
+            self.density_model = self.boundary_config.extend_model(
                 model=self.density_model, space_order=self.space_order
             )
 
