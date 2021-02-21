@@ -11,10 +11,14 @@ class SourceReceiver:
     ----------
     kws_half_width : int
         Window half-width of the kaiser windowing function.
+    bbox : tuple, optional
+        Min and maximum coordinates in meters of domain corners
+        e.g., (zmin,zmax,xmin,max)
     """
 
-    def __init__(self, kws_half_width):
+    def __init__(self, kws_half_width, bbox):
         self.kws_half_width = kws_half_width
+        self.bbox = bbox
 
         # create an empty list of source/receivers
         self.locations = []
@@ -74,11 +78,41 @@ class SourceReceiver:
         list
             List of all source/receiver adjusted positions.
         """
+        if self.bbox:
+            locations = self._get_grid_locations(self.locations, self.bbox, extension.spacing)
+        else:
+            locations = self.locations
+ 
         adjusted_list = [
-            extension.adjust_source_position(i, space_order) for i in self.locations
+            extension.adjust_source_position(i, space_order) for i in locations
         ]
 
         return adjusted_list
+
+    def _get_grid_locations(self, locations, bbox, spacing):
+        """
+        Get grid point location acording to spacing
+
+        Parameters
+        ----------
+        locations : sequence
+            Sequence of locations as geometric points
+        bbox : tuple, optional
+            Min and maximum coordinates in meters of domain corners
+            e.g., (zmin,zmax,xmin,max)
+        spacing : tuple(int,...)
+            Spacing along each axis.
+    
+        Returns
+        -------
+        list
+            List of all source/receiver positions as grid points
+        """
+
+        origin = bbox[::2]
+        new_locations = [tuple((location[ax] - origin[ax]) / spacing[ax] for ax in range(len(origin))) for location in locations]
+
+        return new_locations
 
     def get_interpolated_points_and_values(self, grid_shape, extension, space_order):
         """
@@ -132,8 +166,8 @@ class Source(SourceReceiver):
         Wavelet for the source
     """
 
-    def __init__(self, kws_half_width=4, wavelet=None):
-        super().__init__(kws_half_width)
+    def __init__(self, kws_half_width=4, wavelet=None, bbox=None):
+        super().__init__(kws_half_width, bbox)
 
         # if none, create a default wavelet
         if wavelet is None:
@@ -152,5 +186,5 @@ class Receiver(SourceReceiver):
         Window half-width of the kaiser windowing function.
     """
 
-    def __init__(self, kws_half_width=4):
-        super().__init__(kws_half_width)
+    def __init__(self, kws_half_width=4, bbox=None):
+        super().__init__(kws_half_width, bbox)

@@ -21,7 +21,9 @@ compiler = Compiler(cc="gcc", cflags="-O3 -shared")
 
 # domain extension (damping + spatial order halo)
 extension = BoundaryProcedures(
-    nbl=50,
+    # nbl=50,
+    grid_spacing = spacing,
+    length = [(750, 750), (750, 750)],
     boundary_condition=(("NN", "NN"), ("NN", "NN")),
     damping_polynomial_degree=3,
     alpha=0.0001,
@@ -31,14 +33,23 @@ extension = BoundaryProcedures(
 wavelet = Wavelet(frequency=5.0)
 
 # Source
+"""
 source = Source(kws_half_width=1, wavelet=wavelet)
+source.add(position=(270, 240))
 source.add(position=(255.5, 255.5))
-
+"""
+source = Source(kws_half_width=1, wavelet=wavelet, bbox=(0, 7680, 0, 7680))
+source.add(position=(4050, 3600))
+source.add(position=(3832.5, 3832.5))
 # receivers
+receivers = Receiver(kws_half_width=1, bbox=(0, 7680, 0, 7680))
+for i in range(512):
+    receivers.add(position=(3832.5, i*15.0))
+"""
 receivers = Receiver(kws_half_width=1)
-
 for i in range(512):
     receivers.add(position=(255.5, i))
+"""
 
 setup = Setup(
     velocity_model=velModel,

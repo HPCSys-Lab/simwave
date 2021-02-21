@@ -14,6 +14,13 @@ class BoundaryProcedures:
         ((before_1, after_1), … (before_N, after_N)) unique pad widths for each side of each axis.
         Int is a shortcut for before = after for all axes.
         Default is 0 points.
+    length : {sequence, float}, optional
+        Length of padded extension to the edges in the directions of each axis (Z,X,[Y]).
+        ((before_1, after_1), … (before_N, after_N)) unique pad widths (in meters) for each side of each axis.
+        Float is a shortcut for before = after for all axes.
+        If length is given grid_spacing is mandatory.
+    grid_spacing : tuple, optional
+        Grid spacing in meters each axis. Mandatory if length is given.
     boundary_condition : {sequence, str}
         Boundary condition implementation on the edges of each axis (Z,X,[Y]).
         ((before_1, after_1), … (before_N, after_N)) unique boundary condition for each side of each axis.
@@ -29,12 +36,46 @@ class BoundaryProcedures:
     """
 
     def __init__(
-        self, nbl=0, boundary_condition="N", damping_polynomial_degree=1, alpha=0.0001
+        self, nbl=0, boundary_condition="N", damping_polynomial_degree=1, alpha=0.0001, length = None, grid_spacing = None
     ):
-        self.nbl = nbl
+        if not (length or grid_spacing):
+            self.nbl = nbl
+        else:
+            self.nbl = self._nbl_from_geometry(length, grid_spacing)
         self.boundary_condition = boundary_condition
         self.damping_polynomial_degree = damping_polynomial_degree
         self.alpha = alpha
+        self.spacing = grid_spacing
+
+    def _nbl_from_geometry(self, length, spacing):
+        """
+        Return number of grid points from bbox specification
+
+        Parameters
+        ----------
+        length : {sequence, float}, optional
+            Length of padded extension to the edges in the directions of each axis (Z,X,[Y]).
+        spacing : tuple, optional
+            Grid spacing in meters each axis. Mandatory if length is given.
+
+        Returns
+        -------
+        nbl : {sequence, int}, optional
+            Number of grid points (boundary layers) padded to the edges of each axis (Z,X,[Y]).
+        """
+        try:
+            if isinstance(length, float) or isinstance(length, int):
+                nbl = [tuple(int(length // spc) for x in range(2)) for spc in spacing]
+            elif len(length) == 2 and len(length[0]) == 2 and len(length[1]) == 2:
+                nbl = [tuple(int(ext // spc) for ext in ax) for ax, spc in zip(length, spacing)]
+        except TypeError as err:
+            print("If length is given, spacing is mandatory and vice-versa", err)
+        except:
+            print("Couldn't assign value to nbl")
+            raise
+
+        return nbl
+
 
     def get_boundary_conditions(self, dimension):
         """
