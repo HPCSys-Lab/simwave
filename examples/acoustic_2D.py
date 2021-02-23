@@ -41,6 +41,7 @@ source.add(position=(255.5, 255.5))
 source = Source(kws_half_width=1, wavelet=wavelet, bbox=(0, 7680, 0, 7680))
 source.add(position=(4050, 3600))
 source.add(position=(3832.5, 3832.5))
+
 # receivers
 receivers = Receiver(kws_half_width=1, bbox=(0, 7680, 0, 7680))
 for i in range(512):

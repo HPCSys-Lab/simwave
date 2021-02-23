@@ -78,6 +78,9 @@ double forward_2D_variable_density(float *grid, float *vel_base, float *density,
             Section 2: add the source term
         */
 
+        // pointer to src value offset
+        size_t offset_src_kws_index_z = 0;
+
         // for each source
         for(size_t src = 0; src < num_sources; src++){
 
@@ -97,13 +100,11 @@ double forward_2D_variable_density(float *grid, float *vel_base, float *density,
             size_t src_x_num_points = src_x_end - src_x_begin + 1;
 
             // index of the Kaiser windowed sinc value of the source point
-            offset_src = src * (src_z_num_points + src_x_num_points);
-            size_t kws_index_z = offset_src;
-            size_t kws_index_x = offset_src + src_z_num_points;
+            size_t kws_index_z = offset_src_kws_index_z;
 
             // for each source point in the Z axis
             for(size_t i = src_z_begin; i <= src_z_end; i++){
-                kws_index_x = offset_src + src_z_num_points;
+                size_t kws_index_x = offset_src_kws_index_z + src_z_num_points;
 
                 // for each source point in the X axis
                 for(size_t j = src_x_begin; j <= src_x_end; j++){
@@ -118,6 +119,8 @@ double forward_2D_variable_density(float *grid, float *vel_base, float *density,
                 }
                 kws_index_z++;
             }
+
+            offset_src_kws_index_z += (src_z_num_points + src_x_num_points);
         }
 
         /*
@@ -201,6 +204,9 @@ double forward_2D_variable_density(float *grid, float *vel_base, float *density,
             Section 4: compute the receivers
         */
 
+        // pointer to rec value offset
+        size_t offset_rec_kws_index_z = 0;
+
         // for each receiver
         for(size_t rec = 0; rec < num_receivers; rec++){
 
@@ -222,13 +228,11 @@ double forward_2D_variable_density(float *grid, float *vel_base, float *density,
             size_t rec_x_num_points = rec_x_end - rec_x_begin + 1;
 
             // index of the Kaiser windowed sinc value of the receiver point
-            offset_rec = rec * (rec_z_num_points + rec_x_num_points);
-            size_t kws_index_z = offset_rec;
-            size_t kws_index_x = offset_rec + rec_z_num_points;
+            size_t kws_index_z = offset_rec_kws_index_z;
 
             // for each receiver point in the Z axis
             for(size_t i = rec_z_begin; i <= rec_z_end; i++){
-                kws_index_x = offset_rec + rec_z_num_points;
+                size_t kws_index_x = offset_rec_kws_index_z + rec_z_num_points;
 
                 // for each receiver point in the X axis
                 for(size_t j = rec_x_begin; j <= rec_x_end; j++){
@@ -246,6 +250,8 @@ double forward_2D_variable_density(float *grid, float *vel_base, float *density,
 
             size_t current_rec_n = n * num_receivers + rec;
             receivers[current_rec_n] = sum;
+
+            offset_rec_kws_index_z += (rec_z_num_points + rec_x_num_points);
         }
 
         //swap arrays for next iteration
