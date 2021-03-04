@@ -1,3 +1,3 @@
-from .data import *
-from .kernel import *
-from .plots import *
+from pywave.io import *
+from pywave.kernel import *
+from pywave.plots import *

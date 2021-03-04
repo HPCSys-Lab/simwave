@@ -79,7 +79,7 @@ def plot_velocity_model(
     os.makedirs("plots", exist_ok=True)
 
     # process data and generate the plot
-    plot = plt.imshow(model.data, cmap=cmap)
+    plot = plt.imshow(model, cmap=cmap)
 
     # Create aligned colorbar on the right
     if colorbar:

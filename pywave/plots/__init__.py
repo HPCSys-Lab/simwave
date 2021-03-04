@@ -1,1 +1,1 @@
-from .plot import *
+from pywave.plots.plot import *

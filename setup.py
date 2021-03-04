@@ -6,7 +6,7 @@ with open("requirements.txt") as f:
 setup(
     name="pywave",
     version="0.1",
-    description="A hybrid Python/C wave propagator project",
+    description="A hybrid Python/C wave propagator",
     long_description="",
     author="Jaime Freire de Souza",
     author_email="jaimefreire.souza@gmail.com",
