@@ -173,7 +173,7 @@ class SpaceModel:
         try:
             return self._damping_polynomial_degree
         except AttributeError:
-            return 1
+            return 3
 
     @property
     def damping_alpha(self):
@@ -182,7 +182,7 @@ class SpaceModel:
         try:
             return self._damping_alpha
         except AttributeError:
-            return 0.0001
+            return 0.001
 
     @property
     def fd_coefficients(self):
@@ -251,7 +251,7 @@ class SpaceModel:
         return (space_order_radius, ) * self.dimension * 2
 
     def config_boundary(self, damping_length=0.0, boundary_condition="N",
-                        damping_polynomial_degree=1, damping_alpha=0.0001):
+                        damping_polynomial_degree=3, damping_alpha=0.001):
         """
         Applies the domain extension (for absorbing layers with damping)
         and boundary conditions.
