@@ -1,85 +1,63 @@
 from pywave import *
 import numpy as np
 
-# shape of the grid
-shape = (512, 512)
-
-# spacing
-spacing = (15.0, 15.0)
-
-# propagation time
-time = 1500
-
 # Velocity model
-vel = np.zeros(shape, dtype=np.float32)
+vel = np.zeros(shape=(512,512), dtype=np.float32)
 vel[:] = 1500.0
-vel[200:] = 2000.0
-velModel = Model(ndarray=vel)
+vel[100:] = 2000.0
 
-# Compiler
-compiler = Compiler(cc="gcc", cflags="-O3 -shared")
-
-# domain extension (damping + spatial order halo)
-extension = BoundaryProcedures(
-    # nbl=50,
-    grid_spacing = spacing,
-    length = [(750, 750), (750, 750)],
-    boundary_condition=(("NN", "NN"), ("NN", "NN")),
-    damping_polynomial_degree=3,
-    alpha=0.0001,
+# create the space model
+space_model = SpaceModel(
+    bbox=(0, 5120, 0, 5120),
+    grid_spacing=(10., 10.),
+    velocity_model=vel,
+    space_order=2
 )
 
-# Wavelet
-wavelet = Wavelet(frequency=5.0)
+# config boundary conditions
+space_model.config_boundary(
+    damping_length=0.0,
+    boundary_condition=("ND", "NN", "N", "NN"),
+    damping_polynomial_degree=1,
+    damping_alpha=0.001
+)
 
-# Source
-"""
-source = Source(kws_half_width=1, wavelet=wavelet)
-source.add(position=(270, 240))
-source.add(position=(255.5, 255.5))
-"""
-source = Source(kws_half_width=1, wavelet=wavelet, bbox=(0, 7680, 0, 7680))
-source.add(position=(4050, 3600))
-source.add(position=(3832.5, 3832.5))
+# create the time model
+time_model = TimeModel(
+    space_model=space_model,
+    t0=0.0,
+    tf=1.0
+)
 
-# receivers
-receivers = Receiver(kws_half_width=1, bbox=(0, 7680, 0, 7680))
-for i in range(512):
-    receivers.add(position=(3832.5, i*15.0))
-"""
-receivers = Receiver(kws_half_width=1)
-for i in range(512):
-    receivers.add(position=(255.5, i))
-"""
+# create the set of sources
+source = Source(space_model, coordinates=[], window_radius=4)
+source.add((10,2560))
+source.add((2560,2560))
 
-setup = Setup(
-    velocity_model=velModel,
+# crete the set of receivers
+receiver = Receiver(
+    space_model=space_model,
+    coordinates=[(2560,i) for i in range(0,5112,10)],
+    window_radius=4
+)
+
+# create a ricker wavelet with 10hz of peak frequency
+ricker = RickerWavelet(10.0, time_model)
+
+# create the solver
+solver = Solver(
+    space_model=space_model,
+    time_model=time_model,
     sources=source,
-    receivers=receivers,
-    boundary_config=extension,
-    spacing=spacing,
-    propagation_time=time,
-    jumps=0,
-    compiler=compiler,
-    space_order=2,
+    receivers=receiver,
+    wavelet=ricker,
+    saving_jump=0,
+    compiler=None
 )
 
-solver = AcousticSolver(setup=setup)
+# run the forward
+u_full, recv = solver.forward()
 
-wavefields, rec, exec_time = solver.forward()
-
-print(wavefields.shape)
-
-if len(wavefields.shape) > 2:
-    count = 0
-    for wavefield in wavefields:
-        plot_wavefield(wavefield, file_name="arq-" + str(count))
-        count += 1
-else:
-    plot_wavefield(wavefields)
-
-print("Forward execution time: %f seconds" % exec_time)
-
-# plot(wavefield[1:512,damp+1:512+damp])
-
-plot_shotrecord(rec)
+print("u_full shape:", u_full.shape)
+plot_wavefield(u_full[-1])
+plot_shotrecord(recv)
