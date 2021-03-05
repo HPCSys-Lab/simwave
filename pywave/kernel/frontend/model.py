@@ -452,6 +452,7 @@ class TimeModel:
         self._space_model = space_model
         self._tf = tf
         self._t0 = t0
+        self._dt = space_model.dt
 
     @property
     def space_model(self):
@@ -471,7 +472,17 @@ class TimeModel:
     @property
     def dt(self):
         """Time variation in seconds."""
-        return self.space_model.dt
+        return self._dt
+
+    @dt.setter
+    def dt(self, value):
+        """Set time step in seconds"""
+        if value < 0:
+            print("Time step cannot be negative")
+        elif value > self.dt:
+            print("Time step given violates CFL condition")
+        else:
+            self._dt = value
 
     @property
     def timesteps(self):
