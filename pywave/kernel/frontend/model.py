@@ -47,6 +47,14 @@ class SpaceModel:
         else:
             self._density_model = density_model
 
+        # evaluate timestep size
+        self._dt = fd.calculate_dt(
+            dimension=self.dimension,
+            space_order=self.space_order,
+            grid_spacing=self.grid_spacing,
+            velocity_model=self.velocity_model
+        )
+
     @property
     def bbox(self):
         return self._bbox
@@ -73,17 +81,17 @@ class SpaceModel:
 
     @property
     def dt(self):
-        """
-        Time variation (in seconds) calculated according to CFL condition.
-        """
-        dt = fd.calculate_dt(
-            dimension=self.dimension,
-            space_order=self.space_order,
-            grid_spacing=self.grid_spacing,
-            velocity_model=self.velocity_model
-        )
+        return self._dt
 
-        return dt
+    @dt.setter
+    def dt(self, value):
+        """Set time step in seconds"""
+        if value < 0:
+            print("Time step cannot be negative")
+        elif value > self._dt:
+            print("Time step given violates CFL condition")
+        else:
+            self._dt = value
 
     @property
     def shape(self):
