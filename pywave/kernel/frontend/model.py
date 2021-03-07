@@ -81,16 +81,6 @@ class SpaceModel:
 
     @property
     def dt(self):
-        # """
-        # Time variation (in seconds) calculated according to CFL condition.
-        # """
-        # dt = fd.calculate_dt(
-            # dimension=self.dimension,
-            # space_order=self.space_order,
-            # grid_spacing=self.grid_spacing,
-            # velocity_model=self.velocity_model
-        # )
-
         return self._dt
 
     @dt.setter
