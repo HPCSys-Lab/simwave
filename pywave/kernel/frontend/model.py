@@ -107,16 +107,16 @@ class SpaceModel:
             # 2 dimension
             z_min, z_max, x_min, x_max = self.bounding_box
             z_spacing, x_spacing = self.grid_spacing
-            nz = int((z_max - z_min) / z_spacing)
-            nx = int((x_max - x_min) / x_spacing)
+            nz = int((z_max - z_min) / z_spacing) + 1
+            nx = int((x_max - x_min) / x_spacing) + 1
             return (nz, nx)
         else:
             # 3 dimension
             z_min, z_max, x_min, x_max, y_min, y_max = self.bounding_box
             z_spacing, x_spacing, y_spacing = self.grid_spacing
-            nz = int((z_max - z_min) / z_spacing)
-            nx = int((x_max - x_min) / x_spacing)
-            ny = int((y_max - y_min) / y_spacing)
+            nz = int((z_max - z_min) / z_spacing) + 1
+            nx = int((x_max - x_min) / x_spacing) + 1
+            ny = int((y_max - y_min) / y_spacing) + 1 
             return (nz, nx, ny)
 
     @property

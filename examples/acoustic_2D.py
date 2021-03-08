@@ -10,7 +10,7 @@ vel[100:] = 2000.0
 # bounding_box
 space_model = SpaceModel(
     bounding_box=(0, 5120, 0, 5120),
-    grid_spacing=(10., 10.),
+    grid_spacing=(10, 10),
     velocity_model=vel,
     space_order=2
 )
