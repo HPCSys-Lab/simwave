@@ -173,7 +173,7 @@ class Middleware:
             'dz',
             'dx',
             'dy',
-            'saving_jump',
+            'saving_stride',
             'dt',
             'begin_timestep',
             'end_timestep',
@@ -213,7 +213,8 @@ class Middleware:
 
     def _convert_boundary_condition(self, boundary_condition):
         """
-        Convert a boundary condition str to int (N : 0, ND : 1, NN : 2).
+        Convert a boundary condition str to int.
+        (none : 0, null_dirichlet : 1, null_neumann : 2).
 
         Parameters
         ----------
@@ -227,9 +228,9 @@ class Middleware:
         """
 
         bc = {
-            'N': 0,
-            'ND': 1,
-            'NN': 2
+            'none': 0,
+            'null_dirichlet': 1,
+            'null_neumann': 2
         }
 
         conv_bc = [bc[i] for i in boundary_condition]

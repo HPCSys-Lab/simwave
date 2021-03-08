@@ -7,31 +7,31 @@ vel[:] = 1500.0
 vel[100:] = 2000.0
 
 # create the space model
+# bounding_box
 space_model = SpaceModel(
-    bbox=(0, 5120, 0, 5120),
+    bounding_box=(0, 5120, 0, 5120),
     grid_spacing=(10., 10.),
     velocity_model=vel,
     space_order=2
 )
 
 # config boundary conditions
+# (null,  null_dirichlet or null_neumann)
 space_model.config_boundary(
-    damping_length=0.0,
-    boundary_condition=("ND", "NN", "N", "NN"),
-    damping_polynomial_degree=1,
+    damping_length=(0, 500, 200, 300),
+    boundary_condition=("null_neumann", "null_dirichlet", "none", "null_dirichlet"),
+    damping_polynomial_degree=3,
     damping_alpha=0.001
 )
 
 # create the time model
 time_model = TimeModel(
     space_model=space_model,
-    t0=0.0,
     tf=1.0
 )
 
 # create the set of sources
-source = Source(space_model, coordinates=[], window_radius=4)
-source.add((10,2560))
+source = Source(space_model, window_radius=4)
 source.add((2560,2560))
 
 # crete the set of receivers
@@ -51,8 +51,7 @@ solver = Solver(
     sources=source,
     receivers=receiver,
     wavelet=ricker,
-    saving_jump=0,
-    compiler=None
+    saving_stride=0
 )
 
 # run the forward

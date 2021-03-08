@@ -17,15 +17,15 @@ class SpaceModel:
         Grid spacing in meters in each axis (z, x [, y]).
     velocity_model : ndarray
         Numpy n-dimensional array with P wave velocity (m/s) profile.
-    density_model : ndarray
+    density_model : ndarray, optional
         Numpy n-dimensional array with the density profile.
     space_order: int, optional
         Spatial order of the stencil. Accepts even orders from 2 to 16.
         Default is 2.
     """
-    def __init__(self, bbox, grid_spacing, velocity_model,
+    def __init__(self, bounding_box, grid_spacing, velocity_model,
                  density_model=None, space_order=2):
-        self._bbox = bbox
+        self._bounding_box = bounding_box
         self._grid_spacing = grid_spacing
         self._space_order = space_order
 
@@ -47,7 +47,7 @@ class SpaceModel:
         else:
             self._density_model = density_model
 
-        # evaluate timestep size
+        # calculate dt according to cfl
         self._dt = fd.calculate_dt(
             dimension=self.dimension,
             space_order=self.space_order,
@@ -56,8 +56,8 @@ class SpaceModel:
         )
 
     @property
-    def bbox(self):
-        return self._bbox
+    def bounding_box(self):
+        return self._bounding_box
 
     @property
     def grid_spacing(self):
@@ -87,9 +87,9 @@ class SpaceModel:
     def dt(self, value):
         """Set time step in seconds"""
         if value < 0:
-            print("Time step cannot be negative")
-        elif value > self._dt:
-            print("Time step given violates CFL condition")
+            print("Time step cannot be negative.")
+        elif value > self.dt:
+            print("Time step value violates CFL condition.")
         else:
             self._dt = value
 
@@ -100,14 +100,14 @@ class SpaceModel:
         # number of grid points (z,x [,y])
         if self.dimension == 2:
             # 2 dimension
-            z_min, z_max, x_min, x_max = self.bbox
+            z_min, z_max, x_min, x_max = self.bounding_box
             z_spacing, x_spacing = self.grid_spacing
             nz = int((z_max - z_min) / z_spacing)
             nx = int((x_max - x_min) / x_spacing)
             return (nz, nx)
         else:
             # 3 dimension
-            z_min, z_max, x_min, x_max, y_min, y_max = self.bbox
+            z_min, z_max, x_min, x_max, y_min, y_max = self.bounding_box
             z_spacing, x_spacing, y_spacing = self.grid_spacing
             nz = int((z_max - z_min) / z_spacing)
             nx = int((x_max - x_min) / x_spacing)
@@ -165,14 +165,14 @@ class SpaceModel:
     def boundary_condition(self):
         """
         Boundary condition implementation on the edges of each axis.
-        'NN' (null neumann), 'ND' (null dirichlet) and 'N' (none).
+        (none, null_dirichlet, null_neumann)
         """
         # if boundary is not configured, boundary conditions
-        # is 0 (Nothing) in all edges of all axis
+        # is 0 (none) in all edges of all axis
         try:
             return self._boundary_condition
         except AttributeError:
-            return ('N',) * self.dimension * 2
+            return ('none',) * self.dimension * 2
 
     @property
     def damping_polynomial_degree(self):
@@ -214,7 +214,7 @@ class SpaceModel:
         """
 
         if self.dimension == 2:
-            z_min, z_max, x_min, x_max = self.bbox
+            z_min, z_max, x_min, x_max = self.bounding_box
 
             # original shape
             z = np.linspace(z_min, z_max, data.shape[0])
@@ -231,7 +231,7 @@ class SpaceModel:
 
             return np.float32(interpolant((Z, X)))
         else:
-            z_min, z_max, x_min, x_max, y_min, y_max = self.bbox
+            z_min, z_max, x_min, x_max, y_min, y_max = self.bounding_box
 
             # original shape
             z = np.linspace(z_min, z_max, data.shape[0])
@@ -258,7 +258,7 @@ class SpaceModel:
         space_order_radius = self.space_order // 2
         return (space_order_radius, ) * self.dimension * 2
 
-    def config_boundary(self, damping_length=0.0, boundary_condition="N",
+    def config_boundary(self, damping_length=0.0, boundary_condition="none",
                         damping_polynomial_degree=3, damping_alpha=0.001):
         """
         Applies the domain extension (for absorbing layers with damping)
@@ -275,7 +275,7 @@ class SpaceModel:
             Boundary condition implementation on the edges of each axis.
             e.g., (z_before, z_after, x_before, x_after [, y_before, y_after]).
             Str is a shortcut for before = after width for all axes.
-            Options: 'NN' (null neumann), 'ND' (null dirichlet) and 'N' (none).
+            Options: none, null_dirichlet, null_neumann.
             Default is N (no boundaray condition).
         damping_polynomial_degree : int, optional
             Degree of the polynomial in the extension function.

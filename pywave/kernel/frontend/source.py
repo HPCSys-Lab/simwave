@@ -46,7 +46,7 @@ class Source:
         for coord in self.coordinates:
             # 2D coordinates
             if len(coord) == 2:
-                zmin, zmax, xmin, xmax = self.space_model.bbox
+                zmin, zmax, xmin, xmax = self.space_model.bounding_box
                 z_spacing, x_spacing = self.space_model.grid_spacing
 
                 if not(zmin <= coord[0] <= zmax) or \
@@ -59,7 +59,7 @@ class Source:
                 positions.append((zpos, xpos))
             # 3D coordinates
             elif len(coord) == 3:
-                zmin, zmax, xmin, xmax, ymin, ymax = self.space_model.bbox
+                zmin, zmax, xmin, xmax, ymin, ymax = self.space_model.bounding_box
                 z_spacing, x_spacing, y_spacing = self.space_model.grid_spacing
 
                 if not(zmin <= coord[0] <= zmax) or \
