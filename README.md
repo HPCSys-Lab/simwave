@@ -101,7 +101,7 @@ solver = Solver(
     sources=source,
     receivers=receiver,
     wavelet=ricker,
-    saving_jump=0,
+    saving_stride=0,
     compiler=None
 )
 
