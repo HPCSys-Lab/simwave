@@ -25,8 +25,13 @@ class SpaceModel:
     """
     def __init__(self, bounding_box, grid_spacing, velocity_model,
                  density_model=None, space_order=2):
-        self._bounding_box = bounding_box
-        self._grid_spacing = grid_spacing
+
+        # make sure each bounding is float
+        self._bounding_box = tuple([np.float32(i) for i in bounding_box])
+
+        # make sure each spacing is float
+        self._grid_spacing = tuple([np.float32(i) for i in grid_spacing])
+
         self._space_order = space_order
 
         # space_order are limited to [2,4,6,8,10,12,14,16]
@@ -91,7 +96,7 @@ class SpaceModel:
         elif value > self.dt:
             print("Time step value violates CFL condition.")
         else:
-            self._dt = value
+            self._dt = np.float32(value)
 
     @property
     def shape(self):
@@ -290,9 +295,12 @@ class SpaceModel:
 
         # if it is not, convert damping_length to tuple
         if isinstance(damping_length, (float, int)):
-            self._damping_length = (damping_length,) * self.dimension * 2
+            self._damping_length = (np.float32(damping_length),) * self.dimension * 2
         else:
-            self._damping_length = damping_length
+            # make sure damping length is float
+            self._damping_length = tuple(
+                [np.float32(i) for i in damping_length]
+            )
 
         # if it is not, convert boundary_condition to tuple
         if isinstance(boundary_condition, str):
@@ -458,8 +466,8 @@ class TimeModel:
     """
     def __init__(self, space_model, tf, t0=0.0):
         self._space_model = space_model
-        self._tf = tf
-        self._t0 = t0
+        self._tf = np.float32(tf)
+        self._t0 = np.float32(t0)
 
     @property
     def space_model(self):

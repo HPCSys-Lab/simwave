@@ -18,7 +18,12 @@ class Source:
     """
     def __init__(self, space_model, coordinates=[], window_radius=4):
         self._space_model = space_model
-        self._coordinates = coordinates
+
+        # make sure, each source coordinate is float
+        self._coordinates = [
+            [np.float32(i) for i in coord] for coord in coordinates
+        ]
+
         self._window_radius = window_radius
 
     @property
@@ -140,6 +145,8 @@ class Source:
         position : tuple of float
             Source/receiver position (in meters) along each axis.
         """
+        # make sure coordinates in location are float
+        location = tuple([np.float32(i) for i in location])
         self._coordinates.append(location)
 
     def remove_all(self):
