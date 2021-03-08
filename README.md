@@ -1,6 +1,6 @@
 # pywave
 
-`pywave` is a Python package to simulate the propagation of the constant or variable density acoustic wave in an isotropic 2D/3D medium using the finite difference method. Finite difference kernels of aribtrary spatial order (up to 16th order) are written in C for performance and compiled at run time. These kernels are called via a user-friendly Python interface for easy integration with several scientific and engineering libraries to, for example perform full-waveform inversion. 
+`pywave` is a Python package to simulate the propagation of the constant or variable density acoustic wave in an isotropic 2D/3D medium using the finite difference method. Finite difference kernels of aribtrary spatial order (up to 16th order) are written in C for performance and compiled at run time. These kernels are called via a user-friendly Python interface for easy integration with several scientific and engineering libraries to, for example perform full-waveform inversion.
 
 ## Installation:
 
@@ -23,7 +23,7 @@ To contribute to the software:
 2. Clone the forked repository, add your contributions and push the changes to your fork.
 3. Create a [Pull request](https://github.com/HPCSys-Lab/pywave/pulls)
 
-Before creating the pull request, make sure that the tests pass by running 
+Before creating the pull request, make sure that the tests pass by running
 ```
 tox
 ```
@@ -45,7 +45,7 @@ Examples
 
 Simulation with `pywave` is simple and can be accomplished in a dozen or so lines of Python! Jupyter notebooks with tutorials can be found here [here](https://github.com/HPCSys-Lab/pywave/tree/master/tutorial).
 
-Here we show how to simulate the constant density acoustic wave equation on a simple two layer velocity model. 
+Here we show how to simulate the constant density acoustic wave equation on a simple two layer velocity model.
 ```python
 from pywave import *
 import numpy as np
@@ -57,16 +57,17 @@ vel[100:] = 2000.0
 
 # create the space model
 space_model = SpaceModel(
-    bbox=(0, 5120, 0, 5120),
+    bounding_box=(0, 5120, 0, 5120),
     grid_spacing=(10., 10.),
     velocity_model=vel,
     space_order=2
 )
 
 # config boundary conditions
+# (null,  null_dirichlet or null_neumann)
 space_model.config_boundary(
     damping_length=0.0,
-    boundary_condition=("ND", "NN", "N", "NN"),
+    boundary_condition=("null_neumann", "null_dirichlet", "none", "null_dirichlet"),
     damping_polynomial_degree=1,
     damping_alpha=0.001
 )
@@ -112,6 +113,6 @@ plot_wavefield(u_full[-1])
 plot_shotrecord(recv)
 ```
 
-## Performance 
+## Performance
 
-- TO DO 
+- TO DO
