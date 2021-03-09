@@ -116,7 +116,7 @@ class SpaceModel:
             z_spacing, x_spacing, y_spacing = self.grid_spacing
             nz = int((z_max - z_min) / z_spacing) + 1
             nx = int((x_max - x_min) / x_spacing) + 1
-            ny = int((y_max - y_min) / y_spacing) + 1 
+            ny = int((y_max - y_min) / y_spacing) + 1
             return (nz, nx, ny)
 
     @property
@@ -295,7 +295,8 @@ class SpaceModel:
 
         # if it is not, convert damping_length to tuple
         if isinstance(damping_length, (float, int)):
-            self._damping_length = (np.float32(damping_length),) * self.dimension * 2
+            self._damping_length = (np.float32(damping_length),) \
+                                    * self.dimension * 2
         else:
             # make sure damping length is float
             self._damping_length = tuple(

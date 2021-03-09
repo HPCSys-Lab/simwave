@@ -1,6 +1,5 @@
 from pywave.kernel.frontend import kws
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 class Source:
@@ -68,7 +67,9 @@ class Source:
                 positions.append((zpos, xpos))
             # 3D coordinates
             elif len(coord) == 3:
-                zmin, zmax, xmin, xmax, ymin, ymax = self.space_model.bounding_box
+                zmin, zmax, xmin, xmax, ymin, ymax = \
+                                self.space_model.bounding_box
+
                 z_spacing, x_spacing, y_spacing = self.space_model.grid_spacing
 
                 if not(zmin <= coord[0] <= zmax) or \
@@ -172,18 +173,12 @@ class Wavelet:
     ----------
     function : object
         Function (expression) that creates the wavelet.
-    peak_frequency : float
-        Peak frequency for the wavelet in Hz.
-    time_model: TimeModel
-        Time model object.
-    amplitude : float, optional
-        Amplitude of the wavelet. Default is 1.0.
+    kwargs : dict
+        key word arguments of the function.
     """
-    def __init__(self, function, peak_frequency, time_model, amplitude=1):
+    def __init__(self, function, **kwargs):
         self._function = function
-        self._peak_frequency = peak_frequency
-        self._time_model = time_model
-        self._amplitude = amplitude
+        self._kwargs = kwargs
 
     @property
     def function(self):
@@ -191,43 +186,14 @@ class Wavelet:
         return self._function
 
     @property
-    def peak_frequency(self):
-        """Peak frequency of the wavelet in Hz."""
-        return self._peak_frequency
-
-    @property
-    def time_model(self):
-        """Corresponding time model."""
-        return self._time_model
-
-    @property
-    def amplitude(self):
-        """Amplitude of the wavelet."""
-        return self._amplitude
+    def kwargs(self):
+        """key word arguments of the function."""
+        return self._kwargs
 
     @property
     def values(self):
         """Wavelet values."""
-        return self.function(self.peak_frequency,
-                             self.time_model,
-                             self.amplitude)
-
-    def show(self):
-        """
-        Show the wavelet in a graph.
-
-        Parameters
-        ----------
-        pulse : list
-            Pulse of the wavelet.
-        time_values : list
-            Discretized values of time in seconds.
-        """
-        plt.plot(self.time_model.time_values, self.values)
-        plt.xlabel("Time (s)")
-        plt.ylabel("Amplitude")
-        plt.tick_params()
-        plt.show()
+        return self.function(**self.kwargs)
 
 
 class RickerWavelet(Wavelet):
@@ -245,9 +211,31 @@ class RickerWavelet(Wavelet):
     """
     def __init__(self, peak_frequency, time_model, amplitude=1):
 
+        self._peak_frequency = peak_frequency
+        self._time_model = time_model
+        self._amplitude = amplitude
+
         super().__init__(
-            self._function, peak_frequency, time_model, amplitude
+            self._function,
+            peak_frequency=self.peak_frequency,
+            time_model=self.time_model,
+            amplitude=self.amplitude
         )
+
+    @property
+    def peak_frequency(self):
+        """Peak frequency of the wavelet in Hz."""
+        return self._peak_frequency
+
+    @property
+    def time_model(self):
+        """Corresponding time model."""
+        return self._time_model
+
+    @property
+    def amplitude(self):
+        """Amplitude of the wavelet."""
+        return self._amplitude
 
     def _function(self, peak_frequency, time_model, amplitude):
         """Function that generates the ricker wavelet."""

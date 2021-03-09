@@ -44,6 +44,8 @@ receiver = Receiver(
 # create a ricker wavelet with 10hz of peak frequency
 ricker = RickerWavelet(10.0, time_model)
 
+#plot_wavelet(time_model.time_values, ricker.values, show=True)
+
 # create the solver
 solver = Solver(
     space_model=space_model,
