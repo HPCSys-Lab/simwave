@@ -16,13 +16,17 @@ class Source:
     window_radius : int, optional
         Window half-width of the kaiser windowing function. Default is 4.
     """
-    def __init__(self, space_model, coordinates=[], window_radius=4):
-        self._space_model = space_model
+    def __init__(self, space_model, coordinates=None, window_radius=4):
 
-        # make sure, each source coordinate is float
-        self._coordinates = [
-            [np.float32(i) for i in coord] for coord in coordinates
-        ]
+        if coordinates is None:
+            self._coordinates = []
+        else:
+            # make sure, each source coordinate is float
+            self._coordinates = [
+                [np.float32(i) for i in coord] for coord in coordinates
+            ]
+
+        self._space_model = space_model
 
         self._window_radius = window_radius
 
