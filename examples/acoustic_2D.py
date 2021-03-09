@@ -18,7 +18,7 @@ space_model = SpaceModel(
 # config boundary conditions
 # (null,  null_dirichlet or null_neumann)
 space_model.config_boundary(
-    damping_length=(0, 500, 200, 300),
+    damping_length=0,
     boundary_condition=("null_neumann", "null_dirichlet", "none", "null_dirichlet"),
     damping_polynomial_degree=3,
     damping_alpha=0.001
@@ -31,14 +31,17 @@ time_model = TimeModel(
 )
 
 # create the set of sources
-source = Source(space_model, window_radius=4)
-source.add((2560,2560))
+source = Source(
+    space_model,
+    coordinates=[(2560,2560)],
+    window_radius=1
+)
 
 # crete the set of receivers
 receiver = Receiver(
     space_model=space_model,
     coordinates=[(2560,i) for i in range(0,5112,10)],
-    window_radius=4
+    window_radius=1
 )
 
 # create a ricker wavelet with 10hz of peak frequency

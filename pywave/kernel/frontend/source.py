@@ -10,24 +10,38 @@ class Source:
     ----------
     space_model : SpaceModel
         Space model object.
-    coordinates : list of tuple, optional
+    coordinates : list of tuple, list of list or ndarray
         Physical coordinates (in meters) for this source.
     window_radius : int, optional
-        Window half-width of the kaiser windowing function. Default is 4.
+        Window half-width of the kaiser windowing function. Default is 1.
     """
-    def __init__(self, space_model, coordinates=None, window_radius=4):
-
-        if coordinates is None:
-            self._coordinates = []
-        else:
-            # make sure, each source coordinate is float
-            self._coordinates = [
-                [np.float32(i) for i in coord] for coord in coordinates
-            ]
+    def __init__(self, space_model, coordinates, window_radius=1):
 
         self._space_model = space_model
-
         self._window_radius = window_radius
+
+        # coordinates can be lists, lists of tuples, tuples,
+        # tuples of tuples, tuples of lists and ndarrays.
+        if isinstance(coordinates, (list, tuple, np.ndarray)):
+            self._coordinates = np.asarray(coordinates, dtype=np.float32)
+
+            # the shape must be (n,d) where
+            # n is the number of sources/receivers
+            # d is the dimension (2 or 3)
+            if len(self.coordinates.shape) == 1:
+
+                self._coordinates = np.reshape(
+                    self._coordinates,
+                    (1,) + self.coordinates.shape
+                )
+
+            elif len(self.coordinates.shape) != 2 or \
+                 self.coordinates.shape[1] not in [2,3]:
+
+                raise Exception("Invalid source/receiver coordinates format.")
+        else:
+            raise Exception("Source/Receiver coordinates must be "
+                            "represented as lists, tuples or ndarrays.")
 
     @property
     def space_model(self):
@@ -85,7 +99,7 @@ class Source:
             else:
                 raise Exception("Dimension %d not supported." % len(coord))
 
-        return positions
+        return np.asarray(positions, dtype=np.float32)
 
     @property
     def adjusted_grid_positions(self):
@@ -103,7 +117,7 @@ class Source:
             for src in self.grid_positions
         ]
 
-        return adjusted_positions
+        return np.asarray(adjusted_positions, dtype=np.float32)
 
     @property
     def interpolated_points_and_values(self):
@@ -139,26 +153,7 @@ class Source:
     @property
     def count(self):
         """Return the number of sources/receives."""
-        return len(self.coordinates)
-
-    def add(self, location):
-        """
-        Add a new source/receiver location.
-
-        Parameters
-        ----------
-        position : tuple of float
-            Source/receiver position (in meters) along each axis.
-        """
-        # make sure coordinates in location are float
-        location = tuple([np.float32(i) for i in location])
-        self._coordinates.append(location)
-
-    def remove_all(self):
-        """
-        Remove all sources/receiver coordinates.
-        """
-        self._coordinates = []
+        return self.coordinates.shape[0]
 
 
 # a receiver is also a type of source

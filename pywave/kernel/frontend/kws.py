@@ -143,7 +143,7 @@ def get_source_points(grid_shape, source_location, half_width):
     ----------
     grid_shape: tuple of int
         Number of grid points in each grid axis.
-    source_location: tuple(float,...)
+    source_location: tuple of float or list of float
         Source/receiver location (in grid points) in each axis.
     half_width: int
         Window half-width of the kaiser windowing function.
