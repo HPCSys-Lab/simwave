@@ -1,6 +1,7 @@
 from pywave import *
 import numpy as np
 
+
 # Velocity model
 vel = np.zeros(shape=(512,512), dtype=np.float32)
 vel[:] = 1500.0
@@ -12,7 +13,7 @@ space_model = SpaceModel(
     bounding_box=(0, 5120, 0, 5120),
     grid_spacing=(10, 10),
     velocity_model=vel,
-    space_order=2
+    space_order=4
 )
 
 # config boundary conditions

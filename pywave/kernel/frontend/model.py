@@ -34,10 +34,10 @@ class SpaceModel:
 
         self._space_order = space_order
 
-        # space_order are limited to [2,4,6,8,10,12,14,16]
-        if self.space_order not in list([2, 4, 6, 8, 10, 12, 14, 16]):
-            raise Exception(
-                "Space order {} not supported".format(self.space_order)
+        # space_order are limited to even number
+        if space_order % 2 != 0 or space_order < 2:
+            raise ValueError(
+                "Space order {} not supported".format(space_order)
             )
 
         # get the space dimension according to the velocity model
@@ -200,7 +200,7 @@ class SpaceModel:
     @property
     def fd_coefficients(self):
         """Central and right side finite differences coefficients."""
-        return fd.get_right_side_coefficients(self.space_order)
+        return fd.half_coefficients(self.space_order)
 
     def interpolate(self, data):
         """
