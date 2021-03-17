@@ -451,6 +451,32 @@ class SpaceModel:
 
         return den_model
 
+    def remove_halo_region(self, u):
+        """
+        Remove the halo region outside some wavefield u.
+
+        Parameters
+        ----------
+        u : ndarray
+            Full wavefield (with snapshots)
+
+        Returns
+        ----------
+        ndarray
+            Full wavefield without halo zone.
+        """
+
+        # number of halo grid points
+        # It is the same in all edges and axis
+        halo = self.halo_size[0]
+
+        if self.dimension == 2:
+            return u[:, halo:-halo, halo:-halo]
+        elif self.dimension == 3:
+            return u[:, halo:-halo, halo:-halo, halo:-halo]
+        else:
+            raise Exception("Wavefield dimension not supported.")
+
 
 class TimeModel:
     """

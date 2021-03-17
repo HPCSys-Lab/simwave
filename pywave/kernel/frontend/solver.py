@@ -139,7 +139,7 @@ class Solver:
         src_points, src_values = self.sources.interpolated_points_and_values
         rec_points, rec_values = self.receivers.interpolated_points_and_values
 
-        return self._middleware.exec(
+        u_full, recv = self._middleware.exec(
             operator='forward',
             u_full=self.u_full,
             velocity_model=self.space_model.extended_velocity_model,
@@ -162,3 +162,8 @@ class Solver:
             end_timestep=self.time_model.timesteps,
             space_order=self.space_model.space_order
         )
+
+        # remove halo region
+        u_full = self.space_model.remove_halo_region(u_full)
+
+        return u_full, recv

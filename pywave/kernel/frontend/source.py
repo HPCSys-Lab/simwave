@@ -35,13 +35,13 @@ class Source:
                     (1,) + self.coordinates.shape
                 )
 
-            elif len(self.coordinates.shape) != 2 or \
-                 self.coordinates.shape[1] not in [2,3]:
+            elif len(self.coordinates.shape) != 2 \
+                    or self.coordinates.shape[1] not in [2, 3]:
 
-                raise Exception("Invalid source/receiver coordinates format.")
+                raise ValueError("Invalid source/receiver coordinates format.")
         else:
-            raise Exception("Source/Receiver coordinates must be "
-                            "represented as lists, tuples or ndarrays.")
+            raise ValueError("Source/Receiver coordinates must be "
+                             "represented as lists, tuples or ndarrays.")
 
     @property
     def space_model(self):
