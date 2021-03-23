@@ -1,9 +1,10 @@
-from pywave import *
+from pywave import SpaceModel, TimeModel, RickerWavelet, Solver
+from pywave import Receiver, Source, plot_wavefield, plot_shotrecord
 import numpy as np
 
 
 # Velocity model
-vel = np.zeros(shape=(512,512), dtype=np.float32)
+vel = np.zeros(shape=(512, 512), dtype=np.float32)
 vel[:] = 1500.0
 vel[100:] = 2000.0
 
@@ -20,7 +21,7 @@ space_model = SpaceModel(
 # (null,  null_dirichlet or null_neumann)
 space_model.config_boundary(
     damping_length=0,
-    boundary_condition=("null_neumann", "null_dirichlet", "none", "null_dirichlet"),
+    boundary_condition=("null_neumann", "null_dirichlet", "none", "none"),
     damping_polynomial_degree=3,
     damping_alpha=0.001
 )
@@ -34,21 +35,19 @@ time_model = TimeModel(
 # create the set of sources
 source = Source(
     space_model,
-    coordinates=[(2560,2560)],
+    coordinates=[(2560, 2560)],
     window_radius=1
 )
 
 # crete the set of receivers
 receiver = Receiver(
     space_model=space_model,
-    coordinates=[(2560,i) for i in range(0,5112,10)],
+    coordinates=[(2560, i) for i in range(0, 5112, 10)],
     window_radius=1
 )
 
 # create a ricker wavelet with 10hz of peak frequency
 ricker = RickerWavelet(10.0, time_model)
-
-#plot_wavelet(time_model.time_values, ricker.values, show=True)
 
 # create the solver
 solver = Solver(

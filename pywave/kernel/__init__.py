@@ -9,3 +9,14 @@ from pywave.kernel.frontend import (
     RickerWavelet,
     Solver
 )
+
+__all__ = [
+    "Compiler",
+    "SpaceModel",
+    "TimeModel",
+    "Source",
+    "Receiver",
+    "Wavelet",
+    "RickerWavelet",
+    "Solver",
+]

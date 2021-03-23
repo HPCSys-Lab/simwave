@@ -90,6 +90,7 @@ def plot_velocity_model(model, file_name="velocity_model",
 
     print("Velocity model saved in plots/{}.png".format(file_name))
 
+
 def plot_wavelet(time_values, wavelet_values,
                  file_name="wavelet", show=False):
     """
