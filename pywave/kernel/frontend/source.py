@@ -91,7 +91,7 @@ class Source:
                    not(ymin <= coord[2] <= ymax):
                     raise Exception("Coordinates %s out of bounds." % coord)
 
-                zpos = (coord[0] - zmin) / z_spacing
+                zpos = (coord[0] - zmin) / z_spacing + 1
                 xpos = (coord[1] - xmin) / x_spacing
                 ypos = (coord[2] - ymin) / y_spacing
 
