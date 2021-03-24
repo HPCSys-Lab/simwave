@@ -2,6 +2,7 @@ from pywave import SpaceModel, TimeModel, RickerWavelet, Solver
 from pywave import Receiver, Source
 import numpy as np
 import pytest
+import os
 
 
 class TestSolution:
@@ -37,8 +38,11 @@ class TestSolution:
             tf = 0.4
             f0 = 15.0
 
-        ref_file = "tests/reference_solution/wavefield-{}d-so-{}.npy".format(
-            dimension, space_order
+        ref_file = os.path.join(
+            os.path.dirname(__file__),
+            "reference_solution/wavefield-{}d-so-{}.npy".format(
+                dimension, space_order
+            )
         )
 
         # Velocity model
