@@ -32,8 +32,6 @@ class TestSource:
 
         source = Source(space_model, coordinates=coords, window_radius=4)
 
-        print(source.grid_positions)
-
         assert np.array_equal(
                     source.grid_positions,
                     np.asarray([grid_positions], dtype=np.float32)

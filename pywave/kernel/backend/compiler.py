@@ -59,7 +59,7 @@ class Compiler:
 
         object_dir = working_dir + "/tmp/"
         c_code_name = "sequential.c"
-        object_name = "lib_c_wave.so"
+        object_name = "lib_c_wave-{}d.so".format(dimension)
 
         cmd = (
             self.cc

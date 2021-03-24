@@ -3,7 +3,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-// forward_2D_constant_density
+// forward_3D_constant_density
 double forward(float *grid, float *vel_base, float *damp,
                float *wavelet, float *coeff, size_t *boundary_conditions,
                size_t *src_points_interval, float *src_points_values,

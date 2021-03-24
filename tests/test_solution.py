@@ -1,138 +1,105 @@
-# test quality of numerical solution
-from scipy.special import hankel2
-import numpy.linalg as la
+from pywave import SpaceModel, TimeModel, RickerWavelet, Solver
+from pywave import Receiver, Source
 import numpy as np
-import pywave
 import pytest
 
 
-def _create_space_model(bbox, spacing, vel, order, dt):
-    space_model = pywave.SpaceModel(
-        bounding_box=bbox,
-        grid_spacing=spacing,
-        velocity_model=vel * np.ones((100, 100), dtype=np.float64),
-        space_order=order
+class TestSolution:
+
+    @pytest.mark.parametrize(
+        'dimension, space_order', [(2, 2), (2, 8), (3, 2), (3, 8)]
     )
-    space_model.dt = dt
-    return space_model
+    def test_solution(self, dimension, space_order):
 
-
-def _acquisition(space_model, time_model, source, receiver, freq):
-    source = pywave.Source(space_model, coordinates=source)
-    receiver = pywave.Receiver(space_model, coordinates=receiver)
-    ricker = pywave.RickerWavelet(freq, time_model)
-
-    return source, receiver, ricker
-
-
-def analytical_solution(space_model, freq, src, recs):
-    time_model = pywave.TimeModel(space_model=space_model, t0=0, tf=3000)
-    ricker = pywave.RickerWavelet(freq, time_model)
-    # Ricker's FFT
-    nf = int(time_model.timesteps / 2 + 1)
-    df = 1 / time_model.tf
-    frequencies = df * np.arange(nf)
-    q = np.fft.fft(ricker.values)[:nf]
-    # Coordinates
-    xg = np.array([rec[0] for rec in recs])
-    zg = np.array([rec[1] for rec in recs])
-    r = np.sqrt((xg - src[0]) ** 2 + (zg - src[1]) ** 2)
-    # Analytical solution
-    k = 2 * np.pi * frequencies / np.unique(space_model.velocity_model)
-    u = np.zeros((nf), dtype=complex)
-    u[1:-1] = hankel2(0, k[1:-1][None, :] * r[:, None])
-    ui = np.fft.ifft(- 1j * np.pi * u * q, time_model.timesteps)
-    # Scale correctly
-    # ui = 1 / (2 * np.pi) * np.real(ui) * space_model.grid_spacing[0] ** 2
-    ui = 1 / (2 * np.pi) * np.real(ui)
-
-    return ui
-
-
-def accuracy(spacing, bbox, order, dt, t0, tf, c, f0, src, rec):
-    space_model = _create_space_model(bbox, spacing, c, order, dt)
-
-    time_model = pywave.TimeModel(space_model=space_model, t0=t0, tf=tf)
-
-    source, receiver, wavelet = _acquisition(
-        space_model, time_model, src, rec, f0
-    )
-
-    solver = pywave.Solver(space_model, time_model, source, receiver, wavelet)
-
-    # numerical solution
-    # u_num = solver.forward()[-1].flatten()
-    u_num = solver.forward()[-1].flatten() / spacing[0] ** 2
-
-    # analytical solution
-    u_exact = analytical_solution(
-                 space_model, f0, src[0], rec
-              ).flatten()[:time_model.timesteps]
-
-    # compare solutions
-    return la.norm(u_num - u_exact) / np.sqrt(u_num.size)
-
-
-@pytest.mark.parametrize(
-    "spacing, bbox, order, dt, t0, tf, c, f0, src, rec, tol",
-    [
-        (
-            (0.5, 0.5), (-40, 440, -40, 440), 8, 0.1, 0, 150.075,
-            1.5, 0.09, [(200, 200)], [(260, 260)], 1e-4
-        )
-    ]
-)
-def test_accuracy(spacing, bbox, order, dt, t0, tf, c, f0, src, rec, tol):
-    assert accuracy(spacing, bbox, order, dt, t0, tf, c, f0, src, rec) < tol
-
-
-@pytest.mark.parametrize(
-    "spacing, bbox, order, timesteps, t0, tf, c, \
-     f0, src, rec, time_convergence",
-    [
-        (
-            (0.5, 0.5), (-40, 440, -40, 440), 8, [0.1, 0.075, 0.04, 0.025],
-            0, 150.075, 1.5, 0.09, [(200, 200)], [(260, 260)], 1.7
-        )
-    ]
-)
-def test_convergence_in_time(spacing, bbox, order, timesteps, t0, tf, c, f0,
-                             src, rec, time_convergence):
-    accs = []
-    for dt in timesteps:
-        accs.append(
-            accuracy(spacing, bbox, order, dt, t0, tf, c, f0, src, rec)
-        )
-
-    assert np.poly1d(np.polyfit(np.log(timesteps),
-                     np.log(accs), 1))[1] > time_convergence
-
-
-@pytest.mark.parametrize(
-    "spacings, bbox, space_orders, dt, t0, tf, c, f0, src, rec, space_rates",
-    [
-        (
-            [2.0, 2.5, 4.0], (-40, 440, -40, 440), [2, 4, 6, 8, 10], 0.025,
-            0, 150.075, 1.5, 0.09, [(200, 200)], [(260, 260)],
-            [1.7, 4, 6, 7.7, 8.7]
-        )
-    ]
-)
-def test_convergence_in_space(spacings, bbox, space_orders, dt, t0, tf, c,
-                              f0, src, rec, space_rates):
-    accs = {}
-    conv_rates = []
-    for order in space_orders:
-        accs[order] = {}
-        for spacing in spacings:
-            accs[order][spacing] = accuracy(
-                tuple([spacing, spacing]), bbox,
-                order, dt, t0, tf, c, f0, src, rec
+        if dimension == 2:
+            shape = (500,)*dimension
+            bbox = (0, 5000, 0, 5000)
+            spacing = (10, 10)
+            damping_length = 100
+            boundary_condition = (
+                "null_neumann", "null_dirichlet",
+                "none", "null_dirichlet"
             )
-        step = list(accs[order].keys())
-        error = list(accs[order].values())
-        conv_rates.append(
-            np.poly1d(np.polyfit(np.log(step), np.log(error), 1))[1]
+            source_position = [(2500, 2500)]
+            tf = 1.0
+            f0 = 10.0
+        else:
+            shape = (100,)*dimension
+            bbox = (0, 1000, 0, 1000, 0, 1000)
+            spacing = (10, 10, 10)
+            damping_length = 50
+            boundary_condition = (
+                "null_neumann", "null_dirichlet",
+                "none", "null_dirichlet",
+                "null_neumann", "null_dirichlet",
+            )
+            source_position = [(500, 495, 505)]
+            tf = 0.4
+            f0 = 15.0
+
+        ref_file = "tests/reference_solution/wavefield-{}d-so-{}.npy".format(
+            dimension, space_order
         )
-    for rate, min_rate in zip(conv_rates, space_rates):
-        assert rate > min_rate
+
+        # Velocity model
+        vel = np.zeros(shape=shape, dtype=np.float32)
+        vel[:] = 1500.0
+        vel[shape[0]//2:] = 2000.0
+
+        # create the space model
+        space_model = SpaceModel(
+            bounding_box=bbox,
+            grid_spacing=spacing,
+            velocity_model=vel,
+            space_order=space_order,
+            dtype=np.float32
+        )
+
+        # config boundary conditions
+        space_model.config_boundary(
+            damping_length=damping_length,
+            boundary_condition=boundary_condition,
+            damping_polynomial_degree=3,
+            damping_alpha=0.001
+        )
+
+        # create the time model
+        time_model = TimeModel(
+            space_model=space_model,
+            tf=tf
+        )
+
+        # create the set of sources
+        source = Source(
+            space_model=space_model,
+            coordinates=source_position
+        )
+
+        # crete the set of receivers
+        receiver = Receiver(
+            space_model=space_model,
+            coordinates=source_position
+        )
+
+        # create a ricker wavelet with 10hz of peak frequency
+        ricker = RickerWavelet(f0, time_model)
+
+        # create the solver
+        solver = Solver(
+            space_model=space_model,
+            time_model=time_model,
+            sources=source,
+            receivers=receiver,
+            wavelet=ricker,
+            saving_stride=0
+        )
+
+        # run the forward
+        u, recv = solver.forward()
+
+        # load the reference result
+        u_ref = np.load(ref_file)
+
+        # alternatively, one can use
+        # assert np.allclose(u, u_ref)
+        assert np.array_equal(u, u_ref)
