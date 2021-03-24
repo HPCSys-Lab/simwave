@@ -105,5 +105,5 @@ class TestSolution:
         u_ref = np.load(ref_file)
 
         # alternatively, one can use
-        # assert np.allclose(u, u_ref)
-        assert np.array_equal(u, u_ref)
+        # assert np.array_equal(u, u_ref)
+        assert np.allclose(u, u_ref)
