@@ -7,8 +7,10 @@ import os
 
 class TestSolution:
 
+    # 'dimension, space_order', [(2, 2), (2, 8), (3, 2), (3, 8)]
+
     @pytest.mark.parametrize(
-        'dimension, space_order', [(2, 2), (2, 8), (3, 2), (3, 8)]
+        'dimension, space_order', [(2, 2)]
     )
     def test_solution(self, dimension, space_order):
 
