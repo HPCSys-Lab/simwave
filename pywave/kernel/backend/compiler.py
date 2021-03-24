@@ -17,13 +17,9 @@ class Compiler:
         self.cc = cc
         self.cflags = cflags
 
-    def compile(
-        self,
-        dimension=2,
-        density="constant_density",
-        space_order_mode="multiple_space_order",
-        operator="forward",
-    ):
+    def compile(self, dimension=2, density="constant_density",
+                space_order_mode="multiple_space_order",
+                operator="forward"):
         """
         Compile the program.
 
@@ -59,7 +55,7 @@ class Compiler:
 
         object_dir = working_dir + "/tmp/"
         c_code_name = "sequential.c"
-        object_name = "lib_c_wave.so"
+        object_name = "lib_c_wave-{}d.so".format(dimension)
 
         cmd = (
             self.cc

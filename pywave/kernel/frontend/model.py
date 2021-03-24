@@ -19,12 +19,14 @@ class SpaceModel:
         Numpy n-dimensional array with P wave velocity (m/s) profile.
     density_model : ndarray, optional
         Numpy n-dimensional array with the density profile.
-    space_order: int, optional
+    space_order : int, optional
         Spatial order of the stencil. Accepts even orders from 2 to 16.
         Default is 2.
+    dtype : data-type, optional
+        Numpy array data-type.
     """
     def __init__(self, bounding_box, grid_spacing, velocity_model,
-                 density_model=None, space_order=2):
+                 density_model=None, space_order=2, dtype=np.float32):
 
         # make sure each bounding is float
         self._bounding_box = tuple([np.float32(i) for i in bounding_box])
@@ -33,6 +35,8 @@ class SpaceModel:
         self._grid_spacing = tuple([np.float32(i) for i in grid_spacing])
 
         self._space_order = space_order
+
+        self._dtype = dtype
 
         # space_order are limited to even number
         if space_order % 2 != 0 or space_order < 2:
@@ -87,6 +91,10 @@ class SpaceModel:
     @property
     def dt(self):
         return self._dt
+
+    @property
+    def dtype(self):
+        return self._dtype
 
     @dt.setter
     def dt(self, value):
