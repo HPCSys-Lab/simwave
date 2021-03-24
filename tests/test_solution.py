@@ -7,10 +7,8 @@ import os
 
 class TestSolution:
 
-    # 'dimension, space_order', [(2, 2), (2, 8), (3, 2), (3, 8)]
-
     @pytest.mark.parametrize(
-        'dimension, space_order', [(2, 2)]
+        'dimension, space_order', [(2, 2), (2, 8), (3, 2), (3, 8)]
     )
     def test_solution(self, dimension, space_order):
 
@@ -106,6 +104,4 @@ class TestSolution:
         # load the reference result
         u_ref = np.load(ref_file)
 
-        # alternatively, one can use
-        # assert np.array_equal(u, u_ref)
         assert np.allclose(u, u_ref, rtol=1e-05, atol=1e-05)
