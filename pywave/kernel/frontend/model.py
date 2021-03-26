@@ -318,6 +318,15 @@ class SpaceModel:
         else:
             self._boundary_condition = boundary_condition
 
+        # validate boundary condition
+        for bc in self.boundary_condition:
+            if bc not in ('none', 'null_dirichlet', 'null_neumann'):
+                raise ValueError(
+                    'Boundary condition {} not available.'.format(
+                        self.boundary_condition
+                    )
+                )
+
         # convert damping length (in meters) to nbl (in grid points)
         if self.dimension == 2:
             lenz1, lenz2, lenx1, lenx2 = self._damping_length
