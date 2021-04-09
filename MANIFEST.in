@@ -1,0 +1,2 @@
+include versioneer.py
+include simwave/_version.py

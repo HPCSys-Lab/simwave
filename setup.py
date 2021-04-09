@@ -1,3 +1,4 @@
+import versioneer
 from setuptools import setup, find_packages
 
 with open("requirements.txt") as f:
@@ -5,7 +6,8 @@ with open("requirements.txt") as f:
 
 setup(
     name="simwave",
-    version="0.1",
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     description="Finite difference 2D/3D acoustic wave propagator.",
     long_description="""Simwave is an hybrid Python/C tool that
     simulates the propagation of the acoustic wave using the
