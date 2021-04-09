@@ -18,6 +18,7 @@ setup(
     license="GPL-3.0 License",
     packages=find_packages(),
     install_requires=required,
+    include_package_data=True,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
