@@ -1,4 +1,4 @@
-from pywave.plots.plot import (
+from simwave.plots.plot import (
     plot_wavefield,
     plot_shotrecord,
     plot_velocity_model,

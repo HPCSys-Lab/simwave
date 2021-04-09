@@ -2,6 +2,5 @@ numpy>=1.18.1
 matplotlib>=3.2.1
 segyio>=1.9.1
 scipy>=1.4.1
-cached_property>=1.5.2
 pytest>=6.2.2
-findiff
+findiff>=0.8.9

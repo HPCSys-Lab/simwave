@@ -1,0 +1,12 @@
+Metadata-Version: 1.0
+Name: simwave
+Version: 0.1
+Summary: Finite difference 2D/3D acoustic wave propagator.
+Home-page: UNKNOWN
+Author: HPCSys-Lab
+Author-email: senger.hermes@gmail.com
+License: GPL-3.0 License
+Description: Simwave is an hybrid Python/C tool that
+            simulates the propagation of the acoustic wave using the
+            finite difference method in 2D and 3D domains.
+Platform: UNKNOWN

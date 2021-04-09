@@ -1,7 +1,7 @@
 import ctypes
 import numpy as np
 from numpy.ctypeslib import ndpointer
-from pywave.kernel.backend.compiler import Compiler
+from simwave.kernel.backend.compiler import Compiler
 
 
 class Middleware:

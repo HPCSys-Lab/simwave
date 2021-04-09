@@ -1,14 +1,14 @@
-# pywave
+# Simwave
 
-`pywave` is a Python package to simulate the propagation of the constant or variable density acoustic wave in an isotropic 2D/3D medium using the finite difference method. Finite difference kernels of aribtrary spatial order (up to 16th order) are written in C for performance and compiled at run time. These kernels are called via a user-friendly Python interface for easy integration with several scientific and engineering libraries to, for example perform full-waveform inversion.
+`Simwave` is a Python package to simulate the propagation of the constant or variable density acoustic wave in an isotropic 2D/3D medium using the finite difference method. Finite difference kernels of aribtrary spatial order (up to 16th order) are written in C for performance and compiled at run time. These kernels are called via a user-friendly Python interface for easy integration with several scientific and engineering libraries to, for example perform full-waveform inversion.
 
 ## Installation:
 
-For installation, `pywave` needs only scipy, numpy, and segyio. See `requirements.txt`. If you wish to plot, then `matplotlib` is additionally required. `pywave` compiles finite difference stencils at run time in C for performance and thus requires a working C compiler.
+For installation, `simwave` needs only scipy, numpy, and segyio. See `requirements.txt`. If you wish to plot, then `matplotlib` is additionally required. `simwave` compiles finite difference stencils at run time in C for performance and thus requires a working C compiler.
 
-`git clone https://github.com/HPCSys-Lab/pywave.git`
+`git clone https://github.com/HPCSys-Lab/simwave.git`
 
-`cd pywave`
+`cd simwave`
 
 `pip3 install -e .`
 
@@ -21,11 +21,11 @@ To contribute to the software:
 
 1. [Fork](https://docs.github.com/en/free-pro-team@latest/github/getting-started-with-github/fork-a-repo) the repository.
 2. Clone the forked repository, add your contributions and push the changes to your fork.
-3. Create a [Pull request](https://github.com/HPCSys-Lab/pywave/pulls)
+3. Create a [Pull request](https://github.com/HPCSys-Lab/simwave/pulls)
 
 Before creating the pull request, make sure that the tests pass by running
 ```
-tox
+pytest
 ```
 Some things that will increase the chance that your pull request is accepted:
 -  Write tests.
@@ -43,11 +43,11 @@ If something isn't working as it should or you'd like to recommend a new additio
 Examples
 ========
 
-Simulation with `pywave` is simple and can be accomplished in a dozen or so lines of Python! Jupyter notebooks with tutorials can be found here [here](https://github.com/HPCSys-Lab/pywave/tree/master/tutorial).
+Simulation with `simwave` is simple and can be accomplished in a dozen or so lines of Python! Jupyter notebooks with tutorials can be found here [here](https://github.com/HPCSys-Lab/simwave/tree/master/tutorial).
 
 Here we show how to simulate the constant density acoustic wave equation on a simple two layer velocity model.
 ```python
-from pywave import *
+from simwave import *
 import numpy as np
 
 # Velocity model

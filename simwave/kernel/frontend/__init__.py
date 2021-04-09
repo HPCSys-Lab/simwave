@@ -1,13 +1,13 @@
-from pywave.kernel.frontend.model import SpaceModel, TimeModel
+from simwave.kernel.frontend.model import SpaceModel, TimeModel
 
-from pywave.kernel.frontend.source import (
+from simwave.kernel.frontend.source import (
     Source,
     Receiver,
     Wavelet,
     RickerWavelet
 )
 
-from pywave.kernel.frontend.solver import Solver
+from simwave.kernel.frontend.solver import Solver
 
 __all__ = [
     "SpaceModel",

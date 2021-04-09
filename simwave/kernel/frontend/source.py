@@ -1,4 +1,4 @@
-from pywave.kernel.frontend import kws
+from simwave.kernel.frontend import kws
 import numpy as np
 
 

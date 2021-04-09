@@ -1,4 +1,4 @@
-from pywave import SpaceModel
+from simwave import SpaceModel
 import numpy as np
 import pytest
 

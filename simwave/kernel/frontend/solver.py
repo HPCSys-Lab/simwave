@@ -1,5 +1,5 @@
 import numpy as np
-from pywave.kernel.backend.middleware import Middleware
+from simwave.kernel.backend.middleware import Middleware
 
 
 class Solver:

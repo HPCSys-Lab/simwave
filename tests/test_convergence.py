@@ -2,12 +2,12 @@
 from scipy.special import hankel2
 import numpy.linalg as la
 import numpy as np
-import pywave
+import simwave
 import pytest
 
 
 def _create_space_model(bbox, spacing, vel, order, dt):
-    space_model = pywave.SpaceModel(
+    space_model = simwave.SpaceModel(
         bounding_box=bbox,
         grid_spacing=spacing,
         velocity_model=vel * np.ones((100, 100), dtype=np.float64),
@@ -18,16 +18,16 @@ def _create_space_model(bbox, spacing, vel, order, dt):
 
 
 def _acquisition(space_model, time_model, source, receiver, freq):
-    source = pywave.Source(space_model, coordinates=source)
-    receiver = pywave.Receiver(space_model, coordinates=receiver)
-    ricker = pywave.RickerWavelet(freq, time_model)
+    source = simwave.Source(space_model, coordinates=source)
+    receiver = simwave.Receiver(space_model, coordinates=receiver)
+    ricker = simwave.RickerWavelet(freq, time_model)
 
     return source, receiver, ricker
 
 
 def analytical_solution(space_model, freq, src, recs):
-    time_model = pywave.TimeModel(space_model=space_model, t0=0, tf=3000)
-    ricker = pywave.RickerWavelet(freq, time_model)
+    time_model = simwave.TimeModel(space_model=space_model, t0=0, tf=3000)
+    ricker = simwave.RickerWavelet(freq, time_model)
     # Ricker's FFT
     nf = int(time_model.timesteps / 2 + 1)
     df = 1 / time_model.tf
@@ -52,13 +52,13 @@ def analytical_solution(space_model, freq, src, recs):
 def accuracy(spacing, bbox, order, dt, t0, tf, c, f0, src, rec):
     space_model = _create_space_model(bbox, spacing, c, order, dt)
 
-    time_model = pywave.TimeModel(space_model=space_model, t0=t0, tf=tf)
+    time_model = simwave.TimeModel(space_model=space_model, t0=t0, tf=tf)
 
     source, receiver, wavelet = _acquisition(
         space_model, time_model, src, rec, f0
     )
 
-    solver = pywave.Solver(space_model, time_model, source, receiver, wavelet)
+    solver = simwave.Solver(space_model, time_model, source, receiver, wavelet)
 
     # numerical solution
     # u_num = solver.forward()[-1].flatten()

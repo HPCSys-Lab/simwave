@@ -4,13 +4,15 @@ with open("requirements.txt") as f:
     required = f.read().splitlines()
 
 setup(
-    name="pywave",
+    name="simwave",
     version="0.1",
-    description="A hybrid Python/C wave propagator",
-    long_description="",
-    author="Jaime Freire de Souza",
-    author_email="jaimefreire.souza@gmail.com",
-    license="BSD-2-Clause License",
+    description="Finite difference 2D/3D acoustic wave propagator.",
+    long_description="""Simwave is an hybrid Python/C tool that
+    simulates the propagation of the acoustic wave using the
+    finite difference method in 2D and 3D domains.""",
+    author="HPCSys-Lab",
+    author_email="senger.hermes@gmail.com",
+    license="GPL-3.0 License",
     packages=find_packages(),
     install_requires=required,
 )

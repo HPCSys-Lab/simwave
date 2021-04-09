@@ -1,6 +1,6 @@
-from pywave.io import read_2D_segy
+from simwave.io import read_2D_segy
 
-from pywave.kernel import (
+from simwave.kernel import (
     Compiler,
     SpaceModel,
     TimeModel,
@@ -11,7 +11,7 @@ from pywave.kernel import (
     Solver
 )
 
-from pywave.plots import (
+from simwave.plots import (
     plot_wavefield,
     plot_shotrecord,
     plot_velocity_model,

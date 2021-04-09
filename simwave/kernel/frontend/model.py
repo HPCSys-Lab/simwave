@@ -1,7 +1,6 @@
 from scipy.interpolate import RegularGridInterpolator
-from cached_property import cached_property
 import numpy as np
-from pywave.kernel.frontend import fd
+from simwave.kernel.frontend import fd
 
 
 class SpaceModel:
@@ -148,7 +147,7 @@ class SpaceModel:
 
         return tuple(extended_shape)
 
-    @cached_property
+    @property
     def grid(self):
         """Finite differences grid."""
         # create the grid only once
@@ -538,12 +537,12 @@ class TimeModel:
         """Number of timesteps of the propagation."""
         return int(np.ceil((self.tf - self.t0 + self.dt) / self.dt))
 
-    @cached_property
+    @property
     def time_indexes(self):
         """Time indexes of the time values."""
         return np.linspace(0, self.timesteps-1, self.timesteps, dtype=np.uint)
 
-    @cached_property
+    @property
     def time_values(self):
         """Time values of the propagation timesteps."""
         # time values starting from t0 to tf with dt interval

@@ -1,5 +1,5 @@
-from pywave import SpaceModel, TimeModel, RickerWavelet, Solver
-from pywave import Receiver, Source
+from simwave import SpaceModel, TimeModel, RickerWavelet, Solver
+from simwave import Receiver, Source
 import numpy as np
 import pytest
 import os

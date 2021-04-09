@@ -1,6 +1,6 @@
-from pywave.kernel.backend import Compiler
+from simwave.kernel.backend import Compiler
 
-from pywave.kernel.frontend import (
+from simwave.kernel.frontend import (
     SpaceModel,
     TimeModel,
     Source,
