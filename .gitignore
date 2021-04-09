@@ -3,5 +3,5 @@
 *.so
 *.png
 /src/wavefield/*
-pywave.egg-info/*
+simwave.egg-info/*
 .ipynb_checkpoints
