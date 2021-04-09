@@ -13,9 +13,6 @@ setup(
     simulates the propagation of the acoustic wave using the
     finite difference method in 2D and 3D domains.""",
     url='https://github.com/HPCSys-Lab/simwave',
-    download_url=r'''
-    https://github.com/HPCSys-Lab/simwave/archive/refs/tags/v0.5.tar.gz
-    ''',
     author="HPCSys-Lab",
     author_email="senger.hermes@gmail.com",
     license="GPL-3.0 License",
@@ -33,5 +30,5 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9'
-    ],
+    ]
 )
