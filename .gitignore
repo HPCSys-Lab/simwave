@@ -3,6 +3,7 @@
 *.so
 *.png
 dist/
+build/
 /src/wavefield/*
 simwave.egg-info/*
 .ipynb_checkpoints
