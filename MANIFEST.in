@@ -1,2 +1,3 @@
 include versioneer.py
 include simwave/_version.py
+recursive-include simwave/kernel/backend/c_code *.c
