@@ -17,9 +17,7 @@ class Compiler:
         self.cc = cc
         self.cflags = cflags
 
-    def compile(self, dimension=2, density="constant_density",
-                space_order_mode="multiple_space_order",
-                operator="forward"):
+    def compile(self, dimension, density, float_precision, operator):
         """
         Compile the program.
 
@@ -33,6 +31,8 @@ class Compiler:
         space_order_mode: str
             Compile the version with multiple spatial orders (multiple)
             or the fixed second order version (fixed).
+        float_precision : str
+            Float single (C float) or double (C double) precision.
         operator : str
             Operator implementation.
             Only forward operator available at the moment.
@@ -49,8 +49,8 @@ class Compiler:
         current_dir = os.path.dirname(os.path.realpath(__file__))
 
         # program dir
-        program_dir = current_dir + "/c_code/{}/{}/{}/{}d/".format(
-            operator, space_order_mode, density, dimension
+        program_dir = current_dir + "/c_code/{}/{}/{}d/".format(
+            operator, density, dimension
         )
 
         object_dir = working_dir + "/tmp/"
@@ -67,6 +67,7 @@ class Compiler:
             + " -o "
             + object_dir
             + object_name
+            + " {}".format(float_precision)
         )
 
         print("Compilation command:", cmd)

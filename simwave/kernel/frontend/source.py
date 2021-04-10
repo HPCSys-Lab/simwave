@@ -23,7 +23,8 @@ class Source:
         # coordinates can be lists, lists of tuples, tuples,
         # tuples of tuples, tuples of lists and ndarrays.
         if isinstance(coordinates, (list, tuple, np.ndarray)):
-            self._coordinates = np.asarray(coordinates, dtype=np.float32)
+            self._coordinates = np.asarray(coordinates,
+                                           dtype=self.space_model.dtype)
 
             # the shape must be (n,d) where
             # n is the number of sources/receivers
@@ -99,7 +100,7 @@ class Source:
             else:
                 raise Exception("Dimension %d not supported." % len(coord))
 
-        return np.asarray(positions, dtype=np.float32)
+        return np.asarray(positions, dtype=self.space_model.dtype)
 
     @property
     def adjusted_grid_positions(self):
@@ -117,7 +118,7 @@ class Source:
             for src in self.grid_positions
         ]
 
-        return np.asarray(adjusted_positions, dtype=np.float32)
+        return np.asarray(adjusted_positions, dtype=self.space_model.dtype)
 
     @property
     def interpolated_points_and_values(self):
@@ -135,7 +136,7 @@ class Source:
         """
 
         points = np.array([], dtype=np.uint)
-        values = np.array([], dtype=np.float32)
+        values = np.array([], dtype=self.space_model.dtype)
 
         for position in self.adjusted_grid_positions:
             # apply kasier window to interpolate the source/receiver

@@ -47,7 +47,7 @@ def coefficients(space_order):
     # fixed second derivative
     coeffs = findiff.coefficients(deriv=2, acc=space_order)
 
-    return np.float32(coeffs['center']['coefficients'])
+    return coeffs['center']['coefficients']
 
 
 def calculate_dt(dimension, space_order, grid_spacing, velocity_model):
@@ -87,4 +87,4 @@ def calculate_dt(dimension, space_order, grid_spacing, velocity_model):
     # dt <= coeff * h / max(velocity)
     dt = coeff * np.min(grid_spacing) / np.max(velocity_model)
 
-    return np.float32(dt)
+    return dt

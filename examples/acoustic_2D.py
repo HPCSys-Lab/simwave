@@ -14,7 +14,8 @@ space_model = SpaceModel(
     bounding_box=(0, 5120, 0, 5120),
     grid_spacing=(10, 10),
     velocity_model=vel,
-    space_order=4
+    space_order=4,
+    dtype=np.float32
 )
 
 # config boundary conditions

@@ -3,31 +3,39 @@
 #include <time.h>
 #include <sys/time.h>
 
-// forward_3D_variable_density
-double forward(float *grid, float *vel_base, float *density, float *damp,
-               float *wavelet, float *coeff, size_t *boundary_conditions,
-               size_t *src_points_interval, float *src_points_values,
-               size_t *rec_points_interval, float *rec_points_values,
-               float *receivers, size_t num_sources, size_t num_receivers,
-               size_t nz, size_t nx, size_t ny, float dz, float dx, float dy,
-               size_t jumps, float dt,
+// use single (float) or double precision
+// according to the value passed in the compilation cmd
+#if defined(FLOAT)
+   typedef float f_type;
+#elif defined(DOUBLE)
+   typedef double f_type;
+#endif
+
+// forward_2D_constant_density
+double forward(f_type *grid, f_type *velocity, f_type *damp,
+               f_type *wavelet, f_type *coeff, size_t *boundary_conditions,
+               size_t *src_points_interval, f_type *src_points_values,
+               size_t *rec_points_interval, f_type *rec_points_values,
+               f_type *receivers, size_t num_sources, size_t num_receivers,
+               size_t nz, size_t nx, size_t ny, f_type dz, f_type dx, f_type dy,
+               size_t saving_stride, f_type dt,
                size_t begin_timestep, size_t end_timestep, size_t space_order){
 
     size_t stencil_radius = space_order / 2;
 
-    float *swap;
+    f_type *swap;
     size_t current;
     size_t wavefield_count = 0;
 
-    float dzSquared = dz * dz;
-    float dxSquared = dx * dx;
-    float dySquared = dy * dy;
-    float dtSquared = dt * dt;
+    f_type dzSquared = dz * dz;
+    f_type dxSquared = dx * dx;
+    f_type dySquared = dy * dy;
+    f_type dtSquared = dt * dt;
 
     size_t nsize = nz * nx * ny;
 
-    float *prev_base = malloc(nsize * sizeof(float));
-    float *next_base = malloc(nsize * sizeof(float));
+    f_type *prev_snapshot = malloc(nsize * sizeof(f_type));
+    f_type *next_snapshot = malloc(nsize * sizeof(f_type));
 
     // initialize aux matrix
     for(size_t i = 0; i < nz; i++){
@@ -36,8 +44,8 @@ double forward(float *grid, float *vel_base, float *density, float *damp,
             size_t offset = (i * nx + j) * ny;
 
             for(size_t k = 0; k < ny; k++){
-                prev_base[offset + k] = grid[offset + k];
-                next_base[offset + k] = 0.0f;
+                prev_snapshot[offset + k] = grid[offset + k];
+                next_snapshot[offset + k] = 0.0f;
             }
         }
     }
@@ -62,28 +70,33 @@ double forward(float *grid, float *vel_base, float *density, float *damp,
                     // index of the current point in the grid
                     current = (i * nx + j) * ny + k;
 
-                    //neighbors in the Y direction
-                    float y1 = ((prev_base[current + 1] - prev_base[current]) * (density[current + 1] + density[current])) / density[current + 1];
-                    float y2 = ((prev_base[current] - prev_base[current - 1]) * (density[current] + density[current - 1])) / density[current - 1];
-                    float term_y = (y1 - y2) / (2 * dySquared);
+                    // stencil code to update grid
+                    f_type value = 0.0;
 
-                    //neighbors in the X direction
-                    float x1 = ((prev_base[current + ny] - prev_base[current]) * (density[current + ny] + density[current])) / density[current + ny];
-                    float x2 = ((prev_base[current] - prev_base[current - ny]) * (density[current] + density[current - ny])) / density[current - ny];
-                    float term_x = (x1 - x2) / (2 * dxSquared);
+                    f_type sum_y = coeff[0] * prev_snapshot[current];
+                    f_type sum_x = coeff[0] * prev_snapshot[current];
+                    f_type sum_z = coeff[0] * prev_snapshot[current];
 
-                    //neighbors in the Z direction
-                    float z1 = ((prev_base[current + (nx * ny)] - prev_base[current]) * (density[current + (nx * ny)] + density[current])) / density[current + (nx * ny)];
-                    float z2 = ((prev_base[current] - prev_base[current - (nx * ny)]) * (density[current] + density[current - (nx * ny)])) / density[current - (nx * ny)];
-                    float term_z = (z1 - z2) / (2 * dzSquared);
+                    // radius of the stencil
+                    for(int ir = 1; ir <= stencil_radius; ir++){
+                        //neighbors in the Y direction
+                        sum_y += coeff[ir] * (prev_snapshot[current + ir] + prev_snapshot[current - ir]);
+
+                        //neighbors in the X direction
+                        sum_x += coeff[ir] * (prev_snapshot[current + (ir * ny)] + prev_snapshot[current - (ir * ny)]);
+
+                        //neighbors in the Z direction
+                        sum_z += coeff[ir] * (prev_snapshot[current + (ir * nx * ny)] + prev_snapshot[current - (ir * nx * ny)]);
+                    }
+
+                    value += sum_y/dySquared + sum_x/dxSquared + sum_z/dzSquared;
 
                     //nominator with damp coefficient
-                    float nominator = (1.0 + damp[current] * dt);
+                    f_type denominator = (1.0 + damp[current] * dt);
 
-                    float value = dtSquared * vel_base[current] * vel_base[current] * (term_z + term_x + term_y) / nominator;
+                    value *= (dtSquared * velocity[current] * velocity[current]) / denominator;
 
-                    next_base[current] = 2.0 / nominator * prev_base[current] - ((1.0 - damp[current] * dt) / nominator) * next_base[current] + value;
-
+                    next_snapshot[current] = 2.0 / denominator * prev_snapshot[current] - ((1.0 - damp[current] * dt) / denominator) * next_snapshot[current] + value;
                 }
             }
         }
@@ -133,11 +146,11 @@ double forward(float *grid, float *vel_base, float *density, float *damp,
                     // for each source point in the Y axis
                     for(size_t k = src_y_begin; k <= src_y_end; k++){
 
-                        float kws = src_points_values[kws_index_z] * src_points_values[kws_index_x] * src_points_values[kws_index_y];
+                        f_type kws = src_points_values[kws_index_z] * src_points_values[kws_index_x] * src_points_values[kws_index_y];
 
                         // current source point in the grid
                         current = (i * nx + j) * ny + k;
-                        next_base[current] += dtSquared * vel_base[current] * vel_base[current] * kws * wavelet[n];
+                        next_snapshot[current] += dtSquared * velocity[current] * velocity[current] * kws * wavelet[n];
 
                         kws_index_y++;
                     }
@@ -169,28 +182,28 @@ double forward(float *grid, float *vel_base, float *density, float *damp,
                 // null dirichlet on the left
                 if(y_before == 1){
                     current = (i * nx + j) * ny + stencil_radius;
-                    next_base[current] = 0.0;
+                    next_snapshot[current] = 0.0;
                 }
 
                 // null neumann on the left
                 if(y_before == 2){
                     for(int ir = 1; ir <= stencil_radius; ir++){
                         current = (i * nx + j) * ny + stencil_radius;
-                        next_base[current - ir] = next_base[current + ir];
+                        next_snapshot[current - ir] = next_snapshot[current + ir];
                     }
                 }
 
                 // null dirichlet on the right
                 if(y_after == 1){
                     current = (i * nx + j) * ny + (ny - stencil_radius - 1);
-                    next_base[current] = 0.0;
+                    next_snapshot[current] = 0.0;
                 }
 
                 // null neumann on the right
                 if(y_after == 2){
                     for(int ir = 1; ir <= stencil_radius; ir++){
                         current = (i * nx + j) * ny + (ny - stencil_radius - 1);
-                        next_base[current + ir] = next_base[current - ir];
+                        next_snapshot[current + ir] = next_snapshot[current - ir];
                     }
                 }
 
@@ -204,28 +217,28 @@ double forward(float *grid, float *vel_base, float *density, float *damp,
                 // null dirichlet on the front
                 if(x_before == 1){
                     current = (i * nx + stencil_radius) * ny + k;
-                    next_base[current] = 0.0;
+                    next_snapshot[current] = 0.0;
                 }
 
                 // null neumann on the front
                 if(x_before == 2){
                     for(int ir = 1; ir <= stencil_radius; ir++){
                         current = (i * nx + stencil_radius) * ny + k;
-                        next_base[current - (ir * ny)] = next_base[current + (ir * ny)];
+                        next_snapshot[current - (ir * ny)] = next_snapshot[current + (ir * ny)];
                     }
                 }
 
                 // null dirichlet on the back
                 if(x_after == 1){
                     current = (i * nx + (nx - stencil_radius - 1)) * ny + k;
-                    next_base[current] = 0.0;
+                    next_snapshot[current] = 0.0;
                 }
 
                 // null neumann on the back
                 if(x_after == 2){
                     for(int ir = 1; ir <= stencil_radius; ir++){
                         current = (i * nx + (nx - stencil_radius - 1)) * ny + k;
-                        next_base[current + (ir * ny)] = next_base[current - (ir * ny)];
+                        next_snapshot[current + (ir * ny)] = next_snapshot[current - (ir * ny)];
                     }
                 }
 
@@ -239,28 +252,28 @@ double forward(float *grid, float *vel_base, float *density, float *damp,
                 // null dirichlet on the top
                 if(z_before == 1){
                     current = (stencil_radius * nx + j) * ny + k;
-                    next_base[current] = 0.0;
+                    next_snapshot[current] = 0.0;
                 }
 
                 // null neumann on the top
                 if(z_before == 2){
                     for(int ir = 1; ir <= stencil_radius; ir++){
                         current = (stencil_radius * nx + j) * ny + k;
-                        next_base[current - (ir * nx * ny)] = next_base[current + (ir * nx * ny)];
+                        next_snapshot[current - (ir * nx * ny)] = next_snapshot[current + (ir * nx * ny)];
                     }
                 }
 
                 // null dirichlet on the bottom
                 if(z_after == 1){
                     current = ((nz - stencil_radius - 1) * nx + j) * ny + k;
-                    next_base[current] = 0.0;
+                    next_snapshot[current] = 0.0;
                 }
 
                 // null neumann on the bottom
                 if(z_after == 2){
                     for(int ir = 1; ir <= stencil_radius; ir++){
                         current = ((nz - stencil_radius - 1) * nx + j) * ny + k;
-                        next_base[current + (ir * nx * ny)] = next_base[current - (ir * nx * ny)];
+                        next_snapshot[current + (ir * nx * ny)] = next_snapshot[current - (ir * nx * ny)];
                     }
                 }
 
@@ -277,7 +290,7 @@ double forward(float *grid, float *vel_base, float *density, float *damp,
         // for each receiver
         for(size_t rec = 0; rec < num_receivers; rec++){
 
-            float sum = 0.0;
+            f_type sum = 0.0;
 
             // each receiver has 6 (z_b, z_e, x_b, x_e, y_b, y_e) point intervals
             size_t offset_rec = rec * 6;
@@ -314,11 +327,11 @@ double forward(float *grid, float *vel_base, float *density, float *damp,
                     // for each source point in the Y axis
                     for(size_t k = rec_y_begin; k <= rec_y_end; k++){
 
-                        float kws = rec_points_values[kws_index_z] * rec_points_values[kws_index_x] * rec_points_values[kws_index_y];
+                        f_type kws = rec_points_values[kws_index_z] * rec_points_values[kws_index_x] * rec_points_values[kws_index_y];
 
                         // current receiver point in the grid
                         current = (i * nx + j) * ny + k;
-                        sum += prev_base[current] * kws;
+                        sum += prev_snapshot[current] * kws;
 
                         kws_index_y++;
                     }
@@ -334,14 +347,14 @@ double forward(float *grid, float *vel_base, float *density, float *damp,
         }
 
         //swap arrays for next iteration
-        swap = next_base;
-        next_base = prev_base;
-        prev_base = swap;
+        swap = next_snapshot;
+        next_snapshot = prev_snapshot;
+        prev_snapshot = swap;
 
         /*
             Section 5: save the wavefields
         */
-        if( (jumps && (n % jumps) == 0) || (n == end_timestep - 1) ){
+        if( (saving_stride && (n % saving_stride) == 0) || (n == end_timestep - 1) ){
 
             for(size_t i = 0; i < nz; i++){
                 for(size_t j = 0; j < nx; j++){
@@ -350,7 +363,7 @@ double forward(float *grid, float *vel_base, float *density, float *damp,
                     size_t offset_global = ((wavefield_count * nz + i) * nx + j) * ny;
 
                     for(size_t k = 0; k < ny; k++){
-                        grid[offset_global + k] = next_base[offset_local + k];
+                        grid[offset_global + k] = next_snapshot[offset_local + k];
                     }
                 }
             }
@@ -365,8 +378,8 @@ double forward(float *grid, float *vel_base, float *density, float *damp,
 
     double exec_time = (double) (time_end.tv_sec - time_start.tv_sec) + (double) (time_end.tv_usec - time_start.tv_usec) / 1000000.0;
 
-    free(prev_base);
-    free(next_base);
+    free(prev_snapshot);
+    free(next_snapshot);
 
     return exec_time;
 }

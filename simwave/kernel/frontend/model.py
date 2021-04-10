@@ -19,23 +19,24 @@ class SpaceModel:
     density_model : ndarray, optional
         Numpy n-dimensional array with the density profile.
     space_order : int, optional
-        Spatial order of the stencil. Accepts even orders from 2 to 16.
+        Spatial order of the stencil. Accepts even orders.
         Default is 2.
     dtype : data-type, optional
-        Numpy array data-type.
+        Numpy array float data-type (numpy.float32 or numpy.float64).
+        Default is numpy.float32.
     """
     def __init__(self, bounding_box, grid_spacing, velocity_model,
                  density_model=None, space_order=2, dtype=np.float32):
 
+        self._dtype = dtype
+
         # make sure each bounding is float
-        self._bounding_box = tuple([np.float32(i) for i in bounding_box])
+        self._bounding_box = tuple([self.dtype(i) for i in bounding_box])
 
         # make sure each spacing is float
-        self._grid_spacing = tuple([np.float32(i) for i in grid_spacing])
+        self._grid_spacing = tuple([self.dtype(i) for i in grid_spacing])
 
         self._space_order = space_order
-
-        self._dtype = dtype
 
         # space_order are limited to even number
         if space_order % 2 != 0 or space_order < 2:
@@ -89,7 +90,7 @@ class SpaceModel:
 
     @property
     def dt(self):
-        return self._dt
+        return self.dtype(self._dt)
 
     @property
     def dtype(self):
@@ -99,11 +100,11 @@ class SpaceModel:
     def dt(self, value):
         """Set time step in seconds"""
         if value < 0:
-            print("Time step cannot be negative.")
+            raise ValueError("Time step cannot be negative.")
         elif value > self.dt:
-            print("Time step value violates CFL condition.")
+            raise ValueError("Time step value violates CFL condition.")
         else:
-            self._dt = np.float32(value)
+            self._dt = value
 
     @property
     def shape(self):
@@ -151,7 +152,7 @@ class SpaceModel:
     def grid(self):
         """Finite differences grid."""
         # create the grid only once
-        return np.zeros(self.shape, dtype=np.float32)
+        return np.zeros(self.shape, dtype=self.dtype)
 
     @property
     def nbl(self):
@@ -207,7 +208,7 @@ class SpaceModel:
     @property
     def fd_coefficients(self):
         """Central and right side finite differences coefficients."""
-        return fd.half_coefficients(self.space_order)
+        return self.dtype(fd.half_coefficients(self.space_order))
 
     def interpolate(self, data):
         """
@@ -241,7 +242,7 @@ class SpaceModel:
 
             X, Z = np.meshgrid(x, z)
 
-            return np.float32(interpolant((Z, X)))
+            return self.dtype(interpolant((Z, X)))
         else:
             z_min, z_max, x_min, x_max, y_min, y_max = self.bounding_box
 
@@ -260,7 +261,7 @@ class SpaceModel:
 
             X, Z, Y = np.meshgrid(x, z, y)
 
-            return np.float32(interpolant((Z, X, Y)))
+            return self.dtype(interpolant((Z, X, Y)))
 
     @property
     def halo_size(self):
@@ -302,12 +303,12 @@ class SpaceModel:
 
         # if it is not, convert damping_length to tuple
         if isinstance(damping_length, (float, int)):
-            self._damping_length = (np.float32(damping_length),) \
+            self._damping_length = (self.dtype(damping_length),) \
                                     * self.dimension * 2
         else:
             # make sure damping length is float
             self._damping_length = tuple(
-                [np.float32(i) for i in damping_length]
+                [self.dtype(i) for i in damping_length]
             )
 
         # if it is not, convert boundary_condition to tuple
@@ -385,7 +386,7 @@ class SpaceModel:
         damp(z,x,[y]) = alpha * d(z,x,[y])**degree
         """
         # damp mask in the original domain
-        damp_mask = np.zeros(self.shape, dtype=np.float32)
+        damp_mask = np.zeros(self.shape, dtype=self.dtype)
 
         # damp mask in the damping extention
         # use the perpendicular distance from the point to
@@ -509,8 +510,8 @@ class TimeModel:
     """
     def __init__(self, space_model, tf, t0=0.0):
         self._space_model = space_model
-        self._tf = np.float32(tf)
-        self._t0 = np.float32(t0)
+        self._tf = self.space_model.dtype(tf)
+        self._t0 = self.space_model.dtype(t0)
 
     @property
     def space_model(self):
@@ -546,4 +547,5 @@ class TimeModel:
     def time_values(self):
         """Time values of the propagation timesteps."""
         # time values starting from t0 to tf with dt interval
-        return np.linspace(self.t0, self.tf, self.timesteps, dtype=np.float32)
+        return np.linspace(self.t0, self.tf, self.timesteps,
+                           dtype=self.space_model.dtype)

@@ -4,14 +4,16 @@ from setuptools import setup, find_packages
 with open("requirements.txt") as f:
     required = f.read().splitlines()
 
+with open("README.md") as f:
+    readme = f.read()
+
 setup(
     name="simwave",
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     description="Finite difference 2D/3D acoustic wave propagator.",
-    long_description="""Simwave is an hybrid Python/C tool that
-    simulates the propagation of the acoustic wave using the
-    finite difference method in 2D and 3D domains.""",
+    long_description=readme,
+    long_description_content_type="text/markdown",
     url='https://github.com/HPCSys-Lab/simwave',
     author="HPCSys-Lab",
     author_email="senger.hermes@gmail.com",

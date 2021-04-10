@@ -23,22 +23,28 @@ class Middleware:
     def compiler(self):
         return self._compiler
 
-    def library(self, dimension, density):
+    def library(self, dimension, density, dtype):
         """Load and return the C library."""
+
+        # convert dtype to C compiling value
+        # that define float precision
+        type = {
+            'float32': '-DFLOAT',
+            'float64': '-DDOUBLE'
+        }
 
         # constant or variable density
         if density is not None:
             density = "variable_density"
-            space_order_mode = "fixed_space_order"
         else:
             density = "constant_density"
-            space_order_mode = "multiple_space_order"
 
         # compile the code
         shared_object = self.compiler.compile(
             dimension=dimension,
             density=density,
-            space_order_mode=space_order_mode,
+            float_precision=type[str(dtype)],
+            operator="forward"
         )
 
         # load the library
@@ -114,8 +120,11 @@ class Middleware:
         """
 
         # load the C library
-        lib = self.library(dimension=len(kwargs.get('velocity_model').shape),
-                           density=kwargs.get('density_model'))
+        lib = self.library(
+            dimension=len(kwargs.get('velocity_model').shape),
+            density=kwargs.get('density_model'),
+            dtype=kwargs.get('velocity_model').dtype
+        )
 
         # get the argtype for each arg key
         types = self._argtypes(**kwargs)
@@ -255,8 +264,10 @@ class Middleware:
             'int': ctypes.c_size_t,
             'float': ctypes.c_float,
             'float32': ctypes.c_float,
+            'float64': ctypes.c_double,
             'np(uint64)': ndpointer(ctypes.c_size_t, flags="C_CONTIGUOUS"),
             'np(float32)': ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+            'np(float64)': ndpointer(ctypes.c_double, flags="C_CONTIGUOUS")
         }
 
         return argtype[type]

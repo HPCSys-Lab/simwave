@@ -3,29 +3,36 @@
 #include <time.h>
 #include <sys/time.h>
 
+// use single (float) or double precision
+// according to the value passed in the compilation cmd
+#if defined(FLOAT)
+   typedef float f_type;
+#elif defined(DOUBLE)
+   typedef double f_type;
+#endif
+
 // forward_2D_constant_density
-double forward(float *grid, float *vel_base, float *damp,
-               float *wavelet, float *coeff, size_t *boundary_conditions,
-               size_t *src_points_interval, float *src_points_values,
-               size_t *rec_points_interval, float *rec_points_values,
-               float *receivers, size_t num_sources, size_t num_receivers,
-               size_t nz, size_t nx, float dz, float dx,
-               size_t jumps, float dt,
+double forward(f_type *grid, f_type *velocity, f_type *damp,
+               f_type *wavelet, f_type *coeff, size_t *boundary_conditions,
+               size_t *src_points_interval, f_type *src_points_values,
+               size_t *rec_points_interval, f_type *rec_points_values,
+               f_type *receivers, size_t num_sources, size_t num_receivers,
+               size_t nz, size_t nx, f_type dz, f_type dx,
+               size_t saving_stride, f_type dt,
                size_t begin_timestep, size_t end_timestep, size_t space_order){
 
     size_t stencil_radius = space_order / 2;
 
-    float *swap;
-    float value = 0.0, nominator = 0.0;
+    f_type *swap;
     size_t current;
     size_t wavefield_count = 0;
 
-    float dzSquared = dz * dz;
-    float dxSquared = dx * dx;
-    float dtSquared = dt * dt;
+    f_type dzSquared = dz * dz;
+    f_type dxSquared = dx * dx;
+    f_type dtSquared = dt * dt;
 
-    float *prev_base = malloc(nz * nx * sizeof(float));
-    float *next_base = malloc(nz * nx * sizeof(float));
+    f_type *prev_snapshot = malloc(nz * nx * sizeof(f_type));
+    f_type *next_snapshot = malloc(nz * nx * sizeof(f_type));
 
     // initialize aux matrix
     for(size_t i = 0; i < nz; i++){
@@ -33,8 +40,8 @@ double forward(float *grid, float *vel_base, float *damp,
         size_t offset = i * nx;
 
         for(size_t j = 0; j < nx; j++){
-            prev_base[offset + j] = grid[offset + j];
-            next_base[offset + j] = 0.0f;
+            prev_snapshot[offset + j] = grid[offset + j];
+            next_snapshot[offset + j] = 0.0;
         }
     }
 
@@ -58,20 +65,28 @@ double forward(float *grid, float *vel_base, float *damp,
                 current = i * nx + j;
 
                 // stencil code to update grid
-                value = 0.0;
+                f_type value = 0.0;
 
-                //neighbors in the horizontal direction
-                value += (prev_base[current + 1] - 2.0 * prev_base[current] + prev_base[current - 1]) / dxSquared;
+                f_type sum_x = coeff[0] * prev_snapshot[current];
+                f_type sum_z = coeff[0] * prev_snapshot[current];
 
-                //neighbors in the vertical direction
-                value += (prev_base[current + nx] - 2.0 * prev_base[current] + prev_base[current - nx]) / dzSquared;
+                // radius of the stencil
+                for(int ir = 1; ir <= stencil_radius; ir++){
+                    //neighbors in the horizontal direction
+                    sum_x += coeff[ir] * (prev_snapshot[current + ir] + prev_snapshot[current - ir]);
 
-                //nominator with damp coefficient
-                nominator = (1.0 + damp[current] * dt);
+                    //neighbors in the vertical direction
+                    sum_z += coeff[ir] * (prev_snapshot[current + (ir * nx)] + prev_snapshot[current - (ir * nx)]);
+                }
 
-                value *= (dtSquared * vel_base[current] * vel_base[current]) / nominator;
+                value += sum_x/dxSquared + sum_z/dzSquared;
 
-                next_base[current] = 2.0 / nominator * prev_base[current] - ((1.0 - damp[current] * dt) / nominator) * next_base[current] + value;
+                //denominator with damp coefficient
+                f_type denominator = (1.0 + damp[current] * dt);
+
+                value *= (dtSquared * velocity[current] * velocity[current]) / denominator;
+
+                next_snapshot[current] = 2.0 / denominator * prev_snapshot[current] - ((1.0 - damp[current] * dt) / denominator) * next_snapshot[current] + value;
             }
         }
 
@@ -110,11 +125,11 @@ double forward(float *grid, float *vel_base, float *damp,
                 // for each source point in the X axis
                 for(size_t j = src_x_begin; j <= src_x_end; j++){
 
-                    float kws = src_points_values[kws_index_z] * src_points_values[kws_index_x];
+                    f_type kws = src_points_values[kws_index_z] * src_points_values[kws_index_x];
 
                     // current source point in the grid
                     current = i * nx + j;
-                    next_base[current] += dtSquared * vel_base[current] * vel_base[current] * kws * wavelet[n];
+                    next_snapshot[current] += dtSquared * velocity[current] * velocity[current] * kws * wavelet[n];
 
                     kws_index_x++;
                 }
@@ -141,28 +156,28 @@ double forward(float *grid, float *vel_base, float *damp,
             // null dirichlet on the left
             if(x_before == 1){
                 current = i * nx + stencil_radius;
-                next_base[current] = 0.0;
+                next_snapshot[current] = 0.0;
             }
 
             // null neumann on the left
             if(x_before == 2){
                 for(int ir = 1; ir <= stencil_radius; ir++){
                     current = i * nx + stencil_radius;
-                    next_base[current - ir] = next_base[current + ir];
+                    next_snapshot[current - ir] = next_snapshot[current + ir];
                 }
             }
 
             // null dirichlet on the right
             if(x_after == 1){
                 current = i * nx + (nx - stencil_radius - 1);
-                next_base[current] = 0.0;
+                next_snapshot[current] = 0.0;
             }
 
             // null neumann on the right
             if(x_after == 2){
                 for(int ir = 1; ir <= stencil_radius; ir++){
                     current = i * nx + (nx - stencil_radius - 1);
-                    next_base[current + ir] = next_base[current - ir];
+                    next_snapshot[current + ir] = next_snapshot[current - ir];
                 }
             }
 
@@ -174,28 +189,28 @@ double forward(float *grid, float *vel_base, float *damp,
             // null dirichlet on the top
             if(z_before == 1){
                 current = stencil_radius * nx + j;
-                next_base[current] = 0.0;
+                next_snapshot[current] = 0.0;
             }
 
             // null neumann on the top
             if(z_before == 2){
                 for(int ir = 1; ir <= stencil_radius; ir++){
                     current = stencil_radius * nx + j;
-                    next_base[current - (ir * nx)] = next_base[current + (ir * nx)];
+                    next_snapshot[current - (ir * nx)] = next_snapshot[current + (ir * nx)];
                 }
             }
 
             // null dirichlet on the bottom
             if(z_after == 1){
                 current = (nz - stencil_radius - 1) * nx + j;
-                next_base[current] = 0.0;
+                next_snapshot[current] = 0.0;
             }
 
             // null neumann on the bottom
             if(z_after == 2){
                 for(int ir = 1; ir <= stencil_radius; ir++){
                     current = (nz - stencil_radius - 1) * nx + j;
-                    next_base[current + (ir * nx)] = next_base[current - (ir * nx)];
+                    next_snapshot[current + (ir * nx)] = next_snapshot[current - (ir * nx)];
                 }
             }
 
@@ -211,7 +226,7 @@ double forward(float *grid, float *vel_base, float *damp,
         // for each receiver
         for(size_t rec = 0; rec < num_receivers; rec++){
 
-            float sum = 0.0;
+            f_type sum = 0.0;
 
             // each receiver has 4 (z_b, z_e, x_b, x_e) point intervals
             size_t offset_rec = rec * 4;
@@ -238,11 +253,11 @@ double forward(float *grid, float *vel_base, float *damp,
                 // for each receiver point in the X axis
                 for(size_t j = rec_x_begin; j <= rec_x_end; j++){
 
-                    float kws = rec_points_values[kws_index_z] * rec_points_values[kws_index_x];
+                    f_type kws = rec_points_values[kws_index_z] * rec_points_values[kws_index_x];
 
                     // current receiver point in the grid
                     current = i * nx + j;
-                    sum += prev_base[current] * kws;
+                    sum += prev_snapshot[current] * kws;
 
                     kws_index_x++;
                 }
@@ -256,21 +271,21 @@ double forward(float *grid, float *vel_base, float *damp,
         }
 
         //swap arrays for next iteration
-        swap = next_base;
-        next_base = prev_base;
-        prev_base = swap;
+        swap = next_snapshot;
+        next_snapshot = prev_snapshot;
+        prev_snapshot = swap;
 
         /*
             Section 5: save the wavefields
         */
-        if( (jumps && (n % jumps) == 0) || (n == end_timestep - 1) ){
+        if( (saving_stride && (n % saving_stride) == 0) || (n == end_timestep - 1) ){
 
             for(size_t i = 0; i < nz; i++){
                 size_t offset_local = i * nx;
                 size_t offset_global = (wavefield_count * nz + i) * nx;
 
                 for(size_t j = 0; j < nx; j++){
-                    grid[offset_global + j] = next_base[offset_local + j];
+                    grid[offset_global + j] = next_snapshot[offset_local + j];
                 }
             }
 
@@ -284,19 +299,8 @@ double forward(float *grid, float *vel_base, float *damp,
 
     double exec_time = (double) (time_end.tv_sec - time_start.tv_sec) + (double) (time_end.tv_usec - time_start.tv_usec) / 1000000.0;
 
-    // save final result
-    /*
-    for(size_t i = 0; i < nz; i++){
-
-        size_t offset = i * nx;
-
-        for(size_t j = 0; j < nx; j++){
-            grid[offset + j] = next_base[offset + j];
-        }
-    }*/
-
-    free(prev_base);
-    free(next_base);
+    free(prev_snapshot);
+    free(next_snapshot);
 
     return exec_time;
 }

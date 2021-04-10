@@ -112,7 +112,7 @@ class Solver:
         """Return the shot record array."""
         u_recv = np.zeros(
             shape=(self.time_model.timesteps, self.receivers.count),
-            dtype=np.float32
+            dtype=self.space_model.dtype
         )
 
         return u_recv
@@ -122,7 +122,7 @@ class Solver:
         """Return the complete grid (snapshots, nz. nz [, ny])."""
         shape = (self.num_snapshots,) + self.space_model.extended_shape
 
-        return np.zeros(shape, dtype=np.float32)
+        return np.zeros(shape, dtype=self.space_model.dtype)
 
     def forward(self):
         """
