@@ -1,7 +1,15 @@
-from simwave import SpaceModel, TimeModel, RickerWavelet, Solver
+from simwave import SpaceModel, TimeModel, RickerWavelet, Solver, Compiler
 from simwave import Receiver, Source, plot_wavefield, plot_shotrecord
 import numpy as np
 
+
+# set compiler options
+# available language options: c (sequential) or  cpu_openmp (parallel CPU)
+compiler = Compiler(
+    cc='gcc',
+    language='c',
+    cflags='-O3 -fPIC -Wall -std=c99 -shared'
+)
 
 # Velocity model
 vel = np.zeros(shape=(512, 512), dtype=np.float32)
@@ -60,7 +68,8 @@ solver = Solver(
     sources=source,
     receivers=receiver,
     wavelet=ricker,
-    saving_stride=0
+    saving_stride=0,
+    compiler=compiler
 )
 
 # run the forward
