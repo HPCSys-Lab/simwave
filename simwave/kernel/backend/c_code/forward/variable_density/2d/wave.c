@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
+#include <omp.h>
 
 // use single (float) or double precision
 // according to the value passed in the compilation cmd
@@ -59,10 +60,14 @@ double forward(f_type *grid, f_type *velocity, f_type *density, f_type *damp,
             Section 1: update the wavefield according to the acoustic wave equation
         */
 
+        #ifdef CPU_OPENMP
+        #pragma omp parallel for simd
+        #endif
+
         for(size_t i = stencil_radius; i < nz - stencil_radius; i++) {
             for(size_t j = stencil_radius; j < nx - stencil_radius; j++) {
                 // index of the current point in the grid
-                current = i * nx + j;
+                size_t current = i * nx + j;
 
                 //neighbors in the horizontal direction
                 f_type x1 = ((prev_snapshot[current + 1] - prev_snapshot[current]) * (density[current + 1] + density[current])) / density[current + 1];

@@ -7,7 +7,7 @@ import numpy as np
 # available language options: c (sequential) or  cpu_openmp (parallel CPU)
 compiler = Compiler(
     cc='gcc',
-    language='c',
+    language='cpu_openmp',
     cflags='-O3 -fPIC -Wall -std=c99 -shared'
 )
 
@@ -17,7 +17,6 @@ vel[:] = 1500.0
 vel[100:] = 2000.0
 
 # create the space model
-# bounding_box
 space_model = SpaceModel(
     bounding_box=(0, 5120, 0, 5120),
     grid_spacing=(10, 10),
@@ -27,7 +26,7 @@ space_model = SpaceModel(
 )
 
 # config boundary conditions
-# (null,  null_dirichlet or null_neumann)
+# (none,  null_dirichlet or null_neumann)
 space_model.config_boundary(
     damping_length=0,
     boundary_condition=(

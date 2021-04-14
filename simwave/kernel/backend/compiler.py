@@ -68,13 +68,13 @@ class Compiler:
     @language.setter
     def language(self, value):
         if not isinstance(value, str):
-            raise TypeError("Compiler.version attribute must be str.")
+            raise TypeError("Compiler.language attribute must be str.")
 
         options = ['c', 'cpu_openmp']
 
         if value not in options:
             raise ValueError(
-                "Compiler.version {} not implemented.".format(value)
+                "Compiler.language {} not implemented.".format(value)
             )
 
         self._language = value
@@ -126,47 +126,74 @@ class Compiler:
         # get the dir of the compiler.py file
         current_dir = os.path.dirname(os.path.realpath(__file__))
 
-        # program dir
+        # c program root dir
         program_dir = current_dir + "/c_code/{}/{}/{}d/".format(
             operator, density, dimension
         )
 
-        object_dir = working_dir + "/tmp/"
+        # c pragram file name
         c_code_name = "wave.c"
 
-        # compose the object name
-        object_name = "wave-c-{}d-{}-{}-{}".format(
+        # c code complete path
+        program_path = program_dir + c_code_name
+
+        # get c file content
+        with open(program_path, 'r') as f:
+            c_file_content = f.read()
+
+        # object root dir
+        object_dir = working_dir + "/tmp/"
+
+        # define the language
+        if self.language == 'cpu_openmp':
+            language_c = ' -DCPU_OPENMP'
+        elif self.language == 'c':
+            language_c = ''
+
+        # compose the object string
+        object_str = "wave {} {} {} {}d {} {} {} {} \n{}".format(
+            self.language,
+            self.cc,
+            self.cflags,
             dimension,
             operator,
             density,
-            float_precision
+            float_precision,
+            language_c,
+            c_file_content
         )
 
         # apply sha1 hash to name the object
         hash = sha1()
-        hash.update(object_name.encode())
+        hash.update(object_str.encode())
         object_name = hash.hexdigest() + ".so"
 
-        cmd = (
-            self.cc
-            + " "
-            + program_dir
-            + c_code_name
-            + " "
-            + self.cflags
-            + " {}".format(float_precision)
-            + " -o "
-            + object_dir
-            + object_name
-        )
+        # object complete path
+        object_path = object_dir + object_name
 
-        print("Compilation command:", cmd)
+        # check if object_file already exists
+        if os.path.exists(object_path):
+            print("Shared object already compiled in:", object_path)
+        else:
+            cmd = (
+                self.cc
+                + " "
+                + program_path
+                + " "
+                + self.cflags
+                + " {}".format(float_precision)
+                + language_c
+                + " -o "
+                + object_path
+            )
 
-        # create a dir to save the compiled shared object
-        os.makedirs(object_dir, exist_ok=True)
+            print("Compilation command:", cmd)
 
-        # execute the command
-        if os.system(cmd) != 0:
-            raise Exception("Compilation failed")
+            # create a dir to save the compiled shared object
+            os.makedirs(object_dir, exist_ok=True)
 
-        return object_dir + object_name
+            # execute the command
+            if os.system(cmd) != 0:
+                raise Exception("Compilation failed")
+
+        return object_path
