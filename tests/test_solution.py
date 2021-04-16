@@ -1,5 +1,5 @@
 from simwave import SpaceModel, TimeModel, RickerWavelet, Solver
-from simwave import Receiver, Source
+from simwave import Receiver, Source, Compiler
 import numpy as np
 import pytest
 import os
@@ -8,9 +8,20 @@ import os
 class TestSolution:
 
     @pytest.mark.parametrize(
-        'dimension, space_order', [(2, 2), (2, 8), (3, 2), (3, 8)]
+        'dimension, space_order, language', [
+            (2, 2, 'c'),
+            (2, 8, 'c'),
+            (3, 2, 'c'),
+            (3, 8, 'c'),
+            (2, 2, 'cpu_openmp'),
+            (2, 8, 'cpu_openmp'),
+            (3, 2, 'cpu_openmp'),
+            (3, 8, 'cpu_openmp')
+        ]
     )
-    def test_solution(self, dimension, space_order):
+    def test_solution(self, dimension, space_order, language):
+
+        compiler = Compiler(language=language)
 
         if dimension == 2:
             shape = (500,)*dimension
@@ -95,7 +106,8 @@ class TestSolution:
             sources=source,
             receivers=receiver,
             wavelet=ricker,
-            saving_stride=0
+            saving_stride=0,
+            compiler=compiler
         )
 
         # run the forward

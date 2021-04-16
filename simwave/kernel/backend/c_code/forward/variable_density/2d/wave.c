@@ -36,6 +36,9 @@ double forward(f_type *grid, f_type *velocity, f_type *density, f_type *damp,
     f_type *next_snapshot = malloc(nz * nx * sizeof(f_type));
 
     // initialize aux matrix
+    #ifdef CPU_OPENMP
+    #pragma omp parallel for simd
+    #endif
     for(size_t i = 0; i < nz; i++){
 
         size_t offset = i * nx;
@@ -149,6 +152,9 @@ double forward(f_type *grid, f_type *velocity, f_type *density, f_type *damp,
         size_t x_after = boundary_conditions[3];
 
         // boundary conditions on the left and right (fixed in X)
+        #ifdef CPU_OPENMP
+        #pragma omp parallel for simd private(current)
+        #endif
         for(size_t i = stencil_radius; i < nz - stencil_radius; i++){
 
             // null dirichlet on the left
@@ -182,6 +188,9 @@ double forward(f_type *grid, f_type *velocity, f_type *density, f_type *damp,
         }
 
         // boundary conditions on the top and bottom (fixed in Z)
+        #ifdef CPU_OPENMP
+        #pragma omp parallel for simd private(current)
+        #endif
         for(size_t j = stencil_radius; j < nx - stencil_radius; j++){
 
             // null dirichlet on the top
@@ -277,6 +286,10 @@ double forward(f_type *grid, f_type *velocity, f_type *density, f_type *damp,
             Section 5: save the wavefields
         */
         if( (saving_stride && (n % saving_stride) == 0) || (n == end_timestep - 1) ){
+
+            #ifdef CPU_OPENMP
+            #pragma omp parallel for simd
+            #endif
 
             for(size_t i = 0; i < nz; i++){
                 size_t offset_local = i * nx;

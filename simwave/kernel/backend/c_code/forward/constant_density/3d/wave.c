@@ -39,6 +39,9 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
     f_type *next_snapshot = malloc(nsize * sizeof(f_type));
 
     // initialize aux matrix
+    #ifdef CPU_OPENMP
+    #pragma omp parallel for simd
+    #endif
     for(size_t i = 0; i < nz; i++){
         for(size_t j = 0; j < nx; j++){
 
@@ -181,6 +184,9 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
         size_t y_after = boundary_conditions[5];
 
         // boundary conditions on the left and right (fixed on Y)
+        #ifdef CPU_OPENMP
+        #pragma omp parallel for simd private(current)
+        #endif
         for(size_t i = stencil_radius; i < nz - stencil_radius; i++){
             for(size_t j = stencil_radius; j < nx - stencil_radius; j++){
 
@@ -216,6 +222,9 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
         }
 
         // boundary conditions on the front and back (fixed on X)
+        #ifdef CPU_OPENMP
+        #pragma omp parallel for simd private(current)
+        #endif
         for(size_t i = stencil_radius; i < nz - stencil_radius; i++){
             for(size_t k = stencil_radius; k < ny - stencil_radius; k++){
 
@@ -251,6 +260,9 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
         }
 
         // boundary conditions on the bottom and top (fixed on Z)
+        #ifdef CPU_OPENMP
+        #pragma omp parallel for simd private(current)
+        #endif
         for(size_t j = stencil_radius; j < nx - stencil_radius; j++){
             for(size_t k = stencil_radius; k < ny - stencil_radius; k++){
 
@@ -360,6 +372,10 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
             Section 5: save the wavefields
         */
         if( (saving_stride && (n % saving_stride) == 0) || (n == end_timestep - 1) ){
+
+            #ifdef CPU_OPENMP
+            #pragma omp parallel for simd
+            #endif
 
             for(size_t i = 0; i < nz; i++){
                 for(size_t j = 0; j < nx; j++){
