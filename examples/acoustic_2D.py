@@ -1,5 +1,7 @@
-from simwave import SpaceModel, TimeModel, RickerWavelet, Solver, Compiler
-from simwave import Receiver, Source, plot_wavefield, plot_shotrecord
+from simwave import (
+    SpaceModel, TimeModel, RickerWavelet, Solver, Compiler,
+    Receiver, Source, plot_wavefield, plot_shotrecord, plot_velocity_model
+)
 import numpy as np
 
 
@@ -75,5 +77,6 @@ solver = Solver(
 u_full, recv = solver.forward()
 
 print("u_full shape:", u_full.shape)
+plot_velocity_model(space_model.velocity_model)
 plot_wavefield(u_full[-1])
 plot_shotrecord(recv)

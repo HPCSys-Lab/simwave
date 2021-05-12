@@ -49,48 +49,65 @@ Simulation with `simwave` is simple and can be accomplished in a dozen or so lin
 
 Here we show how to simulate the constant density acoustic wave equation on a simple two layer velocity model.
 ```python
-from simwave import *
+from simwave import (
+    SpaceModel, TimeModel, RickerWavelet, Solver, Compiler,
+    Receiver, Source, plot_wavefield, plot_shotrecord, plot_velocity_model
+)
 import numpy as np
 
+
+# set compiler options
+# available language options: c (sequential) or  cpu_openmp (parallel CPU)
+compiler = Compiler(
+    cc='gcc',
+    language='cpu_openmp',
+    cflags='-O3 -fPIC -Wall -std=c99 -shared'
+)
+
 # Velocity model
-vel = np.zeros(shape=(512,512), dtype=np.float32)
+vel = np.zeros(shape=(512, 512), dtype=np.float32)
 vel[:] = 1500.0
 vel[100:] = 2000.0
 
 # create the space model
 space_model = SpaceModel(
     bounding_box=(0, 5120, 0, 5120),
-    grid_spacing=(10., 10.),
+    grid_spacing=(10, 10),
     velocity_model=vel,
-    space_order=2
+    space_order=4,
+    dtype=np.float32
 )
 
 # config boundary conditions
-# (null,  null_dirichlet or null_neumann)
+# (none,  null_dirichlet or null_neumann)
 space_model.config_boundary(
-    damping_length=0.0,
-    boundary_condition=("null_neumann", "null_dirichlet", "none", "null_dirichlet"),
-    damping_polynomial_degree=1,
+    damping_length=0,
+    boundary_condition=(
+        "null_neumann", "null_dirichlet",
+        "none", "null_dirichlet"
+    ),
+    damping_polynomial_degree=3,
     damping_alpha=0.001
 )
 
 # create the time model
 time_model = TimeModel(
     space_model=space_model,
-    t0=0.0,
     tf=1.0
 )
 
 # create the set of sources
-source = Source(space_model, coordinates=[], window_radius=4)
-source.add((10,2560))
-source.add((2560,2560))
+source = Source(
+    space_model,
+    coordinates=[(2560, 2560)],
+    window_radius=1
+)
 
 # crete the set of receivers
 receiver = Receiver(
     space_model=space_model,
-    coordinates=[(2560,i) for i in range(0,5112,10)],
-    window_radius=4
+    coordinates=[(2560, i) for i in range(0, 5112, 10)],
+    window_radius=1
 )
 
 # create a ricker wavelet with 10hz of peak frequency
@@ -104,13 +121,14 @@ solver = Solver(
     receivers=receiver,
     wavelet=ricker,
     saving_stride=0,
-    compiler=None
+    compiler=compiler
 )
 
 # run the forward
 u_full, recv = solver.forward()
 
 print("u_full shape:", u_full.shape)
+plot_velocity_model(space_model.velocity_model)
 plot_wavefield(u_full[-1])
 plot_shotrecord(recv)
 ```
