@@ -23,7 +23,7 @@ compiler = Compiler(
 # create the space model
 space_model = SpaceModel(
     bounding_box=(0, 3500, 0, 17000),
-    grid_spacing=(5, 5),
+    grid_spacing=(10, 10),
     velocity_model=marmousi_model,
     space_order=4,
     dtype=np.float64
@@ -35,7 +35,7 @@ space_model.config_boundary(
     damping_length=0,
     boundary_condition=(
         "null_neumann", "null_dirichlet",
-        "none", "null_dirichlet"
+        "null_dirichlet", "null_dirichlet"
     ),
     damping_polynomial_degree=3,
     damping_alpha=0.001
@@ -57,7 +57,7 @@ source = Source(
 # crete the set of receivers
 receiver = Receiver(
     space_model=space_model,
-    coordinates=[(50, i) for i in range(0, 17000, 5)],
+    coordinates=[(50, i) for i in range(0, 17000, 10)],
     window_radius=1
 )
 
