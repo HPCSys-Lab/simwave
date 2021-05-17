@@ -10,7 +10,9 @@ import numpy as np
 compiler = Compiler(
     cc='gcc',
     language='cpu_openmp',
-    cflags='-O3 -fPIC -Wall -std=c99 -shared'
+    cflags='-O3 -fPIC -ffast-math -Wall -std=c99 -shared'
+    # cflags='-O3 -fPIC -ffast-math -fopenmp \
+    #       -fopenmp-targets=nvptx64-nvidia-cuda -Xopenmp-target -march=sm_75'
 )
 
 # Velocity model
@@ -55,7 +57,7 @@ source = Source(
 # crete the set of receivers
 receiver = Receiver(
     space_model=space_model,
-    coordinates=[(2560, i) for i in range(0, 5112, 10)],
+    coordinates=[(2560, i) for i in range(0, 5120, 10)],
     window_radius=1
 )
 

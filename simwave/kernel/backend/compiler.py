@@ -14,7 +14,8 @@ class Compiler:
         Define the code implementation language like: c (sequential),
         cpu_openmp (parallel CPU). Default is c.
     cflags : str, optional
-        C compiler flags. Default is '-O3 -fPIC -Wall -std=c99 -shared'.
+        C compiler flags.
+        Default is '-O3 -fPIC -Wall -std=c99 -shared'.
     """
     def __init__(self, cc='gcc', language='c', cflags=None):
         self.cc = cc
@@ -50,7 +51,7 @@ class Compiler:
             value += ' -shared'
 
         # add OpenMP flag if it is not provided and version is cpu_openmp
-        if self.language == 'cpu_openmp':
+        if self.language in ('cpu_openmp', 'gpu_openmp'):
             omp_flag = self.get_openmp_flag()
 
             if omp_flag is None:
@@ -70,7 +71,7 @@ class Compiler:
         if not isinstance(value, str):
             raise TypeError("Compiler.language attribute must be str.")
 
-        options = ['c', 'cpu_openmp']
+        options = ['c', 'cpu_openmp', 'gpu_openmp']
 
         if value not in options:
             raise ValueError(
@@ -147,6 +148,8 @@ class Compiler:
         # define the language
         if self.language == 'cpu_openmp':
             language_c = ' -DCPU_OPENMP'
+        elif self.language == 'gpu_openmp':
+            language_c = ' -DGPU_OPENMP'
         elif self.language == 'c':
             language_c = ''
 

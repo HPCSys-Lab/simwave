@@ -5,27 +5,27 @@ import pytest
 import os
 
 
-class TestSolution:
+@pytest.mark.gpu
+class TestSolutionGPU:
 
     @pytest.mark.parametrize(
         'dimension, space_order, language, density', [
-            (2, 2, 'c', False),
-            (2, 8, 'c', False),
-            (3, 2, 'c', False),
-            (3, 8, 'c', False),
-            (2, 2, 'c', True),
-            (3, 2, 'c', True),
-            (2, 2, 'cpu_openmp', False),
-            (2, 8, 'cpu_openmp', False),
-            (3, 2, 'cpu_openmp', False),
-            (3, 8, 'cpu_openmp', False),
-            (2, 2, 'cpu_openmp', True),
-            (3, 2, 'cpu_openmp', True),
+            (2, 2, 'gpu_openmp', False),
+            (2, 2, 'gpu_openmp', True),
+            (2, 8, 'gpu_openmp', False),
+            (3, 2, 'gpu_openmp', False),
+            (3, 2, 'gpu_openmp', True),
+            (3, 8, 'gpu_openmp', False)
         ]
     )
     def test_solution(self, dimension, space_order, language, density):
 
-        compiler = Compiler(language=language)
+        compiler = Compiler(
+            cc='clang',
+            language=language,
+            cflags='-O3 -fPIC -ffast-math -fopenmp \
+            -fopenmp-targets=nvptx64-nvidia-cuda -Xopenmp-target -march=sm_75'
+        )
 
         if dimension == 2:
             shape = (500,)*dimension
@@ -134,7 +134,4 @@ class TestSolution:
         # load the reference result
         u_ref = np.load(ref_file)
 
-        if density:
-            assert np.allclose(u, u_ref, atol=1e-04)
-        else:
-            assert np.allclose(u, u_ref, atol=1e-05)
+        assert np.allclose(u, u_ref, atol=1e-04)

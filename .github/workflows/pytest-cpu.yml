@@ -41,4 +41,4 @@ jobs:
 
     - name: Test with pytest
       run: |
-        pytest --codeblocks
+        pytest --codeblocks -m "not gpu"
