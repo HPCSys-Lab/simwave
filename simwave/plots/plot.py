@@ -6,13 +6,19 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 def plot_wavefield(wavefield, file_name="wavefield", colorbar=True,
-                   cmap="gray", show=False, clim=[-5, 5],):
+                   cmap="gray", extent=None, show=False, clim=[-5, 5],):
 
     # create the destination dir
     os.makedirs("plots", exist_ok=True)
 
     # process data and generate the plot
-    plot = plt.imshow(wavefield, cmap=cmap)
+    plot = plt.imshow(wavefield, cmap=cmap, extent=extent)
+
+    m_unit = 'm' if extent is not None else 'points'
+
+    # labels
+    plt.xlabel('Width ({})'.format(m_unit))
+    plt.ylabel('Depth ({})'.format(m_unit))
 
     # Create aligned colorbar on the right
     if colorbar:
@@ -43,8 +49,8 @@ def plot_shotrecord(rec, file_name="shotrecord", colorbar=True, show=False):
     """
     scale = np.max(rec) / 10.0
     plot = plt.imshow(rec, vmin=-scale, vmax=scale, cmap=cm.gray)
-    plt.xlabel("X position")
-    plt.ylabel("Time")
+    plt.xlabel("Receivers")
+    plt.ylabel("Time (ms)")
 
     # Create colorbar on the right
     if colorbar:
@@ -65,14 +71,20 @@ def plot_shotrecord(rec, file_name="shotrecord", colorbar=True, show=False):
     print("Shot record saved in plots/{}.png".format(file_name))
 
 
-def plot_velocity_model(model, file_name="velocity_model",
-                        colorbar=True, cmap="jet", show=False):
+def plot_velocity_model(model, file_name="velocity_model", colorbar=True,
+                        extent=None, cmap="jet", show=False):
 
     # create the destination dir
     os.makedirs("plots", exist_ok=True)
 
     # process data and generate the plot
-    plot = plt.imshow(model, cmap=cmap)
+    plot = plt.imshow(model, cmap=cmap, extent=extent)
+
+    m_unit = 'm' if extent is not None else 'points'
+
+    # labels
+    plt.xlabel('Width ({})'.format(m_unit))
+    plt.ylabel('Depth ({})'.format(m_unit))
 
     # Create aligned colorbar on the right
     if colorbar:

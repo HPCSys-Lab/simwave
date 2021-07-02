@@ -494,6 +494,29 @@ class SpaceModel:
         else:
             raise Exception("Wavefield dimension not supported.")
 
+    def remove_nbl(self, u):
+        """
+        Remove the damping region (nbl) outside some wavefield u.
+
+        Parameters
+        ----------
+        u : ndarray
+            Full wavefield (with snapshots)
+
+        Returns
+        ----------
+        ndarray
+            Full wavefield without nbl extension.
+        """
+        nbl = self.nbl
+
+        if self.dimension == 2:
+            return u[:, nbl[0]:-nbl[1], nbl[2]:-nbl[3]]
+        elif self.dimension == 3:
+            return u[:, nbl[0]:-nbl[1], nbl[2]:-nbl[3], nbl[4]:-nbl[5]]
+        else:
+            raise Exception("Wavefield dimension not supported.")
+        
 
 class TimeModel:
     """
