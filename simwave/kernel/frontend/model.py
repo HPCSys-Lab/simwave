@@ -516,7 +516,7 @@ class SpaceModel:
             return u[:, nbl[0]:-nbl[1], nbl[2]:-nbl[3], nbl[4]:-nbl[5]]
         else:
             raise Exception("Wavefield dimension not supported.")
-        
+
 
 class TimeModel:
     """
