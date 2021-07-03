@@ -38,8 +38,8 @@ class SpaceModel:
 
         self._space_order = space_order
 
-        # space_order are limited to even number
-        if space_order % 2 != 0 or space_order < 2:
+        # space_order are limited to even number and limited up to 20
+        if space_order % 2 != 0 or space_order < 2 or space_order > 20:
             raise ValueError(
                 "Space order {} not supported".format(space_order)
             )
