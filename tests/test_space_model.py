@@ -153,7 +153,7 @@ class TestSpaceModel:
         )
 
         assert np.allclose(
-                   space_model.fd_coefficients,
+                   space_model.fd_coefficients(2),
                    np.asarray(coeffs, dtype=space_model.dtype)
                )
 

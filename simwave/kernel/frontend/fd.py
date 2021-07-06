@@ -2,10 +2,10 @@ import numpy as np
 import findiff
 
 
-def half_coefficients(space_order):
+def half_coefficients(derivative_order, space_order):
     """
     Return a list of right side finite differences coefficients
-    according to the space order.
+    according to the space order and derivative order.
 
     Parameters
     ----------
@@ -18,7 +18,7 @@ def half_coefficients(space_order):
         List of FD coefficients.
     """
     # all coefficients
-    coeffs = coefficients(space_order)
+    coeffs = coefficients(derivative_order, space_order)
 
     middle = len(coeffs) // 2
 
@@ -28,13 +28,15 @@ def half_coefficients(space_order):
     return coeffs
 
 
-def coefficients(space_order):
+def coefficients(derivative_order, space_order):
     """
     Return a list of finite differences coefficients according
-    to the space order.
+    to the space order and derivative order.
 
     Parameters
     ----------
+    derivative_order : int
+        Derivative order
     space_order : int
         Spatial order.
 
@@ -45,7 +47,7 @@ def coefficients(space_order):
     """
 
     # fixed second derivative
-    coeffs = findiff.coefficients(deriv=2, acc=space_order)
+    coeffs = findiff.coefficients(deriv=derivative_order, acc=space_order)
 
     return coeffs['center']['coefficients']
 
@@ -77,7 +79,10 @@ def calculate_dt(dimension, space_order, grid_spacing, velocity_model):
     a1 = 4
 
     # FD coeffs to the specific space order
-    fd_coeffs = coefficients(space_order)
+    fd_coeffs = coefficients(
+        derivative_order=2,
+        space_order=space_order
+    )
 
     a2 = dimension * np.sum(np.abs(fd_coeffs))
 

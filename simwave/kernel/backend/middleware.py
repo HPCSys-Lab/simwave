@@ -74,8 +74,10 @@ class Middleware:
         kwargs.update({'boundary_condition': bc})
 
         # if density model is None, remove it
+        # and remove first_order_fd_coefficients
         if kwargs.get('density_model') is None:
             kwargs.pop('density_model')
+            kwargs.pop('first_order_fd_coefficients')
 
         # get the grid shape
         grid_shape = kwargs.get('velocity_model').shape
@@ -168,7 +170,8 @@ class Middleware:
             'damping_mask',
             'wavelet',
             'wavelet_size',
-            'fd_coefficients',
+            'second_order_fd_coefficients',
+            'first_order_fd_coefficients',
             'boundary_condition',
             'src_points_interval',
             'src_points_interval_size',
