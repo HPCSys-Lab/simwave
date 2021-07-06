@@ -15,7 +15,7 @@
 // forward_3D_variable_density
 double forward(f_type *grid, f_type *velocity, f_type *density, f_type *damp,
                f_type *wavelet, size_t wavelet_size,
-               f_type *coeff, size_t *boundary_conditions,
+               f_type *coeff_order2, f_type *coeff_order1, size_t *boundary_conditions,
                size_t *src_points_interval, size_t src_points_interval_size,
                f_type *src_points_values, size_t src_points_values_size,
                size_t *rec_points_interval, size_t rec_points_interval_size,
@@ -101,28 +101,56 @@ double forward(f_type *grid, f_type *velocity, f_type *density, f_type *damp,
                     // index of the current point in the grid
                     size_t current = (i * nx + j) * ny + k;
 
-                    //neighbors in the Y direction
-                    f_type y1 = ((prev_snapshot[current + 1] - prev_snapshot[current]) * (density[current + 1] + density[current])) / density[current + 1];
-                    f_type y2 = ((prev_snapshot[current] - prev_snapshot[current - 1]) * (density[current] + density[current - 1])) / density[current - 1];
-                    f_type term_y = (y1 - y2) / (2 * dySquared);
+                    // stencil code to update grid
+                    f_type value = 0.0;
 
-                    //neighbors in the X direction
-                    f_type x1 = ((prev_snapshot[current + ny] - prev_snapshot[current]) * (density[current + ny] + density[current])) / density[current + ny];
-                    f_type x2 = ((prev_snapshot[current] - prev_snapshot[current - ny]) * (density[current] + density[current - ny])) / density[current - ny];
-                    f_type term_x = (x1 - x2) / (2 * dxSquared);
+                    // second derivative for pressure
+                    f_type sd_pressure_y = coeff_order2[0] * prev_snapshot[current];
+                    f_type sd_pressure_x = coeff_order2[0] * prev_snapshot[current];
+                    f_type sd_pressure_z = coeff_order2[0] * prev_snapshot[current];
 
-                    //neighbors in the Z direction
-                    f_type z1 = ((prev_snapshot[current + (nx * ny)] - prev_snapshot[current]) * (density[current + (nx * ny)] + density[current])) / density[current + (nx * ny)];
-                    f_type z2 = ((prev_snapshot[current] - prev_snapshot[current - (nx * ny)]) * (density[current] + density[current - (nx * ny)])) / density[current - (nx * ny)];
-                    f_type term_z = (z1 - z2) / (2 * dzSquared);
+                    // first derivative for pressure
+                    f_type fd_pressure_y = 0.0;
+                    f_type fd_pressure_x = 0.0;
+                    f_type fd_pressure_z = 0.0;
 
-                    //nominator with damp coefficient
+                    // first derivative for density
+                    f_type fd_density_y = 0.0;
+                    f_type fd_density_x = 0.0;
+                    f_type fd_density_z = 0.0;
+
+                    // radius of the stencil
+                    for(int ir = 1; ir <= stencil_radius; ir++){
+                        //neighbors in the Y direction
+                        sd_pressure_y += coeff_order2[ir] * (prev_snapshot[current + ir] + prev_snapshot[current - ir]);
+                        fd_pressure_y += coeff_order1[ir] * (prev_snapshot[current + ir] - prev_snapshot[current - ir]);
+                        fd_density_y += coeff_order1[ir] * (density[current + ir] - density[current - ir]);
+
+                        //neighbors in the X direction
+                        sd_pressure_x += coeff_order2[ir] * (prev_snapshot[current + (ir * ny)] + prev_snapshot[current - (ir * ny)]);
+                        fd_pressure_x += coeff_order1[ir] * (prev_snapshot[current + (ir * nx)] - prev_snapshot[current - (ir * nx)]);
+                        fd_density_x += coeff_order1[ir] * (density[current + (ir * nx)] - density[current - (ir * nx)]);
+
+                        //neighbors in the Z direction
+                        sd_pressure_z += coeff_order2[ir] * (prev_snapshot[current + (ir * nx * ny)] + prev_snapshot[current - (ir * nx * ny)]);
+                        fd_pressure_z += coeff_order1[ir] * (prev_snapshot[current + (ir * nx * ny)] - prev_snapshot[current - (ir * nx * ny)]);
+                        fd_density_z += coeff_order1[ir] * (density[current + (ir * nx * ny)] - density[current - (ir * nx * ny)]);
+                    }
+
+                    value += sd_pressure_y/dySquared + sd_pressure_x/dxSquared + sd_pressure_z/dzSquared;
+
+                    f_type term_y = (fd_pressure_y * fd_density_y) / (2 * dySquared);
+                    f_type term_x = (fd_pressure_x * fd_density_x) / (2 * dxSquared);
+                    f_type term_z = (fd_pressure_z * fd_density_z) / (2 * dzSquared);
+
+                    value -= (term_y + term_x + term_z) / density[current];
+
+                    //denominator with damp coefficient
                     f_type denominator = (1.0 + damp[current] * dt);
 
-                    f_type value = dtSquared * velocity[current] * velocity[current] * (term_z + term_x + term_y) / denominator;
+                    value *= (dtSquared * velocity[current] * velocity[current]) / denominator;
 
                     next_snapshot[current] = 2.0 / denominator * prev_snapshot[current] - ((1.0 - damp[current] * dt) / denominator) * next_snapshot[current] + value;
-
                 }
             }
         }
