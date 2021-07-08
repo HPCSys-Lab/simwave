@@ -62,14 +62,6 @@ class SpaceModel:
         else:
             self._density_model = density_model
 
-        # calculate dt according to cfl
-        self._dt = fd.calculate_dt(
-            dimension=self.dimension,
-            space_order=self.space_order,
-            grid_spacing=self.grid_spacing,
-            velocity_model=self.velocity_model
-        )
-
     @property
     def bounding_box(self):
         return self._bounding_box
@@ -95,22 +87,8 @@ class SpaceModel:
         return self._dimension
 
     @property
-    def dt(self):
-        return self.dtype(self._dt)
-
-    @property
     def dtype(self):
         return self._dtype
-
-    @dt.setter
-    def dt(self, value):
-        """Set time step in seconds"""
-        if value < 0:
-            raise ValueError("Time step cannot be negative.")
-        elif value > self.dt:
-            raise ValueError("Time step value violates CFL condition.")
-        else:
-            self._dt = value
 
     @property
     def shape(self):
@@ -555,6 +533,14 @@ class TimeModel:
         self._tf = self.space_model.dtype(tf)
         self._t0 = self.space_model.dtype(t0)
 
+        # calculate dt according to cfl
+        self._dt = fd.calculate_dt(
+            dimension=self.space_model.dimension,
+            space_order=self.space_model.space_order,
+            grid_spacing=self.space_model.grid_spacing,
+            velocity_model=self.space_model.velocity_model
+        )
+
     @property
     def space_model(self):
         """Corresponding space model."""
@@ -572,8 +558,17 @@ class TimeModel:
 
     @property
     def dt(self):
-        """Time variation in seconds."""
-        return self.space_model.dt
+        return self.space_model.dtype(self._dt)
+
+    @dt.setter
+    def dt(self, value):
+        """Set time step in seconds"""
+        if value < 0:
+            raise ValueError("Time step cannot be negative.")
+        elif value > self.dt:
+            raise ValueError("Time step value violates CFL condition.")
+        else:
+            self._dt = value
 
     @property
     def timesteps(self):

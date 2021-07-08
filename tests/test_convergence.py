@@ -6,14 +6,13 @@ import simwave
 import pytest
 
 
-def _create_space_model(bbox, spacing, vel, order, dt):
+def _create_space_model(bbox, spacing, vel, order):
     space_model = simwave.SpaceModel(
         bounding_box=bbox,
         grid_spacing=spacing,
         velocity_model=vel * np.ones((100, 100), dtype=np.float64),
         space_order=order
     )
-    space_model.dt = dt
     return space_model
 
 
@@ -25,8 +24,9 @@ def _acquisition(space_model, time_model, source, receiver, freq):
     return source, receiver, ricker
 
 
-def analytical_solution(space_model, freq, src, recs):
+def analytical_solution(space_model, freq, src, recs, dt):
     time_model = simwave.TimeModel(space_model=space_model, t0=0, tf=3000)
+    time_model.dt = dt
     ricker = simwave.RickerWavelet(freq, time_model)
     # Ricker's FFT
     nf = int(time_model.timesteps / 2 + 1)
@@ -50,9 +50,10 @@ def analytical_solution(space_model, freq, src, recs):
 
 
 def accuracy(spacing, bbox, order, dt, t0, tf, c, f0, src, rec):
-    space_model = _create_space_model(bbox, spacing, c, order, dt)
+    space_model = _create_space_model(bbox, spacing, c, order)
 
     time_model = simwave.TimeModel(space_model=space_model, t0=t0, tf=tf)
+    time_model.dt = dt
 
     source, receiver, wavelet = _acquisition(
         space_model, time_model, src, rec, f0
@@ -66,7 +67,7 @@ def accuracy(spacing, bbox, order, dt, t0, tf, c, f0, src, rec):
 
     # analytical solution
     u_exact = analytical_solution(
-                 space_model, f0, src[0], rec
+                 space_model, f0, src[0], rec, dt
               ).flatten()[:time_model.timesteps]
 
     # compare solutions

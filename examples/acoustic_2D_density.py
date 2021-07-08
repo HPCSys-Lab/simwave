@@ -9,7 +9,7 @@ import numpy as np
 # available language options: c (sequential) or  cpu_openmp (parallel CPU)
 compiler = Compiler(
     cc='gcc',
-    language='cpu_openmp',
+    language='c',
     cflags='-O3 -fPIC -ffast-math -Wall -std=c99 -shared'
 )
 

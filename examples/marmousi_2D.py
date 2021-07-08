@@ -17,7 +17,7 @@ marmousi_model = read_2D_segy('MODEL_P-WAVE_VELOCITY_1.25m.segy')
 
 compiler = Compiler(
     cc='gcc',
-    language='cpu_openmp',
+    language='c',
     cflags='-O3 -fPIC -ffast-math -Wall -std=c99 -shared'
 )
 

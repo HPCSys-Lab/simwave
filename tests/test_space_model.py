@@ -22,15 +22,12 @@ class TestSpaceModel:
             dtype=np.float32
         )
 
-        space_model.dt = 0.001
-
         assert space_model.bounding_box == bbox
         assert space_model.grid_spacing == spacing
         assert np.array_equal(space_model.velocity_model, vel)
         assert np.array_equal(space_model.density_model, den)
         assert space_model.space_order == 4
         assert space_model.dimension == dimension
-        assert space_model.dt == space_model.dtype(0.001)
         assert space_model.dtype == np.float32
         assert space_model.damping_length == (0.0,) * dimension * 2
         assert space_model.boundary_condition == ('none',) * dimension * 2

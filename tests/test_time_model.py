@@ -16,15 +16,12 @@ class TestTimeModel:
         )
 
         time_model = TimeModel(space_model=space_model, tf=1.0, t0=0.0)
+        time_model.dt = 0.001
 
         assert time_model.space_model == space_model
         assert time_model.tf == 1.0
         assert time_model.t0 == 0.0
-        assert time_model.dt == space_model.dt
-
-        space_model.dt = 0.001
-
-        assert time_model.dt == space_model.dt
+        assert time_model.dt == space_model.dtype(0.001)
 
     @pytest.mark.parametrize(
         'dt, tf, t0, timesteps', [
@@ -42,8 +39,8 @@ class TestTimeModel:
             grid_spacing=(10, 10),
             velocity_model=vel,
         )
-        space_model.dt = dt
 
         time_model = TimeModel(space_model=space_model, tf=tf, t0=t0)
+        time_model.dt = dt
 
         assert time_model.timesteps == timesteps
