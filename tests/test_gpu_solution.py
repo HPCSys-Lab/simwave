@@ -105,13 +105,15 @@ class TestSolutionGPU:
         # create the set of sources
         source = Source(
             space_model=space_model,
-            coordinates=source_position
+            coordinates=source_position,
+            window_radius=1
         )
 
         # crete the set of receivers
         receiver = Receiver(
             space_model=space_model,
-            coordinates=source_position
+            coordinates=source_position,
+            window_radius=1
         )
 
         # create a ricker wavelet with 10hz of peak frequency
