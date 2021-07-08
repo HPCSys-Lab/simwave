@@ -13,9 +13,9 @@ class Source:
     coordinates : list of tuple, list of list or ndarray
         Physical coordinates (in meters) for this source.
     window_radius : int, optional
-        Window half-width of the kaiser windowing function. Default is 1.
+        Window half-width of the kaiser windowing function. Default is 4.
     """
-    def __init__(self, space_model, coordinates, window_radius=1):
+    def __init__(self, space_model, coordinates, window_radius=4):
 
         self._space_model = space_model
         self._window_radius = window_radius
