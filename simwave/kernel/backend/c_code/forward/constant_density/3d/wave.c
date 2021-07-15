@@ -18,8 +18,10 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
                f_type *coeff, size_t *boundary_conditions,
                size_t *src_points_interval, size_t src_points_interval_size,
                f_type *src_points_values, size_t src_points_values_size,
+               size_t *src_points_values_offset,
                size_t *rec_points_interval, size_t rec_points_interval_size,
                f_type *rec_points_values, size_t rec_points_values_size,
+               size_t *rec_points_values_offset,
                f_type *receivers, size_t num_sources, size_t num_receivers,
                size_t nz, size_t nx, size_t ny, f_type dz, f_type dx, f_type dy,
                size_t saving_stride, f_type dt,
@@ -73,8 +75,10 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
     #pragma omp target enter data map(to: coeff[:stencil_radius+1])
     #pragma omp target enter data map(to: src_points_interval[:src_points_interval_size])
     #pragma omp target enter data map(to: src_points_values[:src_points_values_size])
+    #pragma omp target enter data map(to: src_points_values_offset[:num_sources])
     #pragma omp target enter data map(to: rec_points_interval[:rec_points_interval_size])
     #pragma omp target enter data map(to: rec_points_values[:rec_points_values_size])
+    #pragma omp target enter data map(to: rec_points_values_offset[:num_receivers])
     #pragma omp target enter data map(to: wavelet[:wavelet_size])
     #pragma omp target enter data map(to: receivers[:shot_record_size])
     #endif
@@ -135,9 +139,6 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
             Section 2: add the source term
         */
 
-        // pointer to src value offset
-        size_t offset_src_kws_index_z = 0;
-
         #ifdef CPU_OPENMP
         #pragma omp parallel for
         #endif
@@ -167,7 +168,10 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
             // number of grid points of the source in each axis
             size_t src_z_num_points = src_z_end - src_z_begin + 1;
             size_t src_x_num_points = src_x_end - src_x_begin + 1;
-            size_t src_y_num_points = src_y_end - src_y_begin + 1;
+            //size_t src_y_num_points = src_y_end - src_y_begin + 1;
+
+            // pointer to src value offset
+            size_t offset_src_kws_index_z = src_points_values_offset[src];
 
             // index of the Kaiser windowed sinc value of the source point
             size_t kws_index_z = offset_src_kws_index_z;
@@ -200,8 +204,6 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
                 }
                 kws_index_z++;
             }
-
-            offset_src_kws_index_z += (src_z_num_points + src_x_num_points + src_y_num_points);
         }
 
         /*
@@ -347,9 +349,6 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
             Section 4: compute the receivers
         */
 
-        // pointer to rec value offset
-        size_t offset_rec_kws_index_z = 0;
-
         #ifdef CPU_OPENMP
         #pragma omp parallel for simd
         #endif
@@ -381,7 +380,10 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
             // number of grid points of the receiver in each axis
             size_t rec_z_num_points = rec_z_end - rec_z_begin + 1;
             size_t rec_x_num_points = rec_x_end - rec_x_begin + 1;
-            size_t rec_y_num_points = rec_y_end - rec_y_begin + 1;
+            //size_t rec_y_num_points = rec_y_end - rec_y_begin + 1;
+
+            // pointer to rec value offset
+            size_t offset_rec_kws_index_z = rec_points_values_offset[rec];
 
             // index of the Kaiser windowed sinc value of the receiver point
             size_t kws_index_z = offset_rec_kws_index_z;
@@ -413,8 +415,6 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
 
             size_t current_rec_n = n * num_receivers + rec;
             receivers[current_rec_n] = sum;
-
-            offset_rec_kws_index_z += (rec_z_num_points + rec_x_num_points + rec_y_num_points);
         }
 
         //swap arrays for next iteration
@@ -462,8 +462,10 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
     #pragma omp target exit data map(delete: coeff[:stencil_radius+1])
     #pragma omp target exit data map(delete: src_points_interval[:src_points_interval_size])
     #pragma omp target exit data map(delete: src_points_values[:src_points_values_size])
+    #pragma omp target exit data map(delete: src_points_values_offset[:num_sources])
     #pragma omp target exit data map(delete: rec_points_interval[:rec_points_interval_size])
     #pragma omp target exit data map(delete: rec_points_values[:rec_points_values_size])
+    #pragma omp target exit data map(delete: rec_points_values_offset[:num_receivers])
     #pragma omp target exit data map(delete: wavelet[:wavelet_size])
     #pragma omp target exit data map(delete: receivers[:shot_record_size])
     #endif

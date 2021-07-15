@@ -9,7 +9,7 @@ import numpy as np
 # available language options: c (sequential) or  cpu_openmp (parallel CPU)
 compiler = Compiler(
     cc='gcc',
-    language='c',
+    language='cpu_openmp',
     cflags='-O3 -fPIC -ffast-math -Wall -std=c99 -shared'
     # cflags='-O3 -fPIC -ffast-math -fopenmp \
     #       -fopenmp-targets=nvptx64-nvidia-cuda -Xopenmp-target -march=sm_75'

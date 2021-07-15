@@ -137,6 +137,7 @@ class Source:
 
         points = np.array([], dtype=np.uint)
         values = np.array([], dtype=self.space_model.dtype)
+        offsets = [0]
 
         for position in self.adjusted_grid_positions:
             # apply kasier window to interpolate the source/receiver
@@ -146,10 +147,14 @@ class Source:
                 source_location=position,
                 half_width=self.window_radius
             )
+
+            # values offset for each position
+            offsets.append(offsets[-1] + v.size)
+
             points = np.append(points, p)
             values = np.append(values, v)
 
-        return points, values
+        return points, values, np.asarray(offsets, dtype=np.uint)
 
     @property
     def count(self):

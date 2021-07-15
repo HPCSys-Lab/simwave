@@ -9,7 +9,7 @@ import numpy as np
 # available language options: c (sequential) or  cpu_openmp (parallel CPU)
 compiler = Compiler(
     cc='gcc',
-    language='c',
+    language='cpu_openmp',
     cflags='-O3 -fPIC -ffast-math -Wall -std=c99 -shared'
 )
 
@@ -54,14 +54,14 @@ time_model = TimeModel(
 source = Source(
     space_model,
     coordinates=[(2560, 2560)],
-    window_radius=1
+    window_radius=4
 )
 
 # crete the set of receivers
 receiver = Receiver(
     space_model=space_model,
     coordinates=[(2560, i) for i in range(0, 5120, 10)],
-    window_radius=1
+    window_radius=4
 )
 
 # create a ricker wavelet with 10hz of peak frequency

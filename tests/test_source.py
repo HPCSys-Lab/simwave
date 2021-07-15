@@ -158,7 +158,7 @@ class TestSource:
             window_radius=window_radius
         )
 
-        p, v = source.interpolated_points_and_values
+        p, v, _ = source.interpolated_points_and_values
 
         assert np.array_equal(p, np.asarray(points))
         assert np.array_equal(v, space_model.dtype(values))

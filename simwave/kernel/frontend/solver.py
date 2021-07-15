@@ -136,8 +136,10 @@ class Solver:
             Shot record.
         """
 
-        src_points, src_values = self.sources.interpolated_points_and_values
-        rec_points, rec_values = self.receivers.interpolated_points_and_values
+        src_points, src_values, src_offsets = \
+            self.sources.interpolated_points_and_values
+        rec_points, rec_values, rec_offsets = \
+            self.receivers.interpolated_points_and_values
 
         u_full, recv = self._middleware.exec(
             operator='forward',
@@ -153,10 +155,12 @@ class Solver:
             src_points_interval=src_points,
             src_points_interval_size=len(src_points),
             src_points_values=src_values,
+            src_points_values_offset=src_offsets,
             src_points_values_size=len(src_values),
             rec_points_interval=rec_points,
             rec_points_interval_size=len(rec_points),
             rec_points_values=rec_values,
+            rec_points_values_offset=rec_offsets,
             rec_points_values_size=len(rec_values),
             shot_record=self.shot_record,
             num_sources=self.sources.count,
