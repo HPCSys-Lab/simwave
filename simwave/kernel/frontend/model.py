@@ -527,11 +527,15 @@ class TimeModel:
         End time in seconds.
     t0 : float, optional
         Start time in seconds. Default is 0.0.
+    saving_stride : int
+        Skipping factor when saving the wavefields.
+        If saving_jump is 0, only the last wavefield is saved. Default is 0.
     """
-    def __init__(self, space_model, tf, t0=0.0):
+    def __init__(self, space_model, tf, t0=0.0, saving_stride=0):
         self._space_model = space_model
         self._tf = self.space_model.dtype(tf)
         self._t0 = self.space_model.dtype(t0)
+        self._saving_stride = saving_stride
 
         # calculate dt according to cfl
         self._dt = fd.calculate_dt(
@@ -540,6 +544,13 @@ class TimeModel:
             grid_spacing=self.space_model.grid_spacing,
             velocity_model=self.space_model.velocity_model
         )
+
+        # validate the saving stride
+        if not (0 <= self.saving_stride <= self.timesteps):
+            raise Exception(
+                "Saving jumps can not be less than zero or "
+                "greater than the number of timesteps."
+            )
 
     @property
     def space_model(self):
@@ -555,6 +566,11 @@ class TimeModel:
     def t0(self):
         """Initial time value in seconds."""
         return self._t0
+
+    @property
+    def saving_stride(self):
+        """Skipping factor when saving the wavefields."""
+        return self._saving_stride
 
     @property
     def dt(self):
@@ -573,7 +589,14 @@ class TimeModel:
     @property
     def timesteps(self):
         """Number of timesteps of the propagation."""
-        return int(np.ceil((self.tf - self.t0 + self.dt) / self.dt))
+        num_timesteps = int(np.ceil((self.tf - self.t0 + self.dt) / self.dt))
+
+        # adjust the number of timesteps according to saving_stride
+        if self.saving_stride > 1:
+            while num_timesteps % self.saving_stride != 1:
+                num_timesteps += 1
+
+        return num_timesteps
 
     @property
     def time_indexes(self):

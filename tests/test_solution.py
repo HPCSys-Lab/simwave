@@ -99,7 +99,8 @@ class TestSolution:
         # create the time model
         time_model = TimeModel(
             space_model=space_model,
-            tf=tf
+            tf=tf,
+            saving_stride=0
         )
 
         # create the set of sources
@@ -126,7 +127,6 @@ class TestSolution:
             sources=source,
             receivers=receiver,
             wavelet=ricker,
-            saving_stride=0,
             compiler=compiler
         )
 
