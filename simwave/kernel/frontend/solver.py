@@ -100,7 +100,12 @@ class Solver:
     @property
     def u_full(self):
         """Return the complete grid (snapshots, nz. nz [, ny])."""
-        shape = (self.num_snapshots,) + self.space_model.extended_shape
+
+        # add 2 halo snapshots (second order in time)
+        snapshots = self.num_snapshots + 2
+
+        # define the final shape (snapshots + domain)
+        shape = (snapshots,) + self.space_model.extended_shape
 
         return np.zeros(shape, dtype=self.space_model.dtype)
 
@@ -148,12 +153,16 @@ class Solver:
             grid_spacing=self.space_model.grid_spacing,
             saving_stride=self.time_model.saving_stride,
             dt=self.time_model.dt,
-            begin_timestep=int(self.time_model.time_indexes[0]),
+            begin_timestep=1,
             end_timestep=self.time_model.timesteps,
-            space_order=self.space_model.space_order
+            space_order=self.space_model.space_order,
+            num_snapshots=self.u_full.shape[0]
         )
 
-        # remove halo region
+        # remove time halo region
+        u_full = self.time_model.remove_time_halo_region(u_full)
+
+        # remove spatial halo region
         u_full = self.space_model.remove_halo_region(u_full)
 
         return u_full, recv

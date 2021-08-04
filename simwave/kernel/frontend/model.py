@@ -592,7 +592,7 @@ class TimeModel:
         num_timesteps = int(np.ceil((self.tf - self.t0 + self.dt) / self.dt))
 
         # adjust the number of timesteps according to saving_stride
-        if self.saving_stride > 1:
+        if 1 < self.saving_stride <= num_timesteps:
             while num_timesteps % self.saving_stride != 1:
                 num_timesteps += 1
 
@@ -609,3 +609,25 @@ class TimeModel:
         # time values starting from t0 to tf with dt interval
         return np.linspace(self.t0, self.tf, self.timesteps,
                            dtype=self.space_model.dtype)
+
+    def remove_time_halo_region(self, u):
+        """
+        Remove the time halo region from the snapshots.
+
+        Parameters
+        ----------
+        u : ndarray
+            Full wavefield with time halo region.
+
+        Returns
+        ----------
+        ndarray
+            Full wavefield without time halo region.
+        """
+
+        # it needs the last timestep only
+        if self.saving_stride == 0:
+            last_snapshot = self.timesteps % 3
+            return u[last_snapshot:last_snapshot+1]
+        else:
+            return u[1:-1]

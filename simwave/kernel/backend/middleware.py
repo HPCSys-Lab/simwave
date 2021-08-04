@@ -196,7 +196,8 @@ class Middleware:
             'dt',
             'begin_timestep',
             'end_timestep',
-            'space_order'
+            'space_order',
+            'num_snapshots'
         ]
 
         return key_order
