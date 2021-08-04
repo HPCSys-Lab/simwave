@@ -45,7 +45,8 @@ space_model.config_boundary(
 # create the time model
 time_model = TimeModel(
     space_model=space_model,
-    tf=2
+    tf=2,
+    saving_stride=0
 )
 
 # create the set of sources
@@ -72,7 +73,6 @@ solver = Solver(
     sources=source,
     receivers=receiver,
     wavelet=ricker,
-    saving_stride=0,
     compiler=compiler
 )
 

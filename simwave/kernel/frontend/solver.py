@@ -18,32 +18,21 @@ class Solver:
         Receiver object.
     wavelet : Wavelet
         Wavelet object.
-    saving_stride : int
-        Skipping factor when saving the wavefields.
-        If saving_jump is 0, only the last wavefield is saved. Default is 0.
     compiler : Compiler
         Backend compiler object.
     """
     def __init__(self, space_model, time_model, sources,
-                 receivers, wavelet, saving_stride=0, compiler=None):
+                 receivers, wavelet, compiler=None):
 
         self._space_model = space_model
         self._time_model = time_model
         self._sources = sources
         self._receivers = receivers
         self._wavelet = wavelet
-        self._saving_stride = saving_stride
         self._compiler = compiler
 
         # create a middleware to communicate with backend
         self._middleware = Middleware(compiler=self.compiler)
-
-        # validate the saving stride
-        if not (0 <= self.saving_stride <= self.time_model.timesteps):
-            raise Exception(
-                "Saving jumps can not be less than zero or "
-                "greater than the number of timesteps."
-            )
 
     @property
     def space_model(self):
@@ -71,11 +60,6 @@ class Solver:
         return self._wavelet
 
     @property
-    def saving_stride(self):
-        """Skipping factor when saving the wavefields."""
-        return self._saving_stride
-
-    @property
     def compiler(self):
         """Compiler object."""
         return self._compiler
@@ -85,20 +69,16 @@ class Solver:
         """List of snapshot indexes (wavefields to be saved)."""
 
         # if saving_stride is 0, only saves the last timestep
-        if self.saving_stride == 0:
+        if self.time_model.saving_stride == 0:
             return [self.time_model.time_indexes[-1]]
 
         snap_indexes = list(
             range(
                 self.time_model.time_indexes[0],
                 self.time_model.timesteps,
-                self.saving_stride
+                self.time_model.saving_stride
             )
         )
-
-        # always add the last timestep
-        if snap_indexes[-1] != self.time_model.time_indexes[-1]:
-            snap_indexes.append(self.time_model.time_indexes[-1])
 
         return snap_indexes
 
@@ -120,7 +100,12 @@ class Solver:
     @property
     def u_full(self):
         """Return the complete grid (snapshots, nz. nz [, ny])."""
-        shape = (self.num_snapshots,) + self.space_model.extended_shape
+
+        # add 2 halo snapshots (second order in time)
+        snapshots = self.num_snapshots + 2
+
+        # define the final shape (snapshots + domain)
+        shape = (snapshots,) + self.space_model.extended_shape
 
         return np.zeros(shape, dtype=self.space_model.dtype)
 
@@ -166,14 +151,18 @@ class Solver:
             num_sources=self.sources.count,
             num_receivers=self.receivers.count,
             grid_spacing=self.space_model.grid_spacing,
-            saving_stride=self.saving_stride,
+            saving_stride=self.time_model.saving_stride,
             dt=self.time_model.dt,
-            begin_timestep=int(self.time_model.time_indexes[0]),
+            begin_timestep=1,
             end_timestep=self.time_model.timesteps,
-            space_order=self.space_model.space_order
+            space_order=self.space_model.space_order,
+            num_snapshots=self.u_full.shape[0]
         )
 
-        # remove halo region
+        # remove time halo region
+        u_full = self.time_model.remove_time_halo_region(u_full)
+
+        # remove spatial halo region
         u_full = self.space_model.remove_halo_region(u_full)
 
         return u_full, recv

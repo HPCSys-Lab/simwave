@@ -13,7 +13,7 @@
 #endif
 
 // forward_2D_constant_density
-double forward(f_type *grid, f_type *velocity, f_type *damp,
+double forward(f_type *u, f_type *velocity, f_type *damp,
                f_type *wavelet, size_t wavelet_size,
                f_type *coeff, size_t *boundary_conditions,
                size_t *src_points_interval, size_t src_points_interval_size,
@@ -25,34 +25,21 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
                f_type *receivers, size_t num_sources, size_t num_receivers,
                size_t nz, size_t nx, f_type dz, f_type dx,
                size_t saving_stride, f_type dt,
-               size_t begin_timestep, size_t end_timestep, size_t space_order){
+               size_t begin_timestep, size_t end_timestep,
+               size_t space_order, size_t num_snapshots){
 
     size_t stencil_radius = space_order / 2;
 
-    f_type *swap;
-    size_t wavefield_count = 0;
-    size_t nsize = nz * nx;
+    size_t domain_size = nz * nx;
 
     f_type dzSquared = dz * dz;
     f_type dxSquared = dx * dx;
     f_type dtSquared = dt * dt;
 
-    f_type *prev_snapshot = malloc(nsize * sizeof(f_type));
-    f_type *next_snapshot = malloc(nsize * sizeof(f_type));
-
-    // initialize aux matrix
-    #ifdef CPU_OPENMP
-    #pragma omp parallel for simd
-    #endif
-    for(size_t i = 0; i < nz; i++){
-
-        size_t offset = i * nx;
-
-        for(size_t j = 0; j < nx; j++){
-            prev_snapshot[offset + j] = grid[offset + j];
-            next_snapshot[offset + j] = 0.0;
-        }
-    }
+    // timestep pointers
+    size_t prev_t = 0;
+    size_t current_t = 1;
+    size_t next_t = 2;
 
     // variable to measure execution time
     struct timeval time_start;
@@ -63,9 +50,9 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
 
     #ifdef GPU_OPENMP
     size_t shot_record_size = wavelet_size * num_receivers;
+    size_t u_size = num_snapshots * domain_size;
 
-    #pragma omp target enter data map(to: prev_snapshot[:nsize])
-    #pragma omp target enter data map(to: next_snapshot[:nsize])
+    #pragma omp target enter data map(to: u[:u_size])
     #pragma omp target enter data map(to: velocity[:nsize])
     #pragma omp target enter data map(to: damp[:nsize])
     #pragma omp target enter data map(to: coeff[:stencil_radius+1])
@@ -80,7 +67,23 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
     #endif
 
     // wavefield modeling
-    for(size_t n = begin_timestep; n < end_timestep; n++) {
+    for(size_t n = begin_timestep; n <= end_timestep; n++) {
+
+        // no saving case
+        if(saving_stride == 0){
+            prev_t = (n - 1) % 3;
+            current_t = n % 3;
+            next_t = (n + 1) % 3;
+        }else{
+            // all timesteps saving case
+            if(saving_stride == 1){
+                prev_t = n - 1;
+                current_t = n;
+                next_t = n + 1;
+            }
+        }
+
+        //printf("%ld %ld %ld\n", prev_t, current_t, next_t);
 
         /*
             Section 1: update the wavefield according to the acoustic wave equation
@@ -97,31 +100,35 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
         for(size_t i = stencil_radius; i < nz - stencil_radius; i++) {
             for(size_t j = stencil_radius; j < nx - stencil_radius; j++) {
                 // index of the current point in the grid
-                size_t current = i * nx + j;
+                size_t domain_offset = i * nx + j;
+
+                size_t prev_snapshot = prev_t * domain_size + domain_offset;
+                size_t current_snapshot = current_t * domain_size + domain_offset;
+                size_t next_snapshot = next_t * domain_size + domain_offset;
 
                 // stencil code to update grid
                 f_type value = 0.0;
 
-                f_type sum_x = coeff[0] * prev_snapshot[current];
-                f_type sum_z = coeff[0] * prev_snapshot[current];
+                f_type sum_x = coeff[0] * u[current_snapshot];
+                f_type sum_z = coeff[0] * u[current_snapshot];
 
                 // radius of the stencil
                 for(int ir = 1; ir <= stencil_radius; ir++){
                     //neighbors in the horizontal direction
-                    sum_x += coeff[ir] * (prev_snapshot[current + ir] + prev_snapshot[current - ir]);
+                    sum_x += coeff[ir] * (u[current_snapshot + ir] + u[current_snapshot - ir]);
 
                     //neighbors in the vertical direction
-                    sum_z += coeff[ir] * (prev_snapshot[current + (ir * nx)] + prev_snapshot[current - (ir * nx)]);
+                    sum_z += coeff[ir] * (u[current_snapshot + (ir * nx)] + u[current_snapshot - (ir * nx)]);
                 }
 
                 value += sum_x/dxSquared + sum_z/dzSquared;
 
                 //denominator with damp coefficient
-                f_type denominator = (1.0 + damp[current] * dt);
+                f_type denominator = (1.0 + damp[domain_offset] * dt);
 
-                value *= (dtSquared * velocity[current] * velocity[current]) / denominator;
+                value *= (dtSquared * velocity[domain_offset] * velocity[domain_offset]) / denominator;
 
-                next_snapshot[current] = 2.0 / denominator * prev_snapshot[current] - ((1.0 - damp[current] * dt) / denominator) * next_snapshot[current] + value;
+                u[next_snapshot] = 2.0 / denominator * u[current_snapshot] - ((1.0 - damp[domain_offset] * dt) / denominator) * u[prev_snapshot] + value;
             }
         }
 
@@ -171,12 +178,13 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
                     f_type kws = src_points_values[kws_index_z] * src_points_values[kws_index_x];
 
                     // current source point in the grid
-                    size_t current = i * nx + j;
+                    size_t domain_offset = i * nx + j;
+                    size_t next_snapshot = next_t * domain_size + domain_offset;
 
                     #if defined(CPU_OPENMP) || defined(GPU_OPENMP)
                     #pragma omp atomic
                     #endif
-                    next_snapshot[current] += dtSquared * velocity[current] * velocity[current] * kws * wavelet[n];
+                    u[next_snapshot] += dtSquared * velocity[domain_offset] * velocity[domain_offset] * kws * wavelet[n-1];
 
                     kws_index_x++;
                 }
@@ -207,29 +215,33 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
 
             // null dirichlet on the left
             if(x_before == 1){
-                size_t current = i * nx + stencil_radius;
-                next_snapshot[current] = 0.0;
+                size_t domain_offset = i * nx + stencil_radius;
+                size_t next_snapshot = next_t * domain_size + domain_offset;
+                u[next_snapshot] = 0.0;
             }
 
             // null neumann on the left
             if(x_before == 2){
                 for(int ir = 1; ir <= stencil_radius; ir++){
-                    size_t current = i * nx + stencil_radius;
-                    next_snapshot[current - ir] = next_snapshot[current + ir];
+                    size_t domain_offset = i * nx + stencil_radius;
+                    size_t next_snapshot = next_t * domain_size + domain_offset;
+                    u[next_snapshot - ir] = u[next_snapshot + ir];
                 }
             }
 
             // null dirichlet on the right
             if(x_after == 1){
-                size_t current = i * nx + (nx - stencil_radius - 1);
-                next_snapshot[current] = 0.0;
+                size_t domain_offset = i * nx + (nx - stencil_radius - 1);
+                size_t next_snapshot = next_t * domain_size + domain_offset;
+                u[next_snapshot] = 0.0;
             }
 
             // null neumann on the right
             if(x_after == 2){
                 for(int ir = 1; ir <= stencil_radius; ir++){
-                    size_t current = i * nx + (nx - stencil_radius - 1);
-                    next_snapshot[current + ir] = next_snapshot[current - ir];
+                    size_t domain_offset = i * nx + (nx - stencil_radius - 1);
+                    size_t next_snapshot = next_t * domain_size + domain_offset;
+                    u[next_snapshot + ir] = u[next_snapshot - ir];
                 }
             }
 
@@ -247,29 +259,33 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
 
             // null dirichlet on the top
             if(z_before == 1){
-                size_t current = stencil_radius * nx + j;
-                next_snapshot[current] = 0.0;
+                size_t domain_offset = stencil_radius * nx + j;
+                size_t next_snapshot = next_t * domain_size + domain_offset;
+                u[next_snapshot] = 0.0;
             }
 
             // null neumann on the top
             if(z_before == 2){
                 for(int ir = 1; ir <= stencil_radius; ir++){
-                    size_t current = stencil_radius * nx + j;
-                    next_snapshot[current - (ir * nx)] = next_snapshot[current + (ir * nx)];
+                    size_t domain_offset = stencil_radius * nx + j;
+                    size_t next_snapshot = next_t * domain_size + domain_offset;
+                    u[next_snapshot - (ir * nx)] = u[next_snapshot + (ir * nx)];
                 }
             }
 
             // null dirichlet on the bottom
             if(z_after == 1){
-                size_t current = (nz - stencil_radius - 1) * nx + j;
-                next_snapshot[current] = 0.0;
+                size_t domain_offset = (nz - stencil_radius - 1) * nx + j;
+                size_t next_snapshot = next_t * domain_size + domain_offset;
+                u[next_snapshot] = 0.0;
             }
 
             // null neumann on the bottom
             if(z_after == 2){
                 for(int ir = 1; ir <= stencil_radius; ir++){
-                    size_t current = (nz - stencil_radius - 1) * nx + j;
-                    next_snapshot[current + (ir * nx)] = next_snapshot[current - (ir * nx)];
+                    size_t domain_offset = (nz - stencil_radius - 1) * nx + j;
+                    size_t next_snapshot = next_t * domain_size + domain_offset;
+                    u[next_snapshot + (ir * nx)] = u[next_snapshot - (ir * nx)];
                 }
             }
 
@@ -323,55 +339,71 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
                     f_type kws = rec_points_values[kws_index_z] * rec_points_values[kws_index_x];
 
                     // current receiver point in the grid
-                    size_t current = i * nx + j;
-                    sum += prev_snapshot[current] * kws;
+                    size_t domain_offset = i * nx + j;
+                    size_t current_snapshot = current_t * domain_size + domain_offset;
+                    sum += u[current_snapshot] * kws;
 
                     kws_index_x++;
                 }
                 kws_index_z++;
             }
 
-            size_t current_rec_n = n * num_receivers + rec;
+            size_t current_rec_n = (n-1) * num_receivers + rec;
             receivers[current_rec_n] = sum;
         }
 
-        //swap arrays for next iteration
-        swap = next_snapshot;
-        next_snapshot = prev_snapshot;
-        prev_snapshot = swap;
+        // stride timesteps saving case
+        if(saving_stride > 1){
+            // shift the pointer
+            if(n % saving_stride == 1){
 
-        /*
-            Section 5: save the wavefields
-        */
-        if( (saving_stride && (n % saving_stride) == 0) || (n == end_timestep - 1) ){
+                prev_t = current_t;
+                current_t += 1;
+                next_t += 1;
 
-            #ifdef GPU_OPENMP
-            #pragma omp target update from(next_snapshot[:nsize])
-            #endif
+                // even stride adjust case
+                if(saving_stride % 2 == 0 && n < end_timestep){
+                    size_t swap = current_t;
+                    current_t = next_t;
+                    next_t = swap;
 
-            #if defined(CPU_OPENMP) || defined(GPU_OPENMP)
-            #pragma omp parallel for
-            #endif
+                    #ifdef CPU_OPENMP
+                    #pragma omp parallel for
+                    #endif
 
-            for(size_t i = 0; i < nz; i++){
-                size_t offset_local = i * nx;
-                size_t offset_global = (wavefield_count * nz + i) * nx;
+                    #ifdef GPU_OPENMP
+                    #pragma omp target teams distribute parallel for
+                    #endif
 
-                for(size_t j = 0; j < nx; j++){
-                    grid[offset_global + j] = next_snapshot[offset_local + j];
+                    // exchange of values ​​required
+                    for(size_t i = 0; i < nz; i++) {
+                        for(size_t j = 0; j < nx; j++) {
+                            // index of the current point in the grid
+                            size_t domain_offset = i * nx + j;
+
+                            size_t current_snapshot = current_t * domain_size + domain_offset;
+                            size_t next_snapshot = next_t * domain_size + domain_offset;
+
+                            f_type aux = u[current_snapshot];
+                            u[current_snapshot] = u[next_snapshot];
+                            u[next_snapshot] = aux;
+                        }
+                    }
                 }
-            }
 
-            wavefield_count++;
+            }else{
+                prev_t = current_t;
+                current_t = next_t;
+                next_t = prev_t;
+            }
         }
 
     }
 
     #ifdef GPU_OPENMP
     #pragma omp target exit data map(from: receivers[:shot_record_size])
+    #pragma omp target exit data map(from: u[:u_size])
 
-    #pragma omp target exit data map(delete: prev_snapshot[:nsize])
-    #pragma omp target exit data map(delete: next_snapshot[:nsize])
     #pragma omp target exit data map(delete: velocity[:nsize])
     #pragma omp target exit data map(delete: damp[:nsize])
     #pragma omp target exit data map(delete: coeff[:stencil_radius+1])
@@ -383,15 +415,13 @@ double forward(f_type *grid, f_type *velocity, f_type *damp,
     #pragma omp target exit data map(delete: rec_points_values_offset[:num_receivers])
     #pragma omp target exit data map(delete: wavelet[:wavelet_size])
     #pragma omp target exit data map(delete: receivers[:shot_record_size])
+    #pragma omp target exit data map(delete: u[:u_size])
     #endif
 
     // get the end time
     gettimeofday(&time_end, NULL);
 
     double exec_time = (double) (time_end.tv_sec - time_start.tv_sec) + (double) (time_end.tv_usec - time_start.tv_usec) / 1000000.0;
-
-    free(prev_snapshot);
-    free(next_snapshot);
 
     return exec_time;
 }
