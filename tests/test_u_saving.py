@@ -4,11 +4,11 @@ import numpy as np
 import pytest
 
 
-def run_forward_2d(density, language, saving_stride):
+def run_forward_2d(density, saving_stride):
     compiler = Compiler(
         cc='gcc',
-        language=language,
-        cflags='-O3 -fPIC -ffast-math -Wall -std=c99 -shared'
+        language='c',
+        cflags='-O3'
     )
 
     vel = np.zeros(shape=(512, 512), dtype=np.float32)
@@ -75,11 +75,11 @@ def run_forward_2d(density, language, saving_stride):
     return u_full[-1]
 
 
-def run_forward_3d(density, language, saving_stride):
+def run_forward_3d(density, saving_stride):
     compiler = Compiler(
         cc='gcc',
-        language=language,
-        cflags='-O3 -fPIC -ffast-math -Wall -std=c99 -shared'
+        language='c',
+        cflags='-O3'
     )
 
     vel = np.zeros(shape=(100, 100, 100), dtype=np.float32)
@@ -149,64 +149,60 @@ def run_forward_3d(density, language, saving_stride):
 class TestUSaving:
 
     @pytest.mark.parametrize(
-        'saving_stride, language, density', [
-            (0, 'c', False),
-            (1, 'c', False),
-            (2, 'c', False),
-            (5, 'c', False),
-            (0, 'c', True),
-            (1, 'c', True),
-            (2, 'c', True),
-            (5, 'c', True)
+        'saving_stride, density', [
+            (0, False),
+            (1, False),
+            (2, False),
+            (5, False),
+            (0, True),
+            (1, True),
+            (2, True),
+            (5, True)
         ]
 
     )
-    def test_u_saving_2d(self, saving_stride, language, density):
+    def test_u_saving_2d(self, saving_stride, density):
 
         # baseline result
         u_base = run_forward_2d(
             density=density,
-            language='c',
             saving_stride=0
         )
 
         u_last = run_forward_2d(
             density=density,
-            language=language,
             saving_stride=saving_stride
         )
 
         assert np.array_equal(u_base, u_last)
 
     @pytest.mark.parametrize(
-        'saving_stride, language, density', [
-            (0, 'c', False),
-            (1, 'c', False),
-            (2, 'c', False),
-            (3, 'c', False),
-            (4, 'c', False),
-            (5, 'c', False),
-            (0, 'c', True),
-            (1, 'c', True),
-            (2, 'c', True),
-            (3, 'c', True),
-            (4, 'c', True),
-            (5, 'c', True)
+        'saving_stride, density', [
+            (0, False),
+            (1, False),
+            (2, False),
+            (3, False),
+            (4, False),
+            (5, False),
+            (0, True),
+            (1, True),
+            (2, True),
+            (3, True),
+            (4, True),
+            (5, True)
         ]
 
     )
-    def test_u_saving_3d(self, saving_stride, language, density):
+    def test_u_saving_3d(self, saving_stride, density):
 
         # baseline result
         u_base = run_forward_3d(
             density=density,
-            language='c',
             saving_stride=0
         )
 
         u_last = run_forward_3d(
             density=density,
-            language=language,
             saving_stride=saving_stride
         )
 

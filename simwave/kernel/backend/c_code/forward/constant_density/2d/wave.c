@@ -181,10 +181,12 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
                     size_t domain_offset = i * nx + j;
                     size_t next_snapshot = next_t * domain_size + domain_offset;
 
+                    f_type value = dtSquared * velocity[domain_offset] * velocity[domain_offset] * kws * wavelet[n-1];
+
                     #if defined(CPU_OPENMP) || defined(GPU_OPENMP)
                     #pragma omp atomic
                     #endif
-                    u[next_snapshot] += dtSquared * velocity[domain_offset] * velocity[domain_offset] * kws * wavelet[n-1];
+                    u[next_snapshot] += value;
 
                     kws_index_x++;
                 }
