@@ -53,8 +53,8 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
     size_t u_size = num_snapshots * domain_size;
 
     #pragma omp target enter data map(to: u[:u_size])
-    #pragma omp target enter data map(to: velocity[:nsize])
-    #pragma omp target enter data map(to: damp[:nsize])
+    #pragma omp target enter data map(to: velocity[:domain_size])
+    #pragma omp target enter data map(to: damp[:domain_size])
     #pragma omp target enter data map(to: coeff[:stencil_radius+1])
     #pragma omp target enter data map(to: src_points_interval[:src_points_interval_size])
     #pragma omp target enter data map(to: src_points_values[:src_points_values_size])
@@ -82,8 +82,6 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
                 next_t = n + 1;
             }
         }
-
-        //printf("%ld %ld %ld\n", prev_t, current_t, next_t);
 
         /*
             Section 1: update the wavefield according to the acoustic wave equation
@@ -406,8 +404,8 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
     #pragma omp target exit data map(from: receivers[:shot_record_size])
     #pragma omp target exit data map(from: u[:u_size])
 
-    #pragma omp target exit data map(delete: velocity[:nsize])
-    #pragma omp target exit data map(delete: damp[:nsize])
+    #pragma omp target exit data map(delete: velocity[:domain_size])
+    #pragma omp target exit data map(delete: damp[:domain_size])
     #pragma omp target exit data map(delete: coeff[:stencil_radius+1])
     #pragma omp target exit data map(delete: src_points_interval[:src_points_interval_size])
     #pragma omp target exit data map(delete: src_points_values[:src_points_values_size])

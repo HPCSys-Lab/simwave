@@ -41,10 +41,19 @@ def run_forward(dimension, density, language, dtype):
     vel = np.zeros(shape=shape, dtype=dtype)
     vel[:] = 1500.0
 
+    if language == 'gpu_openmp':
+        cflags = '-O3 -fPIC -ffast-math -fopenmp \
+        -fopenmp-targets=nvptx64-nvidia-cuda -Xopenmp-target -march=sm_75'
+
+        cc = 'clang'
+    else:
+        cflags = '-O3'
+        cc = 'gcc'
+
     compiler = Compiler(
-        cc='gcc',
+        cc=cc,
         language=language,
-        cflags='-O3'
+        cflags=cflags
     )
 
     space_model = SpaceModel(
@@ -125,6 +134,39 @@ class TestParallelSolutionCPU:
 
         # assert np.array_equal(u_base, u)
         # assert np.array_equal(rec_base, rec)
+
+        assert np.allclose(u_base, u, atol=1e-08)
+        assert np.allclose(rec_base, rec, atol=1e-08)
+
+
+@pytest.mark.gpu
+class TestParallelSolutionGPU:
+
+    @pytest.mark.parametrize(
+        'dimension, density, language, dtype', [
+            (2, False, 'gpu_openmp', np.float64),
+            (3, False, 'gpu_openmp', np.float64),
+            (2, True, 'gpu_openmp', np.float64),
+            (3, True, 'gpu_openmp', np.float64)
+        ]
+
+    )
+    def test_parallel_gpu(self, dimension, density, language, dtype):
+
+        # baseline result
+        u_base, rec_base = run_forward(
+            dimension=dimension,
+            density=density,
+            language='c',
+            dtype=dtype
+        )
+
+        u, rec = run_forward(
+            dimension=dimension,
+            density=density,
+            language=language,
+            dtype=dtype
+        )
 
         assert np.allclose(u_base, u, atol=1e-08)
         assert np.allclose(rec_base, rec, atol=1e-08)

@@ -139,7 +139,7 @@ class Compiler:
         program_path = program_dir + c_code_name
 
         # get c file content
-        with open(program_path, 'r') as f:
+        with open(program_path, 'r', encoding='utf-8') as f:
             c_file_content = f.read()
 
         # object root dir
