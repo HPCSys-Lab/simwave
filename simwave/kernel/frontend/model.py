@@ -527,11 +527,13 @@ class TimeModel:
         End time in seconds.
     t0 : float, optional
         Start time in seconds. Default is 0.0.
+    dt : float. optional
+        Timestep variation in seconds.
     saving_stride : int
         Skipping factor when saving the wavefields.
         If saving_jump is 0, only the last wavefield is saved. Default is 0.
     """
-    def __init__(self, space_model, tf, t0=0.0, saving_stride=0):
+    def __init__(self, space_model, tf, dt=None, t0=0.0, saving_stride=0):
         self._space_model = space_model
         self._tf = self.space_model.dtype(tf)
         self._t0 = self.space_model.dtype(t0)
@@ -544,6 +546,10 @@ class TimeModel:
             grid_spacing=self.space_model.grid_spacing,
             velocity_model=self.space_model.velocity_model
         )
+
+        # if setted, update dt to a custom value
+        if dt is not None:
+            self.dt = dt
 
         # validate the saving stride
         if not (0 <= self.saving_stride <= self.timesteps):
