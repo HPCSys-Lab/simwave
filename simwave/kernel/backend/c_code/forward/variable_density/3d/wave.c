@@ -166,73 +166,75 @@ double forward(f_type *u, f_type *velocity, f_type *density, f_type *damp,
             Section 2: add the source term
         */
 
-        #ifdef CPU_OPENMP
-        #pragma omp parallel for
-        #endif
+        if(wavelet[n-1] != 0.0){
+            #ifdef CPU_OPENMP
+            #pragma omp parallel for
+            #endif
 
-        #ifdef GPU_OPENMP
-        #pragma omp target teams distribute parallel for
-        #endif
+            #ifdef GPU_OPENMP
+            #pragma omp target teams distribute parallel for
+            #endif
 
-        // for each source
-        for(size_t src = 0; src < num_sources; src++){
+            // for each source
+            for(size_t src = 0; src < num_sources; src++){
 
-            // each source has 6 (z_b, z_e, x_b, x_e, y_b, y_e) point intervals
-            size_t offset_src = src * 6;
+                // each source has 6 (z_b, z_e, x_b, x_e, y_b, y_e) point intervals
+                size_t offset_src = src * 6;
 
-            // interval of grid points of the source in the Z axis
-            size_t src_z_begin = src_points_interval[offset_src + 0];
-            size_t src_z_end = src_points_interval[offset_src + 1];
+                // interval of grid points of the source in the Z axis
+                size_t src_z_begin = src_points_interval[offset_src + 0];
+                size_t src_z_end = src_points_interval[offset_src + 1];
 
-            // interval of grid points of the source in the X axis
-            size_t src_x_begin = src_points_interval[offset_src + 2];
-            size_t src_x_end = src_points_interval[offset_src + 3];
+                // interval of grid points of the source in the X axis
+                size_t src_x_begin = src_points_interval[offset_src + 2];
+                size_t src_x_end = src_points_interval[offset_src + 3];
 
-            // interval of grid points of the source in the Y axis
-            size_t src_y_begin = src_points_interval[offset_src + 4];
-            size_t src_y_end = src_points_interval[offset_src + 5];
+                // interval of grid points of the source in the Y axis
+                size_t src_y_begin = src_points_interval[offset_src + 4];
+                size_t src_y_end = src_points_interval[offset_src + 5];
 
-            // number of grid points of the source in each axis
-            size_t src_z_num_points = src_z_end - src_z_begin + 1;
-            size_t src_x_num_points = src_x_end - src_x_begin + 1;
-            //size_t src_y_num_points = src_y_end - src_y_begin + 1;
+                // number of grid points of the source in each axis
+                size_t src_z_num_points = src_z_end - src_z_begin + 1;
+                size_t src_x_num_points = src_x_end - src_x_begin + 1;
+                //size_t src_y_num_points = src_y_end - src_y_begin + 1;
 
-            // pointer to src value offset
-            size_t offset_src_kws_index_z = src_points_values_offset[src];
+                // pointer to src value offset
+                size_t offset_src_kws_index_z = src_points_values_offset[src];
 
-            // index of the Kaiser windowed sinc value of the source point
-            size_t kws_index_z = offset_src_kws_index_z;
+                // index of the Kaiser windowed sinc value of the source point
+                size_t kws_index_z = offset_src_kws_index_z;
 
-            // for each source point in the Z axis
-            for(size_t i = src_z_begin; i <= src_z_end; i++){
-                size_t kws_index_x = offset_src_kws_index_z + src_z_num_points;
+                // for each source point in the Z axis
+                for(size_t i = src_z_begin; i <= src_z_end; i++){
+                    size_t kws_index_x = offset_src_kws_index_z + src_z_num_points;
 
-                // for each source point in the X axis
-                for(size_t j = src_x_begin; j <= src_x_end; j++){
+                    // for each source point in the X axis
+                    for(size_t j = src_x_begin; j <= src_x_end; j++){
 
-                    size_t kws_index_y = offset_src_kws_index_z + src_z_num_points + src_x_num_points;
+                        size_t kws_index_y = offset_src_kws_index_z + src_z_num_points + src_x_num_points;
 
-                    // for each source point in the Y axis
-                    for(size_t k = src_y_begin; k <= src_y_end; k++){
+                        // for each source point in the Y axis
+                        for(size_t k = src_y_begin; k <= src_y_end; k++){
 
-                        f_type kws = src_points_values[kws_index_z] * src_points_values[kws_index_x] * src_points_values[kws_index_y];
+                            f_type kws = src_points_values[kws_index_z] * src_points_values[kws_index_x] * src_points_values[kws_index_y];
 
-                        // current source point in the grid
-                        size_t domain_offset = (i * nx + j) * ny + k;
-                        size_t next_snapshot = next_t * domain_size + domain_offset;
+                            // current source point in the grid
+                            size_t domain_offset = (i * nx + j) * ny + k;
+                            size_t next_snapshot = next_t * domain_size + domain_offset;
 
-                        f_type value = dtSquared * velocity[domain_offset] * velocity[domain_offset] * kws * wavelet[n-1];
+                            f_type value = dtSquared * velocity[domain_offset] * velocity[domain_offset] * kws * wavelet[n-1];
 
-                        #if defined(CPU_OPENMP) || defined(GPU_OPENMP)
-                        #pragma omp atomic
-                        #endif
-                        u[next_snapshot] += value;
+                            #if defined(CPU_OPENMP) || defined(GPU_OPENMP)
+                            #pragma omp atomic
+                            #endif
+                            u[next_snapshot] += value;
 
-                        kws_index_y++;
+                            kws_index_y++;
+                        }
+                        kws_index_x++;
                     }
-                    kws_index_x++;
+                    kws_index_z++;
                 }
-                kws_index_z++;
             }
         }
 
