@@ -16,11 +16,14 @@ class Compiler:
     cflags : str, optional
         C compiler flags.
         Default is '-O3 -fPIC -Wall -std=c99 -shared'.
+    cfile : str, optional
+        Path to the file with a custom C Kernel implementation.
     """
-    def __init__(self, cc='gcc', language='c', cflags=None):
+    def __init__(self, cc='gcc', language='c', cflags=None, cfile=None):
         self.cc = cc
         self.language = language
         self.cflags = cflags
+        self.cfile = cfile
 
     @property
     def cc(self):
@@ -80,6 +83,14 @@ class Compiler:
 
         self._language = value
 
+    @property
+    def cfile(self):
+        return self._cfile
+
+    @cfile.setter
+    def cfile(self, value):
+        self._cfile = value
+
     def get_openmp_flag(self):
         """
         Get the OpenMP flag according the compiler.
@@ -124,19 +135,23 @@ class Compiler:
         # get the working dir
         working_dir = os.getcwd()
 
-        # get the dir of the compiler.py file
-        current_dir = os.path.dirname(os.path.realpath(__file__))
+        if self.cfile is None:
+            # get the dir of the compiler.py file
+            current_dir = os.path.dirname(os.path.realpath(__file__))
 
-        # c program root dir
-        program_dir = current_dir + "/c_code/{}/{}/{}d/".format(
-            operator, density, dimension
-        )
+            # c program root dir
+            program_dir = current_dir + "/c_code/{}/{}/{}d/".format(
+                operator, density, dimension
+            )
 
-        # c pragram file name
-        c_code_name = "wave.c"
+            # c pragram file name
+            c_code_name = "wave.c"
 
-        # c code complete path
-        program_path = program_dir + c_code_name
+            # c code complete path
+            program_path = program_dir + c_code_name
+        else:
+            # c code complete path
+            program_path = self.cfile
 
         # get c file content
         with open(program_path, 'r', encoding='utf-8') as f:
