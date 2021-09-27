@@ -4,7 +4,8 @@ from simwave.kernel.frontend.source import (
     Source,
     Receiver,
     Wavelet,
-    RickerWavelet
+    RickerWavelet,
+    MultiWavelet
 )
 
 from simwave.kernel.frontend.solver import Solver
@@ -16,5 +17,6 @@ __all__ = [
     "Receiver",
     "Wavelet",
     "RickerWavelet",
+    "MultiWavelet",
     "Solver"
 ]

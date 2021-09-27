@@ -8,6 +8,7 @@ from simwave.kernel import (
     Receiver,
     Wavelet,
     RickerWavelet,
+    MultiWavelet,
     Solver
 )
 
@@ -30,6 +31,7 @@ __all__ = [
     "Receiver",
     "Wavelet",
     "RickerWavelet",
+    "MultiWavelet",
     "Solver",
     "plot_wavefield",
     "plot_shotrecord",

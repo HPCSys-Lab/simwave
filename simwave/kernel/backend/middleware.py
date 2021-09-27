@@ -170,6 +170,7 @@ class Middleware:
             'damping_mask',
             'wavelet',
             'wavelet_size',
+            'wavelet_count',
             'second_order_fd_coefficients',
             'first_order_fd_coefficients',
             'boundary_condition',

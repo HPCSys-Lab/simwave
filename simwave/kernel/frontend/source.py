@@ -196,6 +196,16 @@ class Wavelet:
         """Wavelet values."""
         return self.function(**self.kwargs)
 
+    @property
+    def num_sources(self):
+        """Number of sources."""
+        return 1
+
+    @property
+    def timesteps(self):
+        """Number of timesteps."""
+        return len(self.values)
+
 
 class RickerWavelet(Wavelet):
     """
@@ -243,3 +253,48 @@ class RickerWavelet(Wavelet):
         t0 = 1 / peak_frequency
         r = np.pi * peak_frequency * (time_model.time_values - t0)
         return amplitude * (1 - 2.0 * r**2) * np.exp(-r**2)
+
+
+class MultiWavelet(Wavelet):
+    """
+    Implement one wavelet for each source.
+
+    Parameters
+    ----------
+    values : ndarray
+        Numpy array [timesteps][sources]
+    time_model: TimeModel
+        Time model object.
+    """
+    def __init__(self, values, time_model):
+        self._values = values
+        self._time_model = time_model
+
+        if self.timesteps != self.time_model.timesteps:
+            raise ValueError("Wavelet must have {} timesteps.").format(
+                self.time_model.timesteps
+            )
+
+    @property
+    def values(self):
+        """Wavelet values."""
+        return self.dtype(self._values)
+
+    @property
+    def num_sources(self):
+        """Number of sources."""
+        return self.values.shape[1]
+
+    @property
+    def timesteps(self):
+        """Number of timesteps."""
+        return self.values.shape[0]
+
+    @property
+    def time_model(self):
+        """Corresponding time model."""
+        return self._time_model
+
+    @property
+    def dtype(self):
+        return self.time_model.dtype

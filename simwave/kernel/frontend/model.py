@@ -580,7 +580,11 @@ class TimeModel:
 
     @property
     def dt(self):
-        return self.space_model.dtype(self._dt)
+        return self.dtype(self._dt)
+
+    @property
+    def dtype(self):
+        return self.space_model.dtype
 
     @dt.setter
     def dt(self, value):
@@ -614,7 +618,7 @@ class TimeModel:
         """Time values of the propagation timesteps."""
         # time values starting from t0 to tf with dt interval
         return np.linspace(self.t0, self.tf, self.timesteps,
-                           dtype=self.space_model.dtype)
+                           dtype=self.dtype)
 
     def remove_time_halo_region(self, u):
         """

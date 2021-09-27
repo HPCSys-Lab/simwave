@@ -14,7 +14,7 @@
 
 // forward_2D_variable_density
 double forward(f_type *u, f_type *velocity, f_type *density, f_type *damp,
-               f_type *wavelet, size_t wavelet_size,
+               f_type *wavelet, size_t wavelet_size, size_t wavelet_count,
                f_type *coeff_order2, f_type *coeff_order1, size_t *boundary_conditions,
                size_t *src_points_interval, size_t src_points_interval_size,
                f_type *src_points_values, size_t src_points_values_size,
@@ -64,7 +64,7 @@ double forward(f_type *u, f_type *velocity, f_type *density, f_type *damp,
     #pragma omp target enter data map(to: rec_points_interval[:rec_points_interval_size])
     #pragma omp target enter data map(to: rec_points_values[:rec_points_values_size])
     #pragma omp target enter data map(to: rec_points_values_offset[:num_receivers])
-    #pragma omp target enter data map(to: wavelet[:wavelet_size])
+    #pragma omp target enter data map(to: wavelet[:wavelet_size * wavelet_count])
     #pragma omp target enter data map(to: receivers[:shot_record_size])
     #endif
 
@@ -154,17 +154,25 @@ double forward(f_type *u, f_type *velocity, f_type *density, f_type *damp,
             Section 2: add the source term
         */
 
-        if(wavelet[n-1] != 0.0){
-            #ifdef CPU_OPENMP
-            #pragma omp parallel for
-            #endif
 
-            #ifdef GPU_OPENMP
-            #pragma omp target teams distribute parallel for
-            #endif
+        #ifdef CPU_OPENMP
+        #pragma omp parallel for
+        #endif
 
-            // for each source
-            for(size_t src = 0; src < num_sources; src++){
+        #ifdef GPU_OPENMP
+        #pragma omp target teams distribute parallel for
+        #endif
+
+        // for each source
+        for(size_t src = 0; src < num_sources; src++){
+
+            size_t wavelet_offset = n - 1;
+
+            if(wavelet_count > 1){
+                wavelet_offset = (n-1) * num_sources + src;
+            }
+
+            if(wavelet[wavelet_offset] != 0.0){
 
                 // each source has 4 (z_b, z_e, x_b, x_e) point intervals
                 size_t offset_src = src * 4;
@@ -200,7 +208,7 @@ double forward(f_type *u, f_type *velocity, f_type *density, f_type *damp,
                         size_t domain_offset = i * nx + j;
                         size_t next_snapshot = next_t * domain_size + domain_offset;
 
-                        f_type value = dtSquared * velocity[domain_offset] * velocity[domain_offset] * kws * wavelet[n-1];
+                        f_type value = dtSquared * velocity[domain_offset] * velocity[domain_offset] * kws * wavelet[wavelet_offset];
 
                         #if defined(CPU_OPENMP) || defined(GPU_OPENMP)
                         #pragma omp atomic
@@ -437,7 +445,7 @@ double forward(f_type *u, f_type *velocity, f_type *density, f_type *damp,
     #pragma omp target exit data map(delete: rec_points_interval[:rec_points_interval_size])
     #pragma omp target exit data map(delete: rec_points_values[:rec_points_values_size])
     #pragma omp target exit data map(delete: rec_points_values_offset[:num_receivers])
-    #pragma omp target exit data map(delete: wavelet[:wavelet_size])
+    #pragma omp target exit data map(delete: wavelet[:wavelet_size * wavelet_count])
     #pragma omp target exit data map(delete: receivers[:shot_record_size])
     #pragma omp target exit data map(delete: u[:u_size])
     #endif
