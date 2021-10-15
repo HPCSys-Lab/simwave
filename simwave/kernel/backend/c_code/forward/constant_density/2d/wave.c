@@ -111,7 +111,7 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
                 f_type sum_z = coeff[0] * u[current_snapshot];
 
                 // radius of the stencil
-                for(int ir = 1; ir <= stencil_radius; ir++){
+                for(size_t ir = 1; ir <= stencil_radius; ir++){
                     //neighbors in the horizontal direction
                     sum_x += coeff[ir] * (u[current_snapshot + ir] + u[current_snapshot - ir]);
 
@@ -232,7 +232,7 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
 
             // null neumann on the left
             if(x_before == 2){
-                for(int ir = 1; ir <= stencil_radius; ir++){
+                for(size_t ir = 1; ir <= stencil_radius; ir++){
                     size_t domain_offset = i * nx + stencil_radius;
                     size_t next_snapshot = next_t * domain_size + domain_offset;
                     u[next_snapshot - ir] = u[next_snapshot + ir];
@@ -248,7 +248,7 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
 
             // null neumann on the right
             if(x_after == 2){
-                for(int ir = 1; ir <= stencil_radius; ir++){
+                for(size_t ir = 1; ir <= stencil_radius; ir++){
                     size_t domain_offset = i * nx + (nx - stencil_radius - 1);
                     size_t next_snapshot = next_t * domain_size + domain_offset;
                     u[next_snapshot + ir] = u[next_snapshot - ir];
@@ -276,7 +276,7 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
 
             // null neumann on the top
             if(z_before == 2){
-                for(int ir = 1; ir <= stencil_radius; ir++){
+                for(size_t ir = 1; ir <= stencil_radius; ir++){
                     size_t domain_offset = stencil_radius * nx + j;
                     size_t next_snapshot = next_t * domain_size + domain_offset;
                     u[next_snapshot - (ir * nx)] = u[next_snapshot + (ir * nx)];
@@ -292,7 +292,7 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
 
             // null neumann on the bottom
             if(z_after == 2){
-                for(int ir = 1; ir <= stencil_radius; ir++){
+                for(size_t ir = 1; ir <= stencil_radius; ir++){
                     size_t domain_offset = (nz - stencil_radius - 1) * nx + j;
                     size_t next_snapshot = next_t * domain_size + domain_offset;
                     u[next_snapshot + (ir * nx)] = u[next_snapshot - (ir * nx)];
