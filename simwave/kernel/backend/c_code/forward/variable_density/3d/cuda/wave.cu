@@ -8,15 +8,19 @@
 #define THREADS_NUM_X TX
 #define THREADS_NUM_Z TZ
 
-#define checkErrorCuda(ans) { gpuCheck((ans), __FILE__, __LINE__); }
+#define checkErrorCuda(ans)                  \
+    {                                        \
+        gpuCheck((ans), __FILE__, __LINE__); \
+    }
 
-inline void gpuCheck(cudaError_t code, const char *file, int line, bool abort=true)
+inline void gpuCheck(cudaError_t code, const char *file, int line, bool abort = true)
 {
-   if (code != cudaSuccess) 
-   {
-      fprintf(stderr,"GPU Check: %s %s %d\n", cudaGetErrorString(code), file, line);
-      if (abort) exit(code);
-   }
+    if (code != cudaSuccess)
+    {
+        fprintf(stderr, "GPU Check: %s %s %d\n", cudaGetErrorString(code), file, line);
+        if (abort)
+            exit(code);
+    }
 };
 
 // use single (float) or double precision
@@ -383,7 +387,7 @@ __global__ void kernel_AddSourceTerm(size_t n, size_t *src_points_interval, size
 __global__ void kernel_UpdateWavefield(size_t prev_t, size_t current_t, size_t next_t,
                                        size_t stencil_radius, size_t nz, size_t nx, size_t ny, f_type dt,
                                        f_type dzSquared, f_type dxSquared, f_type dySquared, f_type dtSquared,
-                                       f_type *u, f_type *velocity, f_type *coeff, f_type *damp)
+                                       f_type *u, f_type *velocity, f_type *density, f_type *coeff_order1, f_type *coeff_order2, f_type *damp)
 {
     // nz --> vertical
     // nx --> horizontal
@@ -408,26 +412,49 @@ __global__ void kernel_UpdateWavefield(size_t prev_t, size_t current_t, size_t n
     // stencil code to update grid
     f_type value = 0.0;
 
-    f_type sum_y = coeff[0] * u[current_snapshot];
-    f_type sum_x = coeff[0] * u[current_snapshot];
-    f_type sum_z = coeff[0] * u[current_snapshot];
+    // second derivative for pressure
+    f_type sd_pressure_y = coeff_order2[0] * u[current_snapshot];
+    f_type sd_pressure_x = coeff_order2[0] * u[current_snapshot];
+    f_type sd_pressure_z = coeff_order2[0] * u[current_snapshot];
+
+    // first derivative for pressure
+    f_type fd_pressure_y = 0.0;
+    f_type fd_pressure_x = 0.0;
+    f_type fd_pressure_z = 0.0;
+
+    // first derivative for density
+    f_type fd_density_y = 0.0;
+    f_type fd_density_x = 0.0;
+    f_type fd_density_z = 0.0;
 
     // radius of the stencil
     for (int ir = 1; ir <= stencil_radius; ir++)
     {
         // neighbors in the Y direction
-        sum_y += coeff[ir] * (u[current_snapshot + ir] + u[current_snapshot - ir]);
+        sd_pressure_y += coeff_order2[ir] * (u[current_snapshot + ir] + u[current_snapshot - ir]);
+        fd_pressure_y += coeff_order1[ir] * (u[current_snapshot + ir] - u[current_snapshot - ir]);
+        fd_density_y += coeff_order1[ir] * (density[domain_offset + ir] - density[domain_offset - ir]);
 
         // neighbors in the X direction
-        sum_x += coeff[ir] * (u[current_snapshot + (ir * ny)] + u[current_snapshot - (ir * ny)]);
+        sd_pressure_x += coeff_order2[ir] * (u[current_snapshot + (ir * ny)] + u[current_snapshot - (ir * ny)]);
+        fd_pressure_x += coeff_order1[ir] * (u[current_snapshot + (ir * nx)] - u[current_snapshot - (ir * nx)]);
+        fd_density_x += coeff_order1[ir] * (density[domain_offset + (ir * nx)] - density[domain_offset - (ir * nx)]);
 
         // neighbors in the Z direction
-        sum_z += coeff[ir] * (u[current_snapshot + (ir * nx * ny)] + u[current_snapshot - (ir * nx * ny)]);
+        sd_pressure_z += coeff_order2[ir] * (u[current_snapshot + (ir * nx * ny)] + u[current_snapshot - (ir * nx * ny)]);
+        fd_pressure_z += coeff_order1[ir] * (u[current_snapshot + (ir * nx * ny)] - u[current_snapshot - (ir * nx * ny)]);
+        fd_density_z += coeff_order1[ir] * (density[domain_offset + (ir * nx * ny)] - density[domain_offset - (ir * nx * ny)]);
     }
 
-    value += sum_y / dySquared + sum_x / dxSquared + sum_z / dzSquared;
+    value += sd_pressure_y / dySquared + sd_pressure_x / dxSquared + sd_pressure_z / dzSquared;
 
-    // nominator with damp coefficient
+    f_type term_y = (fd_pressure_y * fd_density_y) / (2 * dySquared);
+    f_type term_x = (fd_pressure_x * fd_density_x) / (2 * dxSquared);
+    f_type term_z = (fd_pressure_z * fd_density_z) / (2 * dzSquared);
+
+    value -= (term_y + term_x + term_z) / density[domain_offset];
+
+    // denominator with damp coefficient
     f_type denominator = (1.0 + damp[domain_offset] * dt);
 
     value *= (dtSquared * velocity[domain_offset] * velocity[domain_offset]) / denominator;
@@ -435,9 +462,9 @@ __global__ void kernel_UpdateWavefield(size_t prev_t, size_t current_t, size_t n
     u[next_snapshot] = 2.0 / denominator * u[current_snapshot] - ((1.0 - damp[domain_offset] * dt) / denominator) * u[prev_snapshot] + value;
 }
 // forward_2D_constant_density
-extern "C" double forward(f_type *u, f_type *velocity, f_type *damp,
+extern "C" double forward(f_type *u, f_type *velocity, f_type *density, f_type *damp,
                           f_type *wavelet, size_t wavelet_size, size_t wavelet_count,
-                          f_type *coeff, size_t *boundary_conditions,
+                          f_type *coeff_order2, f_type *coeff_order1, size_t *boundary_conditions,
                           size_t *src_points_interval, size_t src_points_interval_size,
                           f_type *src_points_values, size_t src_points_values_size,
                           size_t *src_points_values_offset,
@@ -477,8 +504,10 @@ extern "C" double forward(f_type *u, f_type *velocity, f_type *damp,
     // Device variables
     f_type *d_u;
     f_type *d_velocity;
+    f_type *d_density;
     f_type *d_damp;
-    f_type *d_coeff;
+    f_type *d_coeff_order1;
+    f_type *d_coeff_order2;
     size_t *d_src_points_interval;
     f_type *d_src_points_values;
     size_t *d_src_points_values_offset;
@@ -503,12 +532,18 @@ extern "C" double forward(f_type *u, f_type *velocity, f_type *damp,
     checkErrorCuda(cudaMalloc(&d_velocity, nbytes));
     checkErrorCuda(cudaMemcpy(d_velocity, velocity, nbytes, cudaMemcpyHostToDevice));
 
+    checkErrorCuda(cudaMalloc(&d_density, nbytes));
+    checkErrorCuda(cudaMemcpy(d_density, density, nbytes, cudaMemcpyHostToDevice));
+
     checkErrorCuda(cudaMalloc(&d_damp, nbytes));
     checkErrorCuda(cudaMemcpy(d_damp, damp, nbytes, cudaMemcpyHostToDevice));
 
     nbytes = sizeof(f_type) * (stencil_radius + 1);
-    checkErrorCuda(cudaMalloc(&d_coeff, nbytes));
-    checkErrorCuda(cudaMemcpy(d_coeff, coeff, nbytes, cudaMemcpyHostToDevice));
+    checkErrorCuda(cudaMalloc(&d_coeff_order2, nbytes));
+    checkErrorCuda(cudaMemcpy(d_coeff_order2, coeff_order2, nbytes, cudaMemcpyHostToDevice));
+
+    checkErrorCuda(cudaMalloc(&d_coeff_order1, nbytes));
+    checkErrorCuda(cudaMemcpy(d_coeff_order1, coeff_order1, nbytes, cudaMemcpyHostToDevice));
 
     nbytes = sizeof(size_t) * src_points_interval_size;
     checkErrorCuda(cudaMalloc(&d_src_points_interval, nbytes));
@@ -575,10 +610,10 @@ extern "C" double forward(f_type *u, f_type *velocity, f_type *damp,
         kernel_UpdateWavefield<<<grid, block>>>(prev_t, current_t, next_t,
                                                 stencil_radius, nz, nx, ny, dt,
                                                 dzSquared, dxSquared, dySquared, dtSquared,
-                                                d_u, d_velocity, d_coeff, d_damp);
+                                                d_u, d_velocity, d_density, d_coeff_order1, d_coeff_order2, d_damp);
 
 #if defined(DEBUG)
-        checkErrorCuda(cudaDeviceSynchronize());
+            checkErrorCuda(cudaDeviceSynchronize());
 #endif
 
         /*
@@ -707,7 +742,8 @@ extern "C" double forward(f_type *u, f_type *velocity, f_type *damp,
     checkErrorCuda(cudaFree(d_u));
     checkErrorCuda(cudaFree(d_velocity));
     checkErrorCuda(cudaFree(d_damp));
-    checkErrorCuda(cudaFree(d_coeff));
+    checkErrorCuda(cudaFree(d_coeff_order1));
+    checkErrorCuda(cudaFree(d_coeff_order2));
     checkErrorCuda(cudaFree(d_src_points_interval));
     checkErrorCuda(cudaFree(d_src_points_values));
     checkErrorCuda(cudaFree(d_src_points_values_offset));

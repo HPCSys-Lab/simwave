@@ -34,7 +34,7 @@ __global__ void kernel_ExchangeValue(size_t nx, size_t nz,
     int i = blockIdx.y * blockDim.y + threadIdx.y;
     int j = blockIdx.x * blockDim.x + threadIdx.x;
          
-    if( (i >= nz ) && (j >= nx ) )
+    if( (i >= nz ) || (j >= nx ) )
         return;
 
     size_t domain_size = nz * nx;
@@ -286,7 +286,7 @@ void kernel_UpdateWavefield(size_t prev_t, size_t current_t, size_t next_t,
     int i = blockIdx.y * blockDim.y + threadIdx.y + stencil_radius;
     int j = blockIdx.x * blockDim.x + threadIdx.x + stencil_radius;
          
-    if( (i >= (nz - stencil_radius) ) && (j  >= (nx - stencil_radius) ) )
+    if( (i >= (nz - stencil_radius) )  || (j  >= (nx - stencil_radius) ) )
         return;
 
     size_t domain_size = nz * nx;

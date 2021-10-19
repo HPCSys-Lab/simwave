@@ -54,7 +54,7 @@ if __name__ == '__main__':
         cflags = '-O3 -gencode arch=compute_75,code=sm_75 \
                   --compiler-options -fPIC,-Wall \
                   --use_fast_math -std=c++17 -shared \
-                  -DDEBUG -DTX=32 -DTY=4 -DTZ=2'
+                  -DTX=32 -DTY=4 -DTZ=2'
     else:
         raise ValueError('Language not available')
 
