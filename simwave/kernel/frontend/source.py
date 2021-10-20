@@ -278,7 +278,7 @@ class MultiWavelet(Wavelet):
     @property
     def values(self):
         """Wavelet values."""
-        return self.dtype(self._values)
+        return np.ascontiguousarray(self._values, dtype=self.dtype)
 
     @property
     def num_sources(self):
