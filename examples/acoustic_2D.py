@@ -77,8 +77,11 @@ solver = Solver(
 
 print("Timesteps:", time_model.timesteps)
 
+# initial grid
+initial_grid = np.zeros(shape=space_model.shape)
+
 # run the forward
-u_full, recv = solver.forward()
+u_full, recv = solver.forward(initial_grid)
 
 print("u_full shape:", u_full.shape)
 plot_velocity_model(space_model.velocity_model)

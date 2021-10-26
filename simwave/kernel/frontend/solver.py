@@ -109,7 +109,7 @@ class Solver:
 
         return np.zeros(shape, dtype=self.space_model.dtype)
 
-    def forward(self):
+    def forward(self, initial_grid=None):
         """
         Run the forward propagator.
 
@@ -126,9 +126,47 @@ class Solver:
         rec_points, rec_values, rec_offsets = \
             self.receivers.interpolated_points_and_values
 
+        u = self.u_full
+
+        if initial_grid is not None:
+
+            initial_grid = self.space_model.dtype(initial_grid)
+
+            if initial_grid.shape != self.space_model.shape:
+                raise ValueError(
+                    "initial_grid must have shape = {}").format(
+                    self.space_model.shape
+                )
+
+            halo = self.space_model.halo_size[0]
+            nbl = self.space_model.nbl
+
+            print("Initial grid")
+            print(initial_grid)
+            print("Initial grid shape:", initial_grid.shape)
+
+            if self.space_model.dimension == 2:
+
+                z1 = halo + nbl[0]
+                z2 = halo + nbl[1]
+                x1 = halo + nbl[2]
+                x2 = halo + nbl[3]
+                u[0, z1:-z2, x1:-x2] = initial_grid
+
+            else:
+
+                z1 = halo + nbl[0]
+                z2 = halo + nbl[1]
+                x1 = halo + nbl[2]
+                x2 = halo + nbl[3]
+                y1 = halo + nbl[4]
+                y2 = halo + nbl[5]
+
+                u[0, z1:-z2, x1:-x2, y1:-y2] = initial_grid
+
         u_full, recv = self._middleware.exec(
             operator='forward',
-            u_full=self.u_full,
+            u_full=u,
             velocity_model=self.space_model.extended_velocity_model,
             density_model=self.space_model.extended_density_model,
             damping_mask=self.space_model.damping_mask,
@@ -157,7 +195,7 @@ class Solver:
             begin_timestep=1,
             end_timestep=self.time_model.timesteps,
             space_order=self.space_model.space_order,
-            num_snapshots=self.u_full.shape[0]
+            num_snapshots=u.shape[0]
         )
 
         # remove time halo region
