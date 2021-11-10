@@ -151,6 +151,8 @@ class Solver:
                 z2 = halo + nbl[1]
                 x1 = halo + nbl[2]
                 x2 = halo + nbl[3]
+
+                u[0, z1:-z2, x1:-x2] = initial_grid
                 u[1, z1:-z2, x1:-x2] = initial_grid
 
             else:
@@ -162,6 +164,7 @@ class Solver:
                 y1 = halo + nbl[4]
                 y2 = halo + nbl[5]
 
+                u[0, z1:-z2, x1:-x2, y1:-y2] = initial_grid
                 u[1, z1:-z2, x1:-x2, y1:-y2] = initial_grid
 
         u_full, recv = self._middleware.exec(
