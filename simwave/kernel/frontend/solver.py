@@ -132,11 +132,11 @@ class Solver:
 
             initial_grid = self.space_model.dtype(initial_grid)
 
-            if initial_grid.shape != self.space_model.shape:
-                raise ValueError(
-                    "initial_grid must have shape = {}").format(
-                    self.space_model.shape
-                )
+            # if initial_grid.shape != self.space_model.shape:
+            #     raise ValueError(
+            #         "initial_grid must have shape = {}").format(
+            #         self.space_model.shape
+            #     )
 
             halo = self.space_model.halo_size[0]
             nbl = self.space_model.nbl
@@ -152,8 +152,8 @@ class Solver:
                 x1 = halo + nbl[2]
                 x2 = halo + nbl[3]
 
-                u[0, z1:-z2, x1:-x2] = initial_grid
-                u[1, z1:-z2, x1:-x2] = initial_grid
+                u[0, z1:-z2, x1:-x2] = initial_grid[0]
+                u[1, z1:-z2, x1:-x2] = initial_grid[1]
 
             else:
 
@@ -164,8 +164,8 @@ class Solver:
                 y1 = halo + nbl[4]
                 y2 = halo + nbl[5]
 
-                u[0, z1:-z2, x1:-x2, y1:-y2] = initial_grid
-                u[1, z1:-z2, x1:-x2, y1:-y2] = initial_grid
+                u[0, z1:-z2, x1:-x2, y1:-y2] = initial_grid[0]
+                u[1, z1:-z2, x1:-x2, y1:-y2] = initial_grid[1]
 
         u_full, recv = self._middleware.exec(
             operator='forward',
