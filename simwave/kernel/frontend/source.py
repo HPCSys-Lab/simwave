@@ -133,6 +133,8 @@ class Source:
             .., begin_point_axisN, end_point_axisN].
         ndarray
             1D Numpy array with [source_values_axis1, .., source_values_axisN].
+        ndarray
+            1D Numpy array with [source_1_offset, .., source_N_offset].
         """
 
         points = np.array([], dtype=np.uint)
