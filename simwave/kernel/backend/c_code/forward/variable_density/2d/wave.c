@@ -49,6 +49,12 @@ double forward(f_type *u, f_type *velocity, f_type *density, f_type *damp,
     gettimeofday(&time_start, NULL);
 
     #ifdef GPU_OPENMP
+
+    // select the device 
+    #ifdef DEVICEID
+    omp_set_default_device(DEVICEID);
+    #endif
+    
     size_t shot_record_size = wavelet_size * num_receivers;
     size_t u_size = num_snapshots * domain_size;
 
