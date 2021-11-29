@@ -2,7 +2,10 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
-#include <omp.h>
+
+#if defined(CPU_OPENMP) || defined(GPU_OPENMP)
+    #include <omp.h>
+#endif
 
 // use single (float) or double precision
 // according to the value passed in the compilation cmd
