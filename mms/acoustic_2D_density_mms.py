@@ -1,31 +1,63 @@
-import numpy as np
-import matplotlib.pyplot as plt
+"""Converge test for constant density acoustic wave equation
 
-from simwave import (
-    SpaceModel, TimeModel, RickerWavelet, MultiWavelet, Wavelet, Solver, Compiler,
-    Receiver, Source, plot_wavefield, plot_shotrecord, plot_velocity_model
-)
+VERBOSE OPTIONS
+
+--mode
+        'single': runs a single time and plots comparison at a point
+        'time': test order-accuracy in time
+        'full': displays absolute and relative difference between wavefield and interpolated receiver values on the whole domain
+--data
+        'default': same as in devito's accuracy jupyter-notebook, but with scaling usually adopted in the simwave examples
+        'devito_scale': same as in devito's accuracy jupyter-notebook, including the scaling (kHz, domain in meters but velocity in km/s, etc)
+        'test_params': same as in test_convergence.py pytest file, which currently passes (for a point source)
+--signal
+        'cosine': source time dependency as cos(w*t)
+        'squared_sine': source time dependency as sin(w*t) ** 2
+        'keith_cosine': source time dependency as cos(w*t) * cos(w*(t+dt))
+
+--------------------------------------------------------------------------
+
+Consider the acoustic wave equation with constant density
+
+1/c**2 * d^2u/dt^2 - div(grad(u)) = f,                               (1)
+
+Assuming a solution of the type
+
+u(z, x, t) = sin(kz * z) * sin(kx * x) * cos(w * t),                 (2)
+
+where kz = pi / Lz, kx = pi / Lx, and w = 2*pi*f. Lx is the width of the
+domain, Lz is its depth, and 'f' is some arbitrary frequency. This choice
+implies that u(z, k, t) = 0 at the boundaries. It also implies an initial
+condition of u(z, x, 0) = sin(kz * z) * sin(kx * x), and initial 'velocity'
+du/dt(z, x, 0) = 0.
+
+In particular, the source whose solution to (1) results in (2) is:
+
+f(z, x, t) = (kz**2 + kx**2 - (w/c)**2) * u(z, x, t),                (3)
+
+"""
+
+
+import sys
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from simwave import (Compiler, Receiver, RickerWavelet, Solver, Source,
+                     SpaceModel, TimeModel, Wavelet, plot_shotrecord,
+                     plot_velocity_model, plot_wavefield)
+
+# from sympy import cos, diff, simplify, sin, symbols
+
+#######################################################################
+######################  CLASSES AND FUNCTIONS  ########################
+#######################################################################
 
 
 class MySource(Source):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.count = 1
-
-    @property
-    def count(self):
-        """Return the number of sources/receives."""
-        return self._count
-    
-    @count.setter
-    def count(self, count):
-        """Return the number of sources/receives."""
-        self._count = count
-   
     @property
     def interpolated_points_and_values(self):
-        """ Calculate the amplitude value at all points"""
+        """Calculate the amplitude value at all points"""
 
         points = np.array([], dtype=np.uint)
         values = np.array([], dtype=self.space_model.dtype)
@@ -38,152 +70,145 @@ class MySource(Source):
 
         # senoid window
         for dim, dim_length in enumerate(self.space_model.shape):
+        # for dim, dim_length in enumerate(self.space_model.extended_shape):
 
             # points
             lpad = halo_pad_width[dim][0] + nbl_pad_width[dim][0]
-            rpad = halo_pad_width[dim][1] + nbl_pad_width[dim][1] + dim_length
+            # lpad = 0
+            rpad = halo_pad_width[dim][1] + nbl_pad_width[dim][1] + dim_length - 1
+            # rpad = dim_length
             points = np.append(points, np.array([lpad, rpad], dtype=np.uint))
             # values
-            coor_min, coor_max = bbox[dim * dimension:2 + dim * dimension]
+            coor_min, coor_max = bbox[dim * dimension : 2 + dim * dimension]
             coordinates = np.linspace(coor_min, coor_max, dim_length)
             amplitudes = np.sin(np.pi / (coor_max - coor_min) * coordinates)
             values = np.append(values, amplitudes.astype(values.dtype))
         # offset
         offset = np.append(offset, np.array([values.size], dtype=np.uint))
 
-        # add window for density term
-
-        # points
-        lpad_x = halo_pad_width[0][0] + nbl_pad_width[0][0]
-        rpad_x = halo_pad_width[0][1] + nbl_pad_width[0][1] + self.space_model.shape[0]
-        points = np.append(points, np.array([lpad_x, rpad_x], dtype=np.uint))
-
-        lpad_z = halo_pad_width[1][0] + nbl_pad_width[1][0]
-        rpad_z = halo_pad_width[1][1] + nbl_pad_width[1][1] + self.space_model.shape[1]
-        points = np.append(points, np.array([lpad_z, rpad_z], dtype=np.uint))
-
-        xmin, xmax = bbox[0: 2]
-        zmin, zmax = bbox[2: 4]
-        kx = np.pi / (xmax - xmin)
-        kz = np.pi / (zmax - zmin)
-        x_coordinates = np.linspace(xmin, xmax, self.space_model.shape[0])
-        z_coordinates = np.linspace(zmin, zmax, self.space_model.shape[1])
-        X, Z = np.meshgrid(z_coordinates, z_coordinates)
-
-        # (1 / rho) * drho_dz * dphi_dz
-        x_amplitudes = np.sin(kx * x_coordinates)
-
-        dens = self.space_model.density_model
-        mid_z = dens.shape[-1] // 2
-        drho_dz = np.gradient(dens[:, mid_z], z_coordinates).mean()
-        z_amplitudes = kz * drho_dz * np.cos(kz * z_coordinates) / dens[:,mid_z]
-
-        values = np.append(values, x_amplitudes.astype(values.dtype))
-        values = np.append(values, z_amplitudes.astype(values.dtype))
-
-        offset = np.append(offset, np.array([values.size], dtype=np.uint))
-
         return points, values, offset
 
-def grid(Lx, Lz, h):
-    nz = int((Lz) / h + 1)
-    nx = int((Lx) / h + 1)
-    zcoords = np.linspace(0, Lz, nz)
-    xcoords = np.linspace(0, Lx, nx)
-    return np.meshgrid(zcoords, xcoords)
 
-def ansatz(Lx, Lz, h, freq, tp):
-    # Params
-    kz = np.pi / Lx
-    kx = np.pi / Lz
-    meshgrid = grid(Lx, Lz, h)
-    omega = 2*np.pi*freq
-    # Solution
-    space_solution = np.sin(kx*meshgrid[0]) * np.sin(kz*meshgrid[1])
-    time_solution = np.cos(omega*tp)
-    return (space_solution[:,:,None] * time_solution).T
+def cosenoid(time_model, amplitude, omega=2 * np.pi):
+    """Function that generates the signal satisfying s(0) = ds/dt(0) = 0"""
+    return amplitude * np.cos(omega * time_model.time_values)
+
+
+def squared_senoid(time_model, kx=None, kz=None, vp=None, omega=None):
+    """Function that generates the signal satisfying s(0) = ds/dt(0) = 0"""
+    return (kx ** 2 + kz ** 2) * np.sin(omega * time_model.time_values) ** 2 + 2 * (
+        omega / vp
+    ) ** 2 * np.cos(2 * omega * time_model.time_values)
+
+
+def keith_cosenoid(time_model, kx=None, kz=None, vp=None, omega=None):
+    """Function that generates the signal satisfying s(0) = 0 and s(-dt) = 0"""
+    dt = time_model.dt
+    t_ = time_model.time_values
+    return (
+        vp ** 2 * (kx ** 2 + kz ** 2) * np.sin(omega * t_) * np.sin(omega * (dt + t_))
+        + 2 * omega ** 2 * np.cos(omega * (dt + 2 * t_))
+    ) / vp ** 2
+
 
 def initial_shape(space_model, kx, kz):
     nbl_pad_width = space_model.nbl_pad_width
     halo_pad_width = space_model.halo_pad_width
     bbox = space_model.bounding_box
     # values
-    xmin, xmax = bbox[0: 2]
-    zmin, zmax = bbox[2: 4]
-    x_coords = np.linspace(xmin, xmax, space_model.shape[0])
-    z_coords = np.linspace(zmin, zmax, space_model.shape[1])
-    X, Z = np.meshgrid(x_coords, z_coords)
+    xmin, xmax = bbox[2:4]
+    zmin, zmax = bbox[0:2]
+    x_coords = np.linspace(xmin, xmax, space_model.shape[1])
+    z_coords = np.linspace(zmin, zmax, space_model.shape[0])
+    Z, X = np.meshgrid(z_coords, x_coords)
 
     return np.sin(kx * X) * np.sin(kz * Z)
-   
-def cosenoid(time_model, amplitude, omega=2*np.pi*1):
-    """Function that generates the signal satisfying s(0) = ds/dt(0) = 0"""
-    return amplitude * np.cos(omega * time_model.time_values)
 
-def create_models(Lx, Lz, vel, dens, tf, h, p):
+
+def ansatz(Lx, Lz, h, omega, tp, dt=None, signal=None):
+    # Params
+    kz = np.pi / Lx
+    kx = np.pi / Lz
+    nz = int((Lz) / h + 1)
+    nx = int((Lx) / h + 1)
+    zcoords = np.linspace(0, Lz, nz)
+    xcoords = np.linspace(0, Lx, nx)
+    meshgrid = np.meshgrid(zcoords, xcoords)
+    # Solution
+    space_solution = np.sin(kx * meshgrid[0]) * np.sin(kz * meshgrid[1])
+    if signal in ["cosine"]:
+        time_solution = np.cos(omega * tp)
+    elif signal in ["squared_sine"]:
+        time_solution = np.sin(omega * tp) ** 2
+    elif signal in ["keith_cosine"]:
+        time_solution = np.sin(omega * tp) * np.sin(omega * (tp + dt))
+    return (space_solution[:, :, None] * time_solution).T
+
+
+def create_models(Lz, Lx, spacing, order, vel, dens, tf, dt, stride):
+
     # create the space model
     space_model = SpaceModel(
-        bounding_box=(0, Lx, 0, Lz),
-        grid_spacing=(h, h),
+        bounding_box=(0, Lz, 0, Lx),
+        grid_spacing=(spacing, spacing),
         velocity_model=vel,
         density_model=dens,
-        space_order=p,
-        dtype=np.float32
+        space_order=order,
+        dtype=np.float64,
     )
 
     # config boundary conditions
     # (none,  null_dirichlet or null_neumann)
     space_model.config_boundary(
-        damping_length=0,
         boundary_condition=(
-            "null_dirichlet", "null_dirichlet",
-            "null_dirichlet", "null_dirichlet"
+            "null_dirichlet",
+            "null_dirichlet",
+            "null_dirichlet",
+            "null_dirichlet",
         ),
-        damping_polynomial_degree=3,
-        damping_alpha=0.001
-    ) 
+    )
 
     # create the time model
-    time_model = TimeModel(
-        space_model=space_model,
-        tf=tf,
-        saving_stride=1
-    )
+    time_model = TimeModel(space_model=space_model, tf=tf, dt=dt, saving_stride=stride)
+    print(f"dt size = {time_model.dt}")
 
     return space_model, time_model
 
-def geometry_acquisition(space_model, receivers=None):
-    if receivers is None:
-        receivers=[(2560, i) for i in range(0, 5120, 10)]
 
-    # personalized source
+def acquisition_geometry(
+    space_model, time_model, src, rec, vp, kz, kx, omega, signal=None
+):
+    # check for rec
+    if rec is None:
+        rec = [
+            (260, i * space_model.grid_spacing[1]) for i in range(space_model.shape[1])
+        ]
+
+    # create the set of sources
     my_source = MySource(space_model, coordinates=[])
 
     # crete the set of receivers
-    receiver = Receiver(
-        space_model=space_model,
-        coordinates=receivers,
-        window_radius=4
-    )
+    receiver = Receiver(space_model=space_model, coordinates=rec, window_radius=4)
 
-    return my_source, receiver
+    # create a cosine wavelet with 90hz of linear frequency
+    if signal in ["cosine"]:
+        amp_no_density = 1 * ((kx ** 2 + kz ** 2) - omega ** 2 / vp ** 2)
+        wavelet = Wavelet(
+            cosenoid, time_model=time_model, amplitude=amp_no_density, omega=omega
+        )
+    elif signal in ["squared_sine"]:
+        wavelet = Wavelet(
+            squared_senoid, time_model=time_model, kx=kx, kz=kz, vp=vp, omega=omega
+        )
+    elif signal in ["keith_cosine"]:
+        wavelet = Wavelet(
+            keith_cosenoid, time_model=time_model, kx=kx, kz=kz, vp=vp, omega=omega
+        )
 
-def build_solver(space_model, time_model, vp, kx, kz, omega, density):
+    return my_source, receiver, wavelet
 
-    # geometry acquisition
-    source, receiver = geometry_acquisition(space_model)
 
-    # create a cosenoid wavelet
-    amp_no_density = 1 * ((kx**2+kz**2) - omega**2/vp**2)
-    amp_with_density = 1 if density else 0
-    wavelet1 = Wavelet(cosenoid, time_model=time_model, amplitude=amp_no_density, omega=omega)
-    wavelet2 = Wavelet(cosenoid, time_model=time_model, amplitude=amp_with_density, omega=omega)
-    wavelets = MultiWavelet(np.vstack((wavelet1.values, wavelet2.values)).T, time_model)
-
-    source.count = wavelets.values.shape[-1]
-
-    # set compiler options
-    compiler = Compiler( cc='gcc', language='cpu_openmp', cflags='-O3 -fPIC -ffast-math -Wall -std=c99 -shared')
+def run(space_model, time_model, source, receiver, wavelet, omega, init_grid=False):
 
     # create the solver
     solver = Solver(
@@ -191,90 +216,183 @@ def build_solver(space_model, time_model, vp, kx, kz, omega, density):
         time_model=time_model,
         sources=source,
         receivers=receiver,
-        wavelet=wavelets,
-        compiler=compiler
+        wavelet=wavelet,
+        compiler=compiler,
     )
 
-    return solver
+    print("Timesteps:", time_model.timesteps)
 
-def accuracy(Lx, Lz, tf, freq, vp, rho, rho_z, h, p, dt=None, density=True):
-    """Compare numerical and analytical results"""
-    # harmonic parameters
-    kx = np.pi / Lx
-    kz = np.pi / Lz
-    omega = 2*np.pi*freq
-
-    n = Lx // h + 1
-    # velocity model
-    vel = vp * np.ones(shape=(n, n), dtype=np.float32)
-    # density model
-    dens = rho * np.ones(shape=(n, n), dtype=np.float32)
-    for depth, dens_values in enumerate(dens):
-        dens_values[:] = rho + rho_z * depth / dens.shape[0] 
-
-    # discretization
-    space_model, time_model = create_models(Lx, Lz, vel, dens, tf, h, p)
-    print(f"CFL time step dt = {time_model.dt}")
-    if dt is not None:
-        time_model.dt = dt
-        print(f"imposed time step dt = {time_model.dt}")
     # initial grid
-    initial_grid = initial_shape(space_model, kx, kz)
-    # get solver
-    solver = build_solver(space_model, time_model, vp, kx, kz, omega, density)
+    if init_grid:
+        if signal in ["cosine"]:
+            init_shape = initial_shape(space_model, kx, kz)
+            initial_grid = [
+                init_shape * np.cos(-1 * time_model.dt * omega),
+                init_shape * np.cos(-0 * time_model.dt * omega),
+            ]
+        elif signal in ["squared_sine"]:
+            init_shape = initial_shape(space_model, kx, kz)
+            initial_grid = [
+                init_shape * np.sin(-1 * time_model.dt * omega) ** 2,
+                init_shape * np.sin(-0 * time_model.dt * omega) ** 2,
+            ]
+        elif signal in ["keith_cosine"]:
+            initial_grid = None
+
+    else:
+        initial_grid = None
 
     # run the forward
-    u_full, recv = solver.forward(
-        [initial_grid * np.cos(-1 * time_model.dt * omega),
-         initial_grid * np.cos(-0 * time_model.dt * omega)
-        ]
-    )
+    u_full, recv = solver.forward(initial_grid)
 
-    """
-    # plot stuff
-    print("u_full shape:", u_full.shape)
-    plot_wavefield(u_full[-1])
-    plot_shotrecord(recv)
-    """
+    return u_full, recv
 
-    # Get analytical solution
-    u_analytic = ansatz(Lx, Lz, h, freq, time_model.time_values)
-    # plot comparison
-    pt_x, pt_z = (3 * dim // 4 for dim in u_full[0,:,:].shape)
-    numerical_values = u_full[:, pt_x, pt_z]
-    analytic_values = u_analytic[:, pt_x, pt_z]
-    time_values = time_model.time_values
 
-    plt.plot(time_values, analytic_values, time_values, numerical_values)
+def plot_at_point(u_num, u_ana, time_values, label):
+    plt.plot(time_values, u_ana, time_values, u_num, label=label)
     plt.legend(["analytical", "numerical"])
     plt.title("Comparison between analytical and numerical result (simwave)")
     plt.xlabel("time")
-    plt.show()
 
-    # compare solutions
-    return np.linalg.norm(numerical_values - analytic_values) / numerical_values.size
+
+def convergence_time(
+    Lz, Lx, base_h, base_p, vel, tf, dts, stride, src, rec, vp, kz, kx, omega, signal
+):
+    error = []
+    for i, dt_ in enumerate(dts):
+        space_model, time_model = create_models(
+            Lz, Lx, base_h, base_p, vel, None, tf, dt_, stride=stride
+        )
+        source, receiver, wavelet = acquisition_geometry(
+            space_model, time_model, src, rec, vp, kz, kx, omega, signal
+        )
+        u_full, recv = run(
+            space_model, time_model, source, receiver, wavelet, omega, init_grid=True
+        )
+        if signal in ["cosine"]:
+            analyticv = (
+                np.sin(kz * rec[0][0])
+                * np.sin(kx * rec[0][1])
+                * np.cos(omega * time_model.time_values)
+            )
+        elif signal in ["squared_sine"]:
+            analyticv = (
+                np.sin(kz * rec[0][0])
+                * np.sin(kx * rec[0][1])
+                * np.sin(omega * time_model.time_values) ** 2
+            )
+        elif signal in ["keith_cosine"]:
+            print("in here")
+            analyticv = (
+                np.sin(kz * rec[0][0])
+                * np.sin(kx * rec[0][1])
+                * np.sin(omega * time_model.time_values[::stride])
+                * np.sin(omega * (time_model.time_values[::stride] - dt_))
+            )
+
+        idx_z = int(receiver.grid_positions[0][0])
+        idx_x = int(receiver.grid_positions[0][1])
+        u_recv = u_full[:, idx_z, idx_x]
+
+        print(u_recv.shape, analyticv.shape)
+
+        u_recv = np.asarray(u_recv.flatten())
+        tmp = np.mean(u_recv - analyticv)
+        print(tmp)
+        # u_recv -= tmp
+        plot_at_point(
+            u_recv - analyticv,
+            u_recv - analyticv,
+            np.arange(time_model.time_values[::stride].size),
+            label="error",
+        )
+        plt.legend()
+        plt.show()
+
+        error.append(
+            np.linalg.norm(u_recv - analyticv, 2)
+            / np.sqrt(time_model.time_values[::stride].size)
+        )
+        # error.append(np.linalg.norm(u_recv.flatten() - analyticv, 2) / np.sqrt(time_model.time_values.size))
+        if i > 0:
+            ratio_dt = dts[i - 1] / dts[i]
+            ratio_e = error[-2] / error[-1]
+            print(error)
+            print(
+                f"for dt = {dt_}, error={error[-1]}, squared dt ratio = {ratio_dt**2}, error ratio = {ratio_e}"
+            )
+
+
+def run_and_compare_all(
+    Lz, Lx, h, p, vel, dens, tf, dt, stride, src, rec, vp, kz, kx, omega, signal
+):
+    space_model, time_model = create_models(
+        Lz, Lx, h, p, vel, dens, tf, dt, stride=stride
+    )
+    source, receiver, wavelet = acquisition_geometry(
+        space_model, time_model, src, rec, vp, kz, kx, omega, signal
+    )
+    u_full, recv = run(
+        space_model, time_model, source, receiver, wavelet, omega, init_grid=True
+    )
+    u_reshaped = u_full.reshape((time_model.timesteps, receiver.count), order="C")
+    u_interp_error = u_reshaped - recv
+    delta_error = np.linalg.norm(u_interp_error) / np.linalg.norm(recv)
+
+    print(
+        f"Norm of the difference between 'u_full' and 'recv' is {np.linalg.norm(u_interp_error)}"
+    )
+    print(f"Relative difference of {delta_error * 100} %")
+
+    return u_interp_error
 
 
 if __name__ == "__main__":
 
-    # space order params
-    orders = [2]
-    spacings = [10]
+    compiler = Compiler(
+        cc="gcc",
+        language="c",
+        cflags="-O2 -fPIC -Wall -std=c99 -shared",
+    )
 
-    # problem params
-    Lx_, Lz_ = 5120, 5120
-    tf_ = 2  * 1.5
-    dt_ = 0.002
-    freq_ = 5
-    vp_ = 1500
-    rho_ = 1
-    rho_z_ = 1
-    rho_x_ = 0
+    dts = [0.0005, 0.0005 / 2]
 
-    # discretization params
-    h_ = 10
-    p_ = 2
+    # Velocity model
+    vp = 1500.0
+    vel = vp * np.ones(shape=(513, 513), dtype=np.float64)
 
-    # check accuracy
-    num = accuracy(Lx_, Lz_, tf_, freq_, vp_, rho_, rho_z_, h_, p_, dt=dt_, density=False)
+    tf = 1 * 0.10
+    base_dt = 0.0005
+    freq = 10
+    stride = 2
 
+    Lz, Lx = 440, 440
+    base_h = 2
+    base_p = 16
+
+    src = [(200, 200)]
+    rec = [(260, 260)]
+
+    kz, kx = np.pi / Lz, np.pi / Lx
+    omega = 2 * np.pi * freq
+
+    signal = "keith_cosine"
+
+    # Lz, Lx, base_h, base_p, vel, tf, dts, stride, src, rec, vp, kz, kx, omega, signal
+    convergence_time(
+        Lz,
+        Lx,
+        base_h,
+        base_p,
+        vel,
+        tf,
+        dts,
+        stride,
+        src,
+        rec,
+        vp,
+        kz,
+        kx,
+        omega,
+        signal,
+    )
