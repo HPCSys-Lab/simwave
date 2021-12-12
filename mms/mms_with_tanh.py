@@ -223,10 +223,13 @@ def convergence_space(
     u_full, u_recv = run(space_model, time_model, source, receiver, wavelet, omega)
     # for i, u in enumerate(u_full):
     #    plot_wavefield(u, f"snap_{i}.png", clim=[-1, 1])
+    Ax, Az, _, _, _, _ = analytical_solution(kx, kz)
 
     analyticv = (
         np.sin(kz * rec[0][0])
+        * Ax(rec[0][0])
         * np.sin(kx * rec[0][1])
+        * Az(rec[0][1])
         * np.sin(omega * time_model.time_values[::stride])
         * np.sin(omega * (time_model.time_values[::stride] + dt))
     )
@@ -290,7 +293,7 @@ if __name__ == "__main__":
     vp = 3000.0
     vel = vp * np.ones(shape=(513, 513), dtype=np.float64)
 
-    tf = 1.0
+    tf = 0.1
     freq = 10.0
     stride = 1
 
@@ -300,8 +303,8 @@ if __name__ == "__main__":
     hs = [10, 5, 2.5]
     order = 4  # order to test
     """
-    dt = 0.0001  # seconds
-    hs = [20, 10, 5, 2.5]
+    dt = 0.00001  # seconds
+    hs = [20, 10, 5, 2.5, 1.25]
     order = 2  # order to test
 
     src = [(200, 200)]
