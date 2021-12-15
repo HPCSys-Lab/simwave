@@ -454,9 +454,7 @@ double forward(f_type *u, f_type *velocity, f_type *density, f_type *damp,
     #pragma omp target exit data map(delete: rec_points_interval[:rec_points_interval_size])
     #pragma omp target exit data map(delete: rec_points_values[:rec_points_values_size])
     #pragma omp target exit data map(delete: rec_points_values_offset[:num_receivers])
-    #pragma omp target exit data map(delete: wavelet[:wavelet_size * wavelet_count])
-    #pragma omp target exit data map(delete: receivers[:shot_record_size])
-    #pragma omp target exit data map(delete: u[:u_size])
+    #pragma omp target exit data map(delete: wavelet[:wavelet_size * wavelet_count])    
     #endif
 
     // get the end time

@@ -54,11 +54,11 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
 
     #ifdef GPU_OPENMP
 
-    // select the device 
+    // select the device
     #ifdef DEVICEID
     omp_set_default_device(DEVICEID);
     #endif
-    
+
     size_t shot_record_size = wavelet_size * num_receivers;
     size_t u_size = num_snapshots * domain_size;
 
@@ -519,8 +519,6 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
     #pragma omp target exit data map(delete: rec_points_values[:rec_points_values_size])
     #pragma omp target exit data map(delete: rec_points_values_offset[:num_receivers])
     #pragma omp target exit data map(delete: wavelet[:wavelet_size * wavelet_count])
-    #pragma omp target exit data map(delete: receivers[:shot_record_size])
-    #pragma omp target exit data map(delete: u[:u_size])
     #endif
 
     // get the end time
