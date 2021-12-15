@@ -54,11 +54,11 @@ double forward(f_type *u, f_type *velocity, f_type *density, f_type *damp,
 
     #ifdef GPU_OPENMP
 
-    // select the device 
+    // select the device
     #ifdef DEVICEID
     omp_set_default_device(DEVICEID);
     #endif
-    
+
     size_t shot_record_size = wavelet_size * num_receivers;
     size_t u_size = num_snapshots * domain_size;
 
@@ -155,9 +155,9 @@ double forward(f_type *u, f_type *velocity, f_type *density, f_type *damp,
 
                     value += sd_pressure_y/dySquared + sd_pressure_x/dxSquared + sd_pressure_z/dzSquared;
 
-                    f_type term_y = (fd_pressure_y * fd_density_y) / (2 * dySquared);
-                    f_type term_x = (fd_pressure_x * fd_density_x) / (2 * dxSquared);
-                    f_type term_z = (fd_pressure_z * fd_density_z) / (2 * dzSquared);
+                    f_type term_y = (fd_pressure_y * fd_density_y) / (4 * dySquared);
+                    f_type term_x = (fd_pressure_x * fd_density_x) / (4 * dxSquared);
+                    f_type term_z = (fd_pressure_z * fd_density_z) / (4 * dzSquared);
 
                     value -= (term_y + term_x + term_z) / density[domain_offset];
 
