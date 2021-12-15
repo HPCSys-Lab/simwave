@@ -136,8 +136,8 @@ double forward(f_type *u, f_type *velocity, f_type *density, f_type *damp,
 
                 value += sd_pressure_x/dxSquared + sd_pressure_z/dzSquared;
 
-                f_type term_x = (fd_pressure_x * fd_density_x) / (2 * dxSquared);
-                f_type term_z = (fd_pressure_z * fd_density_z) / (2 * dzSquared);
+                f_type term_x = (fd_pressure_x * fd_density_x) / (4 * dxSquared);
+                f_type term_z = (fd_pressure_z * fd_density_z) / (4 * dzSquared);
 
                 value -= (term_x + term_z) / density[domain_offset];
 
