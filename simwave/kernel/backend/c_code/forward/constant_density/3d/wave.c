@@ -7,6 +7,10 @@
     #include <omp.h>
 #endif
 
+#if defined(GPU_OPENACC)
+    #include <openacc.h>
+#endif
+
 // use single (float) or double precision
 // according to the value passed in the compilation cmd
 #if defined(FLOAT)
@@ -57,7 +61,7 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
     // select the device
     #ifdef DEVICEID
     omp_set_default_device(DEVICEID);
-    #endif
+    #endif   
 
     size_t shot_record_size = wavelet_size * num_receivers;
     size_t u_size = num_snapshots * domain_size;
@@ -74,6 +78,32 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
     #pragma omp target enter data map(to: rec_points_values_offset[:num_receivers])
     #pragma omp target enter data map(to: wavelet[:wavelet_size * wavelet_count])
     #pragma omp target enter data map(to: receivers[:shot_record_size])
+    #endif
+    
+    #ifdef GPU_OPENACC
+
+    // select the device
+    #ifdef DEVICEID
+    acc_init(acc_device_nvidia);
+    acc_set_device_num(DEVICEID, acc_device_nvidia);
+    #endif
+
+    size_t shot_record_size = wavelet_size * num_receivers;
+    size_t u_size = num_snapshots * domain_size;
+
+    #pragma acc enter data copyin(u[:u_size])
+    #pragma acc enter data copyin(velocity[:domain_size])
+    #pragma acc enter data copyin(damp[:domain_size])
+    #pragma acc enter data copyin(coeff[:stencil_radius+1])
+    #pragma acc enter data copyin(src_points_interval[:src_points_interval_size])
+    #pragma acc enter data copyin(src_points_values[:src_points_values_size])
+    #pragma acc enter data copyin(src_points_values_offset[:num_sources])
+    #pragma acc enter data copyin(rec_points_interval[:rec_points_interval_size])
+    #pragma acc enter data copyin(rec_points_values[:rec_points_values_size])
+    #pragma acc enter data copyin(rec_points_values_offset[:num_receivers])
+    #pragma acc enter data copyin(wavelet[:wavelet_size * wavelet_count])
+    #pragma acc enter data copyin(receivers[:shot_record_size])
+        
     #endif
 
     // wavefield modeling
@@ -103,6 +133,10 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
 
         #ifdef GPU_OPENMP
         #pragma omp target teams distribute parallel for collapse(3)
+        #endif
+
+        #ifdef GPU_OPENACC
+        #pragma acc parallel loop collapse(3) present(coeff,damp,u,velocity)
         #endif
 
         for(size_t i = stencil_radius; i < nz - stencil_radius; i++) {
@@ -157,6 +191,10 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
 
         #ifdef GPU_OPENMP
         #pragma omp target teams distribute parallel for
+        #endif
+
+        #ifdef GPU_OPENACC
+        #pragma acc parallel loop present(src_points_interval,src_points_values,src_points_values_offset,u,velocity,wavelet)
         #endif
 
         // for each source
@@ -219,6 +257,10 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
                             #if defined(CPU_OPENMP) || defined(GPU_OPENMP)
                             #pragma omp atomic
                             #endif
+
+                            #ifdef GPU_OPENACC
+                            #pragma acc atomic update
+                            #endif
                             u[next_snapshot] += value;
 
                             kws_index_y++;
@@ -252,6 +294,11 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
         #ifdef GPU_OPENMP
         #pragma omp target teams distribute parallel for collapse(2)
         #endif
+
+        #ifdef GPU_OPENACC
+        #pragma acc parallel loop collapse(2) present(u)
+        #endif
+
         for(size_t i = stencil_radius; i < nz - stencil_radius; i++){
             for(size_t j = stencil_radius; j < nx - stencil_radius; j++){
 
@@ -298,6 +345,11 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
         #ifdef GPU_OPENMP
         #pragma omp target teams distribute parallel for collapse(2)
         #endif
+
+        #ifdef GPU_OPENACC
+        #pragma acc parallel loop collapse(2) present(u)
+        #endif
+
         for(size_t i = stencil_radius; i < nz - stencil_radius; i++){
             for(size_t k = stencil_radius; k < ny - stencil_radius; k++){
 
@@ -344,6 +396,11 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
         #ifdef GPU_OPENMP
         #pragma omp target teams distribute parallel for collapse(2)
         #endif
+
+        #ifdef GPU_OPENACC
+        #pragma acc parallel loop collapse(2) present(u)
+        #endif
+        
         for(size_t j = stencil_radius; j < nx - stencil_radius; j++){
             for(size_t k = stencil_radius; k < ny - stencil_radius; k++){
 
@@ -392,6 +449,10 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
 
         #ifdef GPU_OPENMP
         #pragma omp target teams distribute parallel for
+        #endif
+
+        #ifdef GPU_OPENACC
+        #pragma acc parallel loop present(rec_points_interval,rec_points_values,rec_points_values_offset,u,receivers)
         #endif
 
         // for each receiver
@@ -475,7 +536,11 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
                     #endif
 
                     #ifdef GPU_OPENMP
-                    #pragma omp target teams distribute parallel for
+                    #pragma omp target teams distribute parallel for collapse(3)
+                    #endif
+
+                    #ifdef GPU_OPENACC
+                    #pragma acc parallel loop collapse(3) present(u)
                     #endif
 
                     // exchange of values ​​required
@@ -519,6 +584,25 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
     #pragma omp target exit data map(delete: rec_points_values[:rec_points_values_size])
     #pragma omp target exit data map(delete: rec_points_values_offset[:num_receivers])
     #pragma omp target exit data map(delete: wavelet[:wavelet_size * wavelet_count])
+    #endif
+
+    #ifdef GPU_OPENACC
+    #pragma acc exit data copyout(receivers[:shot_record_size])
+    #pragma acc exit data copyout(u[:u_size])
+
+    #pragma acc exit data delete(receivers[:shot_record_size])
+    #pragma acc exit data delete(u[:u_size])
+
+    #pragma acc exit data delete(velocity[:domain_size])
+    #pragma acc exit data delete(damp[:domain_size])
+    #pragma acc exit data delete(coeff[:stencil_radius+1])
+    #pragma acc exit data delete(src_points_interval[:src_points_interval_size])
+    #pragma acc exit data delete(src_points_values[:src_points_values_size])
+    #pragma acc exit data delete(src_points_values_offset[:num_sources])
+    #pragma acc exit data delete(rec_points_interval[:rec_points_interval_size])
+    #pragma acc exit data delete(rec_points_values[:rec_points_values_size])
+    #pragma acc exit data delete(rec_points_values_offset[:num_receivers])
+    #pragma acc exit data delete(wavelet[:wavelet_size * wavelet_count])
     #endif
 
     // get the end time

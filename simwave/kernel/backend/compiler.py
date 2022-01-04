@@ -12,8 +12,8 @@ class Compiler:
         C compiler. Default is gcc.
     language: str, optional
         Define the code implementation language like: c (sequential),
-        cpu_openmp (parallel CPU), gpu_openmp (GPU), cuda (GPU).
-        Default is c.
+        cpu_openmp (parallel CPU), gpu_openmp (GPU), gpu_openacc (GPU)
+        and cuda (GPU). Default is c.
     cflags : str, optional
         C compiler flags.
         Default is '-O3 -fPIC -Wall -std=c99 -shared'.
@@ -75,7 +75,7 @@ class Compiler:
         if not isinstance(value, str):
             raise TypeError("Compiler.language attribute must be str.")
 
-        options = ['c', 'cpu_openmp', 'gpu_openmp', 'cuda']
+        options = ['c', 'cpu_openmp', 'gpu_openmp', 'gpu_openacc', 'cuda']
 
         if value not in options:
             raise ValueError(
@@ -170,6 +170,8 @@ class Compiler:
             language_c = ' -DCPU_OPENMP'
         elif self.language == 'gpu_openmp':
             language_c = ' -DGPU_OPENMP'
+        elif self.language == 'gpu_openacc':
+            language_c = ' -DGPU_OPENACC'
         else:
             language_c = ''
 

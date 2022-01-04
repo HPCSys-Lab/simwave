@@ -5,12 +5,43 @@ from simwave import (
 import numpy as np
 
 
+# available language options:
+# c (sequential)
+# cpu_openmp (parallel CPU)
+# gpu_openmp (GPU)
+# gpu_openacc (GPU)
+compiler_options = {
+    'c': {
+        'cc': 'gcc',
+        'language': 'c',
+        'cflags': '-O3 -fPIC -ffast-math -Wall -std=c99 -shared'
+    },
+    'cpu_openmp': {
+        'cc': 'gcc',
+        'language': 'cpu_openmp',
+        'cflags': '-O3 -fPIC -ffast-math -Wall -std=c99 -shared -fopenmp'
+    },
+    'gpu_openmp': {
+        'cc': 'clang',
+        'language': 'gpu_openmp',
+        'cflags': '-O3 -fPIC -ffast-math -fopenmp \
+                   -fopenmp-targets=nvptx64-nvidia-cuda \
+                   -Xopenmp-target -march=sm_75'
+    },
+    'gpu_openacc': {
+        'cc': 'pgcc',
+        'language': 'gpu_openacc',
+        'cflags': '-O3 -fPIC -acc:gpu -gpu=pinned -mp'
+    },
+}
+
+selected_compiler = compiler_options['c']
+
 # set compiler options
-# available language options: c (sequential) or  cpu_openmp (parallel CPU)
 compiler = Compiler(
-    cc='gcc',
-    language='cpu_openmp',
-    cflags='-O3 -fPIC -ffast-math -Wall -std=c99 -shared'
+    cc=selected_compiler['cc'],
+    language=selected_compiler['language'],
+    cflags=selected_compiler['cflags']
 )
 
 # Velocity model
