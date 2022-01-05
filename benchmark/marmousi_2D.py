@@ -49,6 +49,9 @@ if __name__ == '__main__':
         cflags = '-O3 -fPIC -ffast-math -fopenmp \
                -fopenmp-targets=nvptx64-nvidia-cuda \
                -Xopenmp-target -march=sm_75'
+    elif language == 'gpu_openacc':
+        cc = 'pgcc'
+        cflags = '-O3 -fPIC -acc:gpu -gpu=pinned'        
     elif language == 'cuda':
         cc = 'nvcc'
         cflags = '-O3 -gencode arch=compute_75,code=sm_75 \
