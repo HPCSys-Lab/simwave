@@ -153,6 +153,9 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
                 f_type sum_z = coeff[0] * u[current_snapshot];
 
                 // radius of the stencil
+                #ifdef GPU_OPENACC
+                #pragma acc loop seq
+                #endif
                 for(size_t ir = 1; ir <= stencil_radius; ir++){
                     //neighbors in the horizontal direction
                     sum_x += coeff[ir] * (u[current_snapshot + ir] + u[current_snapshot - ir]);
@@ -221,10 +224,16 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
                 size_t kws_index_z = offset_src_kws_index_z;
 
                 // for each source point in the Z axis
+                #ifdef GPU_OPENACC
+                #pragma acc loop seq
+                #endif
                 for(size_t i = src_z_begin; i <= src_z_end; i++){
                     size_t kws_index_x = offset_src_kws_index_z + src_z_num_points;
 
                     // for each source point in the X axis
+                    #ifdef GPU_OPENACC
+                    #pragma acc loop seq
+                    #endif
                     for(size_t j = src_x_begin; j <= src_x_end; j++){
 
                         f_type kws = src_points_values[kws_index_z] * src_points_values[kws_index_x];
@@ -287,6 +296,9 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
 
             // null neumann on the left
             if(x_before == 2){
+                #ifdef GPU_OPENACC
+                #pragma acc loop seq
+                #endif
                 for(size_t ir = 1; ir <= stencil_radius; ir++){
                     size_t domain_offset = i * nx + stencil_radius;
                     size_t next_snapshot = next_t * domain_size + domain_offset;
@@ -303,6 +315,9 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
 
             // null neumann on the right
             if(x_after == 2){
+                #ifdef GPU_OPENACC
+                #pragma acc loop seq
+                #endif
                 for(size_t ir = 1; ir <= stencil_radius; ir++){
                     size_t domain_offset = i * nx + (nx - stencil_radius - 1);
                     size_t next_snapshot = next_t * domain_size + domain_offset;
@@ -336,6 +351,9 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
 
             // null neumann on the top
             if(z_before == 2){
+                #ifdef GPU_OPENACC
+                #pragma acc loop seq
+                #endif
                 for(size_t ir = 1; ir <= stencil_radius; ir++){
                     size_t domain_offset = stencil_radius * nx + j;
                     size_t next_snapshot = next_t * domain_size + domain_offset;
@@ -352,6 +370,9 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
 
             // null neumann on the bottom
             if(z_after == 2){
+                #ifdef GPU_OPENACC
+                #pragma acc loop seq
+                #endif
                 for(size_t ir = 1; ir <= stencil_radius; ir++){
                     size_t domain_offset = (nz - stencil_radius - 1) * nx + j;
                     size_t next_snapshot = next_t * domain_size + domain_offset;
@@ -404,10 +425,16 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
             size_t kws_index_z = offset_rec_kws_index_z;
 
             // for each receiver point in the Z axis
+            #ifdef GPU_OPENACC
+            #pragma acc loop seq
+            #endif
             for(size_t i = rec_z_begin; i <= rec_z_end; i++){
                 size_t kws_index_x = offset_rec_kws_index_z + rec_z_num_points;
 
                 // for each receiver point in the X axis
+                #ifdef GPU_OPENACC
+                #pragma acc loop seq
+                #endif
                 for(size_t j = rec_x_begin; j <= rec_x_end; j++){
 
                     f_type kws = rec_points_values[kws_index_z] * rec_points_values[kws_index_x];
