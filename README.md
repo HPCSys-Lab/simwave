@@ -1,4 +1,5 @@
 [![PyPI version](https://badge.fury.io/py/simwave.svg)](https://badge.fury.io/py/simwave)
+[![DOI](https://zenodo.org/badge/285108327.svg)](https://zenodo.org/badge/latestdoi/285108327)
 
 # Simwave
 
