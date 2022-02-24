@@ -47,7 +47,7 @@ def run_forward(dimension, density, language, dtype):
 
         cc = 'clang'
     else:
-        cflags = '-O3'
+        cflags = '-O3 -fPIC'
         cc = 'gcc'
 
     compiler = Compiler(
