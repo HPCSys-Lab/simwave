@@ -4,8 +4,9 @@
                      double *u, const double *velocity, const double *coeff, const double *damp
                      ){
     
-    for(long i = stencil_radius; i < nz - stencil_radius; i++; @outer) {
-        for(long j = stencil_radius; j < nx - stencil_radius; j++; @inner) {
+    for(long i = stencil_radius; i < nz - stencil_radius; i++;  @tile(16, @outer)) {
+        for(long j = stencil_radius; j < nx - stencil_radius; j++; @tile(16, @inner)) {            
+
             // index of the current polong in the grid
             long domain_offset = i * nx + j;
 

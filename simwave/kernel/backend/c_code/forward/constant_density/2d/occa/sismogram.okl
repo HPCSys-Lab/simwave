@@ -8,7 +8,7 @@
 
         double sum = 0.0;
 
-        // each receiver has 4 (z_b, z_e, x_b, x_e) polong longervals
+        // each receiver has 4 (z_b, z_e, x_b, x_e) point intervals
         long offset_rec = rec * 4;
 
         // longerval of grid polongs of the receiver in the Z axis
