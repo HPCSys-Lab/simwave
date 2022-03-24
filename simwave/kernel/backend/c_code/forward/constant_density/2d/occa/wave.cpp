@@ -135,14 +135,14 @@ extern "C" double forward(f_type *u, f_type *velocity, f_type *damp,
 
         // device kernel for fot section 1: update the wavefield according to the acoustic wave equation        
         stencil(
-            stencil_radius, nz, nx, domain_size, prev_t, current_t, next_t,
+            (int)stencil_radius, (int)nz, (int)nx, (int)domain_size, (int)prev_t, (int)current_t, (int)next_t,
             dzSquared, dxSquared, dtSquared, dt,
             d_u, d_velocity, d_coeff, d_damp
         );
         
         // device kernel for section 2: add the source term
         source_injection(
-            num_sources, n, wavelet_count, next_t, nx, domain_size, dtSquared,
+            (int)num_sources, (int)n, (int)wavelet_count, (int)next_t, (int)nx, (int)domain_size, dtSquared,
             d_wavelet, d_src_points_interval.cast(occa::dtype::long_), d_src_points_values_offset.cast(occa::dtype::long_), d_src_points_values, d_velocity, d_u
         );
 
@@ -158,14 +158,14 @@ extern "C" double forward(f_type *u, f_type *velocity, f_type *damp,
         size_t x_after = boundary_conditions[3];
 
         // device kernel for section 3.1
-        boundary_conditions_1(stencil_radius, nz, nx, x_before, x_after, next_t, domain_size, d_u);
+        boundary_conditions_1((int)stencil_radius, (int)nz, (int)nx, (int)x_before, (int)x_after, (int)next_t, (int)domain_size, d_u);
 
         // device kernel for section 3.2
-        boundary_conditions_2(stencil_radius, nz, nx, z_before, z_after, next_t, domain_size, d_u);
+        boundary_conditions_2((int)stencil_radius, (int)nz, (int)nx, (int)z_before, (int)z_after, (int)next_t, (int)domain_size, d_u);
 
         // device kernel for section 4: compute the receivers
         sismogram(
-            num_receivers, n, current_t, nx, domain_size, 
+            (int)num_receivers, (int)n, (int)current_t, (int)nx, (int)domain_size, 
             d_rec_points_interval.cast(occa::dtype::long_), d_rec_points_values_offset.cast(occa::dtype::long_), d_rec_points_values,
             d_u, d_receivers
         );        
@@ -186,7 +186,7 @@ extern "C" double forward(f_type *u, f_type *velocity, f_type *damp,
                     next_t = swap;
 
                     // device kernel for grid swapping
-                    swap_grid_in_even_stride(nz, nx, domain_size, current_t, next_t, d_u);
+                    swap_grid_in_even_stride((int)nz, (int)nx, (int)domain_size, (int)current_t, (int)next_t, d_u);
                     
                 }
 
