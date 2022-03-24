@@ -1,0 +1,45 @@
+@kernel void boundary_conditions_1(const int stencil_radius, const int nz, const int nx,
+                                   const int x_before, const int x_after, const int next_t, const int domain_size,
+                                   double *u 
+                                  ){
+    
+    // boundary conditions on the left and right (fixed in X)
+    for(int i = stencil_radius; i < nz - stencil_radius; i++; @tile(1, @outer, @inner)){
+
+        // null dirichlet on the left
+        if(x_before == 1){
+            int domain_offset = i * nx + stencil_radius;
+            int next_snapshot = next_t * domain_size + domain_offset;
+            u[next_snapshot] = 0.0;
+        }
+
+        // null neumann on the left
+        if(x_before == 2){
+            
+            for(int ir = 1; ir <= stencil_radius; ir++){
+                int domain_offset = i * nx + stencil_radius;
+                int next_snapshot = next_t * domain_size + domain_offset;
+                u[next_snapshot - ir] = u[next_snapshot + ir];
+            }
+        }
+
+        // null dirichlet on the right
+        if(x_after == 1){
+            int domain_offset = i * nx + (nx - stencil_radius - 1);
+            int next_snapshot = next_t * domain_size + domain_offset;
+            u[next_snapshot] = 0.0;
+        }
+
+        // null neumann on the right
+        if(x_after == 2){
+            
+            for(int ir = 1; ir <= stencil_radius; ir++){
+                int domain_offset = i * nx + (nx - stencil_radius - 1);
+                int next_snapshot = next_t * domain_size + domain_offset;
+                u[next_snapshot + ir] = u[next_snapshot - ir];
+            }
+        }
+
+    }
+
+}

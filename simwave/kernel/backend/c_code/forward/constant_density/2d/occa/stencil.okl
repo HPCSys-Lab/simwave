@@ -1,0 +1,41 @@
+@kernel void stencil(const int stencil_radius, const int nz, const long nx, const int domain_size,
+                     const int prev_t, const int current_t, const int next_t,
+                     const double dzSquared, const double dxSquared, const double dtSquared, const double dt,
+                     double *u, const double *velocity, const double *coeff, const double *damp
+                     ){
+    
+    for(int i = stencil_radius; i < nz - stencil_radius; i++; @outer) {
+        for(int j = stencil_radius; j < nx - stencil_radius; j++; @inner) {
+            // index of the current point in the grid
+            int domain_offset = i * nx + j;
+
+            int prev_snapshot = prev_t * domain_size + domain_offset;
+            int current_snapshot = current_t * domain_size + domain_offset;
+            int next_snapshot = next_t * domain_size + domain_offset;
+
+            // stencil code to update grid
+            double value = 0.0;
+
+            double sum_x = coeff[0] * u[current_snapshot];
+            double sum_z = coeff[0] * u[current_snapshot];
+            
+            for(int ir = 1; ir <= stencil_radius; ir++){
+                //neighbors in the horizontal direction
+                sum_x += coeff[ir] * (u[current_snapshot + ir] + u[current_snapshot - ir]);
+
+                //neighbors in the vertical direction
+                sum_z += coeff[ir] * (u[current_snapshot + (ir * nx)] + u[current_snapshot - (ir * nx)]);
+            }
+
+            value += sum_x/dxSquared + sum_z/dzSquared;
+
+            //denominator with damp coefficient
+            double denominator = (1.0 + damp[domain_offset] * dt);
+
+            value *= (dtSquared * velocity[domain_offset] * velocity[domain_offset]) / denominator;
+
+            u[next_snapshot] = 2.0 / denominator * u[current_snapshot] - ((1.0 - damp[domain_offset] * dt) / denominator) * u[prev_snapshot] + value;
+        }
+    }
+
+}

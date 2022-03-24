@@ -33,9 +33,21 @@ compiler_options = {
         'language': 'gpu_openacc',
         'cflags': '-O3 -fPIC -acc:gpu -gpu=pinned -mp'
     },
+    'cpu_occa': {
+        'cc': 'g++',
+        'language': 'cpu_occa',
+        'cflags': '-O3 -fPIC -ffast-math -Wall -shared -fopenmp \
+                   -I/home/occa/occa/include -L/home/occa/occa/lib -locca'
+    },
+    'gpu_occa': {
+        'cc': 'g++',
+        'language': 'gpu_occa',
+        'cflags': '-O3 -fPIC -ffast-math -Wall -shared -I/home/occa/occa/include \
+                   -L/home/occa/occa/lib -locca -DDEVICEID=2'
+    },
 }
 
-selected_compiler = compiler_options['c']
+selected_compiler = compiler_options['gpu_occa']
 
 # set compiler options
 compiler = Compiler(
@@ -55,7 +67,7 @@ space_model = SpaceModel(
     grid_spacing=(10, 10),
     velocity_model=vel,
     space_order=4,
-    dtype=np.float32
+    dtype=np.float64
 )
 
 # config boundary conditions

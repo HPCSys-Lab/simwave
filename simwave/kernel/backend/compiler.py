@@ -12,8 +12,9 @@ class Compiler:
         C compiler. Default is gcc.
     language: str, optional
         Define the code implementation language like: c (sequential),
-        cpu_openmp (parallel CPU), gpu_openmp (GPU), gpu_openacc (GPU)
-        and cuda (GPU). Default is c.
+        cpu_openmp (parallel CPU), gpu_openmp (GPU), gpu_openacc (GPU),
+        cuda (GPU), cpu_occa (parallel CPU), gpu_occa (GPU).
+        Default is c.
     cflags : str, optional
         C compiler flags.
         Default is '-O3 -fPIC -Wall -std=c99 -shared'.
@@ -55,7 +56,7 @@ class Compiler:
             value += ' -shared'
 
         # add OpenMP flag if it is not provided and version is cpu_openmp
-        if self.language in ('cpu_openmp', 'gpu_openmp'):
+        if self.language in ('cpu_openmp', 'gpu_openmp', 'cpu_occa'):
             omp_flag = self.get_openmp_flag()
 
             if omp_flag is None:
@@ -75,7 +76,15 @@ class Compiler:
         if not isinstance(value, str):
             raise TypeError("Compiler.language attribute must be str.")
 
-        options = ['c', 'cpu_openmp', 'gpu_openmp', 'gpu_openacc', 'cuda']
+        options = [
+            'c',
+            'cpu_openmp',
+            'gpu_openmp',
+            'gpu_openacc',
+            'cuda',
+            'cpu_occa',
+            'gpu_occa'
+        ]
 
         if value not in options:
             raise ValueError(
@@ -149,6 +158,9 @@ class Compiler:
             if self.language == 'cuda':
                 program_dir += 'cuda/'
                 c_code_name = "wave.cu"
+            elif self.language in ('cpu_occa', 'gpu_occa'):
+                program_dir += 'occa/'
+                c_code_name = "wave.cpp"
             else:
                 c_code_name = "wave.c"
 
@@ -172,6 +184,10 @@ class Compiler:
             language_c = ' -DGPU_OPENMP'
         elif self.language == 'gpu_openacc':
             language_c = ' -DGPU_OPENACC'
+        elif self.language == 'cpu_occa':
+            language_c = ' -DCPU_OCCA'
+        elif self.language == 'gpu_occa':
+            language_c = ' -DGPU_OCCA'
         else:
             language_c = ''
 
