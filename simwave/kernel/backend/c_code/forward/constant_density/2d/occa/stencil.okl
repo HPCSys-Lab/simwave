@@ -1,17 +1,17 @@
-@kernel void stencil(const int stencil_radius, const int nz, const long nx, const int domain_size,
-                     const int prev_t, const int current_t, const int next_t,
+@kernel void stencil(const long stencil_radius, const long nz, const long nx, const long domain_size,
+                     const long prev_t, const long current_t, const long next_t,
                      const double dzSquared, const double dxSquared, const double dtSquared, const double dt,
                      double *u, const double *velocity, const double *coeff, const double *damp
                      ){
     
-    for(int i = stencil_radius; i < nz - stencil_radius; i++; @outer) {
-        for(int j = stencil_radius; j < nx - stencil_radius; j++; @inner) {
-            // index of the current point in the grid
-            int domain_offset = i * nx + j;
+    for(long i = stencil_radius; i < nz - stencil_radius; i++; @outer) {
+        for(long j = stencil_radius; j < nx - stencil_radius; j++; @inner) {
+            // index of the current polong in the grid
+            long domain_offset = i * nx + j;
 
-            int prev_snapshot = prev_t * domain_size + domain_offset;
-            int current_snapshot = current_t * domain_size + domain_offset;
-            int next_snapshot = next_t * domain_size + domain_offset;
+            long prev_snapshot = prev_t * domain_size + domain_offset;
+            long current_snapshot = current_t * domain_size + domain_offset;
+            long next_snapshot = next_t * domain_size + domain_offset;
 
             // stencil code to update grid
             double value = 0.0;
@@ -19,7 +19,7 @@
             double sum_x = coeff[0] * u[current_snapshot];
             double sum_z = coeff[0] * u[current_snapshot];
             
-            for(int ir = 1; ir <= stencil_radius; ir++){
+            for(long ir = 1; ir <= stencil_radius; ir++){
                 //neighbors in the horizontal direction
                 sum_x += coeff[ir] * (u[current_snapshot + ir] + u[current_snapshot - ir]);
 

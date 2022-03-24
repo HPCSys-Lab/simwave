@@ -161,6 +161,10 @@ class Compiler:
             elif self.language in ('cpu_occa', 'gpu_occa'):
                 program_dir += 'occa/'
                 c_code_name = "wave.cpp"
+
+                # set env variable to informe the path of occa code
+                # to the wave.cpp occa backend
+                os.environ['OCCA_OKL_FILES_PATH'] = program_dir
             else:
                 c_code_name = "wave.c"
 

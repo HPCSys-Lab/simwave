@@ -65,6 +65,10 @@ if __name__ == '__main__':
                   --compiler-options -fPIC,-Wall \
                   --use_fast_math -shared \
                   -DTX=32 -DTY=4 -DTZ=2'
+    elif language in ('cpu_occa', 'gpu_occa'):
+        cc = 'g++'
+        cflags = '-O3 -fPIC -ffast-math -Wall -shared -I/home/occa/occa/include \
+                   -L/home/occa/occa/lib -locca'
     else:
         raise ValueError('Language not available')
 
