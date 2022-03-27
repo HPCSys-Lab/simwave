@@ -1,13 +1,13 @@
-@kernel void source_injection(const long num_sources, const long n, const long wavelet_count, const long next_t, const long nx, const long domain_size,
+@kernel void source_injection(const int num_sources, const int n, const int wavelet_count, const int next_t, const int nx, const int domain_size,
                               const double dtSquared,
-                              const double *wavelet, const long *src_polongs_longerval, const long *src_polongs_values_offset, const double *src_polongs_values,
+                              const double *wavelet, const long *src_points_interval, const long *src_points_values_offset, const double *src_points_values,
                               const double *velocity, double *u
                              ){
 
     // for each source
-    for(long src = 0; src < num_sources; src++; @tile(1, @outer, @inner)){
+    for(int src = 0; src < num_sources; src++; @tile(1, @outer, @inner)){
 
-        long wavelet_offset = n - 1;
+        int wavelet_offset = n - 1;
 
         if(wavelet_count > 1){
             wavelet_offset = (n-1) * num_sources + src;
@@ -15,41 +15,41 @@
 
         if(wavelet[wavelet_offset] != 0.0){
 
-            // each source has 4 (z_b, z_e, x_b, x_e) polong longervals
-            long offset_src = src * 4;
+            // each source has 4 (z_b, z_e, x_b, x_e) point intervals
+            int offset_src = src * 4;
 
-            // longerval of grid polongs of the source in the Z axis
-            long src_z_begin = src_polongs_longerval[offset_src + 0];
-            long src_z_end = src_polongs_longerval[offset_src + 1];
+            // interval of grid points of the source in the Z axis
+            int src_z_begin = src_points_interval[offset_src + 0];
+            int src_z_end = src_points_interval[offset_src + 1];
 
-            // longerval of grid polongs of the source in the X axis
-            long src_x_begin = src_polongs_longerval[offset_src + 2];
-            long src_x_end = src_polongs_longerval[offset_src + 3];            
+            // interval of grid points of the source in the X axis
+            int src_x_begin = src_points_interval[offset_src + 2];
+            int src_x_end = src_points_interval[offset_src + 3];            
 
-            // number of grid polongs of the source in each axis
-            long src_z_num_polongs = src_z_end - src_z_begin + 1;
+            // number of grid points of the source in each axis
+            int src_z_num_points = src_z_end - src_z_begin + 1;
             
-            // polonger to src value offset
-            long offset_src_kws_index_z = src_polongs_values_offset[src];
+            // pointer to src value offset
+            int offset_src_kws_index_z = src_points_values_offset[src];
 
-            // index of the Kaiser windowed sinc value of the source polong
-            long kws_index_z = offset_src_kws_index_z;
+            // index of the Kaiser windowed sinc value of the source point
+            int kws_index_z = offset_src_kws_index_z;
 
-            // for each source polong in the Z axis            
-            for(long i = src_z_begin; i <= src_z_end; i++){                
+            // for each source point in the Z axis            
+            for(int i = src_z_begin; i <= src_z_end; i++){                
 
-                long kws_index_x = offset_src_kws_index_z + src_z_num_polongs;
+                int kws_index_x = offset_src_kws_index_z + src_z_num_points;
 
-                // for each source polong in the X axis                
-                for(long j = src_x_begin; j <= src_x_end; j++){
+                // for each source point in the X axis                
+                for(int j = src_x_begin; j <= src_x_end; j++){
 
-                    double kws = src_polongs_values[kws_index_z] * src_polongs_values[kws_index_x];
+                    double kws = src_points_values[kws_index_z] * src_points_values[kws_index_x];
 
-                    // current source polong in the grid
-                    long domain_offset = i * nx + j;
-                    long next_snapshot = next_t * domain_size + domain_offset;
+                    // current source point in the grid
+                    int domain_offset = i * nx + j;
+                    int next_snapshot = next_t * domain_size + domain_offset;
 
-                    long value = dtSquared * velocity[domain_offset] * velocity[domain_offset] * kws * wavelet[wavelet_offset];
+                    int value = dtSquared * velocity[domain_offset] * velocity[domain_offset] * kws * wavelet[wavelet_offset];
 
                     @atomic{
                         u[next_snapshot] += value;                        

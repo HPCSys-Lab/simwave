@@ -111,16 +111,30 @@ extern "C" double forward(f_type *u, f_type *velocity, f_type *damp,
     d_wavelet.copyFrom(wavelet);
     d_receivers.copyFrom(receivers); 
 
+    //block size info
+
+    #ifndef BLOCK_SIZE_Z
+    #define BLOCK_SIZE_Z 1
+    #endif
+
+    #ifndef BLOCK_SIZE_X
+    #define BLOCK_SIZE_X 1
+    #endif
+
+    occa::json kernel_properties;
+    kernel_properties["defines/BLOCK_SIZE_Z"] = BLOCK_SIZE_Z;
+    kernel_properties["defines/BLOCK_SIZE_X"] = BLOCK_SIZE_X;
+
     // get the path for okl files
     std::string okl_file_path = std::getenv("OCCA_OKL_FILES_PATH");    
 
     // Compile the kernels at run-time    
-    occa::kernel stencil = device.buildKernel(okl_file_path + "stencil.okl", "stencil");
-    occa::kernel source_injection = device.buildKernel(okl_file_path + "source_injection.okl", "source_injection");
-    occa::kernel boundary_conditions_1 = device.buildKernel(okl_file_path + "boundary_conditions_1.okl", "boundary_conditions_1");
-    occa::kernel boundary_conditions_2 = device.buildKernel(okl_file_path + "boundary_conditions_2.okl", "boundary_conditions_2");
-    occa::kernel sismogram = device.buildKernel(okl_file_path + "sismogram.okl", "sismogram");
-    occa::kernel swap_grid_in_even_stride = device.buildKernel(okl_file_path + "swap_grid_in_even_stride.okl", "swap_grid_in_even_stride");
+    occa::kernel stencil = device.buildKernel(okl_file_path + "stencil.okl", "stencil", kernel_properties);
+    occa::kernel source_injection = device.buildKernel(okl_file_path + "source_injection.okl", "source_injection", kernel_properties);
+    occa::kernel boundary_conditions_1 = device.buildKernel(okl_file_path + "boundary_conditions_1.okl", "boundary_conditions_1", kernel_properties);
+    occa::kernel boundary_conditions_2 = device.buildKernel(okl_file_path + "boundary_conditions_2.okl", "boundary_conditions_2", kernel_properties);
+    occa::kernel sismogram = device.buildKernel(okl_file_path + "sismogram.okl", "sismogram", kernel_properties);
+    occa::kernel swap_grid_in_even_stride = device.buildKernel(okl_file_path + "swap_grid_in_even_stride.okl", "swap_grid_in_even_stride", kernel_properties);
 
     // wavefield modeling
     for(size_t n = begin_timestep; n <= end_timestep; n++) {
@@ -147,6 +161,7 @@ extern "C" double forward(f_type *u, f_type *velocity, f_type *damp,
         );
         
         // device kernel for section 2: add the source term
+        
         source_injection(
             num_sources, n, wavelet_count, next_t, nx, domain_size, dtSquared,
             d_wavelet, d_src_points_interval.cast(occa::dtype::long_), d_src_points_values_offset.cast(occa::dtype::long_),
