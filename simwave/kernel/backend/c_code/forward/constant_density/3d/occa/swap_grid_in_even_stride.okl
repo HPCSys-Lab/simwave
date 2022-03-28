@@ -1,0 +1,19 @@
+@kernel void swap_grid_in_even_stride(const int nz, const int nx, const int ny, const int domain_size, const int current_t, const int next_t, double *u){  
+
+    // exchange of values ​​required
+    for(int i = 0; i < nz; i++; @tile(BLOCK_SIZE_Z, @outer, @inner)){
+        for(int j = 0; j < nx; j++; @tile(BLOCK_SIZE_X, @outer, @inner)){
+            for(int k = 0; k < ny; k++; @tile(BLOCK_SIZE_Y, @outer, @inner)){
+                // index of the current point in the grid
+                int domain_offset = (i * nx + j) * ny + k;
+
+                int current_snapshot = current_t * domain_size + domain_offset;
+                int next_snapshot = next_t * domain_size + domain_offset;
+
+                double aux = u[current_snapshot];
+                u[current_snapshot] = u[next_snapshot];
+                u[next_snapshot] = aux;
+            }
+        }
+    }
+}

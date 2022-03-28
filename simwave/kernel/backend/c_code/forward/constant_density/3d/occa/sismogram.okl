@@ -1,0 +1,65 @@
+@kernel void sismogram(const int num_receivers, const int n, const int current_t, const int nx, const int ny, const int domain_size,                       
+                       const long *rec_points_interval, const long *rec_points_values_offset, const double *rec_points_values,
+                       const double *u, double * receivers
+                       ){
+
+    // for each receiver
+    for(int rec = 0; rec < num_receivers; rec++; @tile(1, @outer, @inner)){
+
+        double sum = 0.0;
+
+        // each receiver has 6 (z_b, z_e, x_b, x_e, y_b, y_e) point intervals
+        int offset_rec = rec * 6;
+
+        // interval of grid points of the receiver in the Z axis
+        int rec_z_begin = rec_points_interval[offset_rec + 0];
+        int rec_z_end = rec_points_interval[offset_rec + 1];
+
+        // interval of grid points of the receiver in the X axis
+        int rec_x_begin = rec_points_interval[offset_rec + 2];
+        int rec_x_end = rec_points_interval[offset_rec + 3];
+
+        // interval of grid points of the receiver in the Y axis
+        int rec_y_begin = rec_points_interval[offset_rec + 4];
+        int rec_y_end = rec_points_interval[offset_rec + 5];
+
+        // number of grid points of the receiver in each axis
+        int rec_z_num_points = rec_z_end - rec_z_begin + 1;
+        int rec_x_num_points = rec_x_end - rec_x_begin + 1;            
+
+        // pointer to rec value offset
+        int offset_rec_kws_index_z = rec_points_values_offset[rec];
+
+        // index of the Kaiser windowed sinc value of the receiver point
+        int kws_index_z = offset_rec_kws_index_z;
+
+        // for each receiver point in the Z axis            
+        for(int i = rec_z_begin; i <= rec_z_end; i++){
+            int kws_index_x = offset_rec_kws_index_z + rec_z_num_points;
+
+            // for each receiver point in the X axis
+            for(int j = rec_x_begin; j <= rec_x_end; j++){
+
+                int kws_index_y = offset_rec_kws_index_z + rec_z_num_points + rec_x_num_points;
+
+                // for each source point in the Y axis
+                for(int k = rec_y_begin; k <= rec_y_end; k++){
+
+                    double kws = rec_points_values[kws_index_z] * rec_points_values[kws_index_x] * rec_points_values[kws_index_y];
+
+                    // current receiver point in the grid
+                    int domain_offset = (i * nx + j) * ny + k;
+                    int current_snapshot = current_t * domain_size + domain_offset;
+                    sum += u[current_snapshot] * kws;
+
+                    kws_index_y++;
+                }
+                kws_index_x++;
+            }
+            kws_index_z++;
+        }
+
+        int current_rec_n = (n-1) * num_receivers + rec;
+        receivers[current_rec_n] = sum;
+    }
+}

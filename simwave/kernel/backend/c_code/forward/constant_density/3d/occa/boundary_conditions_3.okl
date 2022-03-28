@@ -1,0 +1,49 @@
+@kernel void boundary_conditions_3(const int stencil_radius, const int nz, const int nx, const int ny,
+                                   const int z_before, const int z_after, const int next_t, const int domain_size,
+                                   double *u 
+                                  ){
+    
+    for(int j = stencil_radius; j < nx - stencil_radius; j++; @tile(BLOCK_SIZE_X, @outer, @inner)){
+        for(int k = stencil_radius; k < ny - stencil_radius; k++; @tile(BLOCK_SIZE_Y, @outer, @inner)){
+
+            // null dirichlet on the top
+            if(z_before == 1){
+                int domain_offset = (stencil_radius * nx + j) * ny + k;
+                int next_snapshot = next_t * domain_size + domain_offset;
+                u[next_snapshot] = 0.0;
+            }
+
+            // null neumann on the top
+            if(z_before == 2){
+                #ifdef GPU_OPENACC
+                #pragma acc loop seq
+                #endif
+                for(int ir = 1; ir <= stencil_radius; ir++){
+                    int domain_offset = (stencil_radius * nx + j) * ny + k;
+                    int next_snapshot = next_t * domain_size + domain_offset;
+                    u[next_snapshot - (ir * nx * ny)] = u[next_snapshot + (ir * nx * ny)];
+                }
+            }
+
+            // null dirichlet on the bottom
+            if(z_after == 1){
+                int domain_offset = ((nz - stencil_radius - 1) * nx + j) * ny + k;
+                int next_snapshot = next_t * domain_size + domain_offset;
+                u[next_snapshot] = 0.0;
+            }
+
+            // null neumann on the bottom
+            if(z_after == 2){
+                #ifdef GPU_OPENACC
+                #pragma acc loop seq
+                #endif
+                for(int ir = 1; ir <= stencil_radius; ir++){
+                    int domain_offset = ((nz - stencil_radius - 1) * nx + j) * ny + k;
+                    int next_snapshot = next_t * domain_size + domain_offset;
+                    u[next_snapshot + (ir * nx * ny)] = u[next_snapshot - (ir * nx * ny)];
+                }
+            }
+
+        }
+    }
+}
