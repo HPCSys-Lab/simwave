@@ -167,11 +167,12 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
                 value += sum_x/dxSquared + sum_z/dzSquared;
 
                 //denominator with damp coefficient
-                f_type denominator = (1.0 + damp[domain_offset] * dt);
+                f_type denominator = (1.0 + damp[domain_offset] * dt / 2);
+                f_type numerator = (1.0 - damp[domain_offset] * dt / 2);
 
                 value *= (dtSquared * velocity[domain_offset] * velocity[domain_offset]) / denominator;
 
-                u[next_snapshot] = 2.0 / denominator * u[current_snapshot] - ((1.0 - damp[domain_offset] * dt) / denominator) * u[prev_snapshot] + value;
+                u[next_snapshot] = 2.0 / denominator * u[current_snapshot] - (numerator / denominator) * u[prev_snapshot] + value;
             }
         }
 
@@ -241,8 +242,11 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
                         // current source point in the grid
                         size_t domain_offset = i * nx + j;
                         size_t next_snapshot = next_t * domain_size + domain_offset;
+                
+                        //denominator with damp coefficient
+                        f_type denominator = (1.0 + damp[domain_offset] * dt / 2);
 
-                        f_type value = dtSquared * velocity[domain_offset] * velocity[domain_offset] * kws * wavelet[wavelet_offset];
+                        f_type value = dtSquared * velocity[domain_offset] * velocity[domain_offset] * kws * wavelet[wavelet_offset] / denominator;
 
                         #if defined(CPU_OPENMP) || defined(GPU_OPENMP)
                         #pragma omp atomic
