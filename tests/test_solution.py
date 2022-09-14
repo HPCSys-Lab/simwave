@@ -136,4 +136,4 @@ class TestSolution:
         # load the reference result
         u_ref = np.load(ref_file)
 
-        assert np.allclose(u, u_ref, atol=1e-05)
+        assert np.allclose(u, u_ref, atol=1e-04)
