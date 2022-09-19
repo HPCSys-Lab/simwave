@@ -173,12 +173,16 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
 
                     value += sum_y/dySquared + sum_x/dxSquared + sum_z/dzSquared;
 
-                    //nominator with damp coefficient
-                    f_type denominator = (1.0 + damp[domain_offset] * dt);
+                    // parameter to be used
+                    f_type slowness = 1.0 / (velocity[domain_offset] * velocity[domain_offset]);
 
-                    value *= (dtSquared * velocity[domain_offset] * velocity[domain_offset]) / denominator;
+                    //denominator with damp coefficient
+                    f_type denominator = (1.0 + damp[domain_offset] * dt / (2 * slowness));
+                    f_type numerator = (1.0 - damp[domain_offset] * dt / (2 * slowness));
 
-                    u[next_snapshot] = 2.0 / denominator * u[current_snapshot] - ((1.0 - damp[domain_offset] * dt) / denominator) * u[prev_snapshot] + value;
+                    value *= (dtSquared / slowness) / denominator;
+
+                    u[next_snapshot] = 2.0 / denominator * u[current_snapshot] - (numerator / denominator) * u[prev_snapshot] + value;
                 }
             }
         }
@@ -264,7 +268,13 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
                             size_t domain_offset = (i * nx + j) * ny + k;
                             size_t next_snapshot = next_t * domain_size + domain_offset;
 
-                            f_type value = dtSquared * velocity[domain_offset] * velocity[domain_offset] * kws * wavelet[wavelet_offset];
+                            // parameter to be used
+                            f_type slowness = 1.0 / (velocity[domain_offset] * velocity[domain_offset]);
+
+                            //denominator with damp coefficient
+                            f_type denominator = (1.0 + damp[domain_offset] * dt / (2 * slowness));
+
+                            f_type value = dtSquared / slowness * kws * wavelet[wavelet_offset] / denominator;
 
                             #if defined(CPU_OPENMP) || defined(GPU_OPENMP)
                             #pragma omp atomic
