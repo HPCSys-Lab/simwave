@@ -67,7 +67,7 @@ class TestSolution:
 
         if density:
             den = np.zeros(shape=shape, dtype=np.float32)
-            den[:] = 5.0
+            den[:] = 1.0
 
             # create the space model
             space_model = SpaceModel(

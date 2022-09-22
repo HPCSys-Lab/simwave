@@ -1,5 +1,5 @@
-from pywave import SpaceModel, TimeModel, RickerWavelet, Solver
-from pywave import Receiver, Source
+from simwave import SpaceModel, TimeModel, RickerWavelet, Solver
+from simwave import Receiver, Source, Compiler
 import numpy as np
 
 
@@ -58,32 +58,38 @@ def generate_one(dimension, space_order):
     # create the time model
     time_model = TimeModel(
         space_model=space_model,
-        tf=tf
+        tf=tf,
+        saving_stride=0
     )
 
     # create the set of sources
     source = Source(
         space_model=space_model,
-        coordinates=source_position
+        coordinates=source_position,
+        window_radius=1
     )
 
     # crete the set of receivers
     receiver = Receiver(
         space_model=space_model,
-        coordinates=source_position
+        coordinates=source_position,
+        window_radius=1
     )
 
     # create a ricker wavelet with 10hz of peak frequency
     ricker = RickerWavelet(f0, time_model)
 
+    # create a compiler
+    compiler = Compiler(language='c')
+
     # create the solver
     solver = Solver(
+        compiler=compiler,
         space_model=space_model,
         time_model=time_model,
         sources=source,
         receivers=receiver,
-        wavelet=ricker,
-        saving_stride=0
+        wavelet=ricker
     )
 
     # run the forward
