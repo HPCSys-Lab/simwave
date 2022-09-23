@@ -72,8 +72,8 @@ class Source:
                 zmin, zmax, xmin, xmax = self.space_model.bounding_box
                 z_spacing, x_spacing = self.space_model.grid_spacing
 
-                if not(zmin <= coord[0] <= zmax) or \
-                   not(xmin <= coord[1] <= xmax):
+                if not (zmin <= coord[0] <= zmax) or \
+                   not (xmin <= coord[1] <= xmax):
                     raise Exception("Coordinates %s out of bounds." % coord)
 
                 zpos = (coord[0] - zmin) / z_spacing
@@ -87,9 +87,9 @@ class Source:
 
                 z_spacing, x_spacing, y_spacing = self.space_model.grid_spacing
 
-                if not(zmin <= coord[0] <= zmax) or \
-                   not(xmin <= coord[1] <= xmax) or \
-                   not(ymin <= coord[2] <= ymax):
+                if not (zmin <= coord[0] <= zmax) or \
+                   not (xmin <= coord[1] <= xmax) or \
+                   not (ymin <= coord[2] <= ymax):
                     raise Exception("Coordinates %s out of bounds." % coord)
 
                 zpos = (coord[0] - zmin) / z_spacing

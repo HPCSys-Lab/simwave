@@ -67,7 +67,7 @@ class TestSolution:
 
         if density:
             den = np.zeros(shape=shape, dtype=np.float32)
-            den[:] = 5.0
+            den[:] = 1.0
 
             # create the space model
             space_model = SpaceModel(
@@ -136,4 +136,4 @@ class TestSolution:
         # load the reference result
         u_ref = np.load(ref_file)
 
-        assert np.allclose(u, u_ref, atol=1e-04)
+        assert np.allclose(u, u_ref, atol=1e-05)
