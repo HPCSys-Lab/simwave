@@ -23,7 +23,7 @@ class Middleware:
     def compiler(self):
         return self._compiler
 
-    def library(self, dimension, density, dtype):
+    def library(self, dimension, density, dtype, operator):
         """Load and return the C library."""
 
         # convert dtype to C compiling value
@@ -44,7 +44,7 @@ class Middleware:
             dimension=dimension,
             density=density,
             float_precision=type[str(dtype)],
-            operator="forward"
+            operator=operator
         )
 
         # load the library
@@ -103,6 +103,10 @@ class Middleware:
         # run the forward operator
         if operator == 'forward':
             return self._exec_forward(**kwargs)
+        
+        # run the gradient operator
+        if operator == 'gradient':
+            return self._exec_gradient(**kwargs)
 
     def _exec_forward(self, **kwargs):
         """
@@ -125,7 +129,8 @@ class Middleware:
         lib = self.library(
             dimension=len(kwargs.get('velocity_model').shape),
             density=kwargs.get('density_model'),
-            dtype=kwargs.get('velocity_model').dtype
+            dtype=kwargs.get('velocity_model').dtype,
+            operator="forward"
         )
 
         # get the argtype for each arg key
@@ -156,6 +161,58 @@ class Middleware:
         print('Run forward in %f seconds.' % exec_time)
 
         return kwargs.get('u_full'), kwargs.get('shot_record')
+    
+    def _exec_gradient(self, **kwargs):
+        """
+        Run the adjoint and gradient operator.
+
+        Parameters
+        ----------
+        kwargs : dict
+            Dictonary of keyword arguments.
+
+        Returns
+        ----------
+        ndarray
+            Gradient array.
+        """
+
+        # load the C library
+        lib = self.library(
+            dimension=len(kwargs.get('velocity_model').shape),
+            density=kwargs.get('density_model'),
+            dtype=kwargs.get('velocity_model').dtype,
+            operator="gradient"
+        )
+
+        # get the argtype for each arg key
+        types = self._argtypes(**kwargs)
+
+        # get the all possible keys in order
+        ordered_keys = self._keys_in_order
+
+        # list of argtypes
+        argtypes = []
+
+        # list of args to pass to C function
+        args = []
+
+        # compose the list of args and arg types
+        for key in ordered_keys:
+            if kwargs.get(key) is not None:
+                argtypes.append(types.get(key))
+                args.append(kwargs.get(key))
+
+        gradient = lib.gradient
+        gradient.restype = ctypes.c_double
+        gradient.argtypes = argtypes
+
+        # run the C gradient function
+        exec_time = gradient(*args)
+
+        print('Run gradient in %f seconds.' % exec_time) 
+        
+        return None#kwargs.get('grad')
 
     @property
     def _keys_in_order(self):

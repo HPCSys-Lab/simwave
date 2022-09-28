@@ -126,7 +126,7 @@ class Compiler:
             Float single (C float) or double (C double) precision.
         operator : str
             Operator implementation.
-            Only forward operator available at the moment.
+            Options: forward, gradient.
 
         Returns
         ----------

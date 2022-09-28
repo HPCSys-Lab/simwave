@@ -167,3 +167,53 @@ class Solver:
         u_full = self.space_model.remove_halo_region(u_full)
 
         return u_full, recv
+    
+    def gradient(self):
+        """
+        Run the the adjoint and gradient.
+
+        Returns
+        ----------
+        ndarray
+            Gradient array
+        """
+        src_points, src_values, src_offsets = \
+            self.sources.interpolated_points_and_values
+        rec_points, rec_values, rec_offsets = \
+            self.receivers.interpolated_points_and_values
+
+        grad = self._middleware.exec(
+            operator='gradient',
+            u_full=self.u_full,
+            velocity_model=self.space_model.extended_velocity_model,
+            density_model=self.space_model.extended_density_model,
+            damping_mask=self.space_model.damping_mask,
+            wavelet=self.wavelet.values,
+            wavelet_size=self.wavelet.timesteps,
+            wavelet_count=self.wavelet.num_sources,
+            second_order_fd_coefficients=self.space_model.fd_coefficients(2),
+            first_order_fd_coefficients=self.space_model.fd_coefficients(1),
+            boundary_condition=self.space_model.boundary_condition,
+            src_points_interval=src_points,
+            src_points_interval_size=len(src_points),
+            src_points_values=src_values,
+            src_points_values_offset=src_offsets,
+            src_points_values_size=len(src_values),
+            rec_points_interval=rec_points,
+            rec_points_interval_size=len(rec_points),
+            rec_points_values=rec_values,
+            rec_points_values_offset=rec_offsets,
+            rec_points_values_size=len(rec_values),
+            shot_record=self.shot_record,
+            num_sources=self.sources.count,
+            num_receivers=self.receivers.count,
+            grid_spacing=self.space_model.grid_spacing,
+            saving_stride=self.time_model.saving_stride,
+            dt=self.time_model.dt,
+            begin_timestep=1,
+            end_timestep=self.time_model.timesteps,
+            space_order=self.space_model.space_order,
+            num_snapshots=self.u_full.shape[0]
+        )       
+
+        return grad
