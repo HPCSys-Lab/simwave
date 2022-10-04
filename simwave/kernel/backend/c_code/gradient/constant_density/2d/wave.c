@@ -20,18 +20,15 @@
 #endif
 
 // gradient 2D_constant_density
-double gradient(f_type *u, f_type *velocity, f_type *damp,
+double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *damp,
                f_type *wavelet, size_t wavelet_size, size_t wavelet_count,
                f_type *coeff, size_t *boundary_conditions,
                size_t *src_points_interval, size_t src_points_interval_size,
                f_type *src_points_values, size_t src_points_values_size,
-               size_t *src_points_values_offset,
-               size_t *rec_points_interval, size_t rec_points_interval_size,
-               f_type *rec_points_values, size_t rec_points_values_size,
-               size_t *rec_points_values_offset,
-               f_type *receivers, size_t num_sources, size_t num_receivers,
+               size_t *src_points_values_offset,               
+               size_t num_sources,
                size_t nz, size_t nx, f_type dz, f_type dx,
-               size_t saving_stride, f_type dt,
+               size_t stride, f_type dt,
                size_t begin_timestep, size_t end_timestep,
                size_t space_order, size_t num_snapshots){
     
@@ -63,8 +60,7 @@ double gradient(f_type *u, f_type *velocity, f_type *damp,
     #ifdef DEVICEID
     omp_set_default_device(DEVICEID);
     #endif
-
-    size_t shot_record_size = wavelet_size * num_receivers;
+    
     size_t u_size = num_snapshots * domain_size;
 
     #pragma omp target enter data map(to: u[:u_size])
@@ -73,12 +69,9 @@ double gradient(f_type *u, f_type *velocity, f_type *damp,
     #pragma omp target enter data map(to: coeff[:stencil_radius+1])
     #pragma omp target enter data map(to: src_points_interval[:src_points_interval_size])
     #pragma omp target enter data map(to: src_points_values[:src_points_values_size])
-    #pragma omp target enter data map(to: src_points_values_offset[:num_sources])
-    #pragma omp target enter data map(to: rec_points_interval[:rec_points_interval_size])
-    #pragma omp target enter data map(to: rec_points_values[:rec_points_values_size])
-    #pragma omp target enter data map(to: rec_points_values_offset[:num_receivers])
+    #pragma omp target enter data map(to: src_points_values_offset[:num_sources])    
     #pragma omp target enter data map(to: wavelet[:wavelet_size * wavelet_count])
-    #pragma omp target enter data map(to: receivers[:shot_record_size])
+   
     #endif
 
     #ifdef GPU_OPENACC
@@ -88,8 +81,7 @@ double gradient(f_type *u, f_type *velocity, f_type *damp,
     acc_init(acc_device_nvidia);
     acc_set_device_num(DEVICEID, acc_device_nvidia);
     #endif
-
-    size_t shot_record_size = wavelet_size * num_receivers;
+    
     size_t u_size = num_snapshots * domain_size;
 
     #pragma acc enter data copyin(u[:u_size])
@@ -98,30 +90,18 @@ double gradient(f_type *u, f_type *velocity, f_type *damp,
     #pragma acc enter data copyin(coeff[:stencil_radius+1])
     #pragma acc enter data copyin(src_points_interval[:src_points_interval_size])
     #pragma acc enter data copyin(src_points_values[:src_points_values_size])
-    #pragma acc enter data copyin(src_points_values_offset[:num_sources])
-    #pragma acc enter data copyin(rec_points_interval[:rec_points_interval_size])
-    #pragma acc enter data copyin(rec_points_values[:rec_points_values_size])
-    #pragma acc enter data copyin(rec_points_values_offset[:num_receivers])
+    #pragma acc enter data copyin(src_points_values_offset[:num_sources])    
     #pragma acc enter data copyin(wavelet[:wavelet_size * wavelet_count])
-    #pragma acc enter data copyin(receivers[:shot_record_size])
     #endif
 
     // wavefield modeling
     for(size_t n = begin_timestep; n <= end_timestep; n++) {
 
-        // no saving case
-        if(saving_stride == 0){
-            prev_t = (n - 1) % 3;
-            current_t = n % 3;
-            next_t = (n + 1) % 3;
-        }else{
-            // all timesteps saving case
-            if(saving_stride == 1){
-                prev_t = n - 1;
-                current_t = n;
-                next_t = n + 1;
-            }
-        }
+        // no saving case        
+        prev_t = (n - 1) % 3;
+        current_t = n % 3;
+        next_t = (n + 1) % 3;
+        
 
         /*
             Section 1: update the wavefield according to the acoustic wave equation
@@ -183,6 +163,7 @@ double gradient(f_type *u, f_type *velocity, f_type *damp,
 
         /*
             Section 2: add the source term
+            In this context, the sources are the same as the receivers from forward
         */
 
         #ifdef CPU_OPENMP
@@ -394,131 +375,9 @@ double gradient(f_type *u, f_type *velocity, f_type *damp,
 
         }
 
-        /*
-            Section 4: compute the receivers
-        */
-
-        #ifdef CPU_OPENMP
-        #pragma omp parallel for simd
-        #endif
-
-        #ifdef GPU_OPENMP
-        #pragma omp target teams distribute parallel for
-        #endif
-
-        #ifdef GPU_OPENACC
-        #pragma acc parallel loop present(rec_points_interval,rec_points_values,rec_points_values_offset,u,receivers)
-        #endif
-
-        // for each receiver
-        for(size_t rec = 0; rec < num_receivers; rec++){
-
-            f_type sum = 0.0;
-
-            // each receiver has 4 (z_b, z_e, x_b, x_e) point intervals
-            size_t offset_rec = rec * 4;
-
-            // interval of grid points of the receiver in the Z axis
-            size_t rec_z_begin = rec_points_interval[offset_rec + 0];
-            size_t rec_z_end = rec_points_interval[offset_rec + 1];
-
-            // interval of grid points of the receiver in the X axis
-            size_t rec_x_begin = rec_points_interval[offset_rec + 2];
-            size_t rec_x_end = rec_points_interval[offset_rec + 3];
-
-            // number of grid points of the receiver in each axis
-            size_t rec_z_num_points = rec_z_end - rec_z_begin + 1;
-            //size_t rec_x_num_points = rec_x_end - rec_x_begin + 1;
-
-            // pointer to rec value offset
-            size_t offset_rec_kws_index_z = rec_points_values_offset[rec];
-
-            // index of the Kaiser windowed sinc value of the receiver point
-            size_t kws_index_z = offset_rec_kws_index_z;
-
-            // for each receiver point in the Z axis
-            #ifdef GPU_OPENACC
-            #pragma acc loop seq
-            #endif
-            for(size_t i = rec_z_begin; i <= rec_z_end; i++){
-                size_t kws_index_x = offset_rec_kws_index_z + rec_z_num_points;
-
-                // for each receiver point in the X axis
-                #ifdef GPU_OPENACC
-                #pragma acc loop seq
-                #endif
-                for(size_t j = rec_x_begin; j <= rec_x_end; j++){
-
-                    f_type kws = rec_points_values[kws_index_z] * rec_points_values[kws_index_x];
-
-                    // current receiver point in the grid
-                    size_t domain_offset = i * nx + j;
-                    size_t current_snapshot = current_t * domain_size + domain_offset;
-                    sum += u[current_snapshot] * kws;
-
-                    kws_index_x++;
-                }
-                kws_index_z++;
-            }
-
-            size_t current_rec_n = (n-1) * num_receivers + rec;
-            receivers[current_rec_n] = sum;
-        }
-
-        // stride timesteps saving case
-        if(saving_stride > 1){
-            // shift the pointer
-            if(n % saving_stride == 1){
-
-                prev_t = current_t;
-                current_t += 1;
-                next_t += 1;
-
-                // even stride adjust case
-                if(saving_stride % 2 == 0 && n < end_timestep){
-                    size_t swap = current_t;
-                    current_t = next_t;
-                    next_t = swap;
-
-                    #ifdef CPU_OPENMP
-                    #pragma omp parallel for
-                    #endif
-
-                    #ifdef GPU_OPENMP
-                    #pragma omp target teams distribute parallel for collapse(2)
-                    #endif
-
-                    #ifdef GPU_OPENACC
-                    #pragma acc parallel loop collapse(2) present(u)
-                    #endif
-
-                    // exchange of values ​​required
-                    for(size_t i = 0; i < nz; i++) {
-                        for(size_t j = 0; j < nx; j++) {
-                            // index of the current point in the grid
-                            size_t domain_offset = i * nx + j;
-
-                            size_t current_snapshot = current_t * domain_size + domain_offset;
-                            size_t next_snapshot = next_t * domain_size + domain_offset;
-
-                            f_type aux = u[current_snapshot];
-                            u[current_snapshot] = u[next_snapshot];
-                            u[next_snapshot] = aux;
-                        }
-                    }
-                }
-
-            }else{
-                prev_t = current_t;
-                current_t = next_t;
-                next_t = prev_t;
-            }
-        }
-
     }
 
-    #ifdef GPU_OPENMP
-    #pragma omp target exit data map(from: receivers[:shot_record_size])
+    #ifdef GPU_OPENMP    
     #pragma omp target exit data map(from: u[:u_size])
 
     #pragma omp target exit data map(delete: velocity[:domain_size])
@@ -526,18 +385,13 @@ double gradient(f_type *u, f_type *velocity, f_type *damp,
     #pragma omp target exit data map(delete: coeff[:stencil_radius+1])
     #pragma omp target exit data map(delete: src_points_interval[:src_points_interval_size])
     #pragma omp target exit data map(delete: src_points_values[:src_points_values_size])
-    #pragma omp target exit data map(delete: src_points_values_offset[:num_sources])
-    #pragma omp target exit data map(delete: rec_points_interval[:rec_points_interval_size])
-    #pragma omp target exit data map(delete: rec_points_values[:rec_points_values_size])
-    #pragma omp target exit data map(delete: rec_points_values_offset[:num_receivers])
+    #pragma omp target exit data map(delete: src_points_values_offset[:num_sources])    
     #pragma omp target exit data map(delete: wavelet[:wavelet_size * wavelet_count])
     #endif
 
     #ifdef GPU_OPENACC
-    #pragma acc exit data copyout(receivers[:shot_record_size])
-    #pragma acc exit data copyout(u[:u_size])
-
-    #pragma acc exit data delete(receivers[:shot_record_size])
+    
+    #pragma acc exit data copyout(u[:u_size])    
     #pragma acc exit data delete(u[:u_size])
 
     #pragma acc exit data delete(velocity[:domain_size])
@@ -545,10 +399,7 @@ double gradient(f_type *u, f_type *velocity, f_type *damp,
     #pragma acc exit data delete(coeff[:stencil_radius+1])
     #pragma acc exit data delete(src_points_interval[:src_points_interval_size])
     #pragma acc exit data delete(src_points_values[:src_points_values_size])
-    #pragma acc exit data delete(src_points_values_offset[:num_sources])
-    #pragma acc exit data delete(rec_points_interval[:rec_points_interval_size])
-    #pragma acc exit data delete(rec_points_values[:rec_points_values_size])
-    #pragma acc exit data delete(rec_points_values_offset[:num_receivers])
+    #pragma acc exit data delete(src_points_values_offset[:num_sources])    
     #pragma acc exit data delete(wavelet[:wavelet_size * wavelet_count])
     #endif
 

@@ -602,6 +602,7 @@ class TimeModel:
         num_timesteps = int(np.ceil((self.tf - self.t0 + self.dt) / self.dt))
 
         # adjust the number of timesteps according to saving_stride
+        # number of timesteps must be multiple of saving_stride
         if 1 < self.saving_stride <= num_timesteps:
             while num_timesteps % self.saving_stride != 1:
                 num_timesteps += 1
