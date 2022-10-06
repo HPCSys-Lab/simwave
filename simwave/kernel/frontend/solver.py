@@ -1,5 +1,6 @@
 import numpy as np
 from simwave.kernel.backend.middleware import Middleware
+from simwave.kernel.frontend.source import MultiWavelet
 
 
 class Solver:
@@ -99,13 +100,34 @@ class Solver:
 
     @property
     def u_full(self):
-        """Return the complete grid (snapshots, nz. nz [, ny])."""
+        """Return the complete grid (snapshots, nz. nx [, ny])."""
 
         # add 2 halo snapshots (second order in time)
         snapshots = self.num_snapshots + 2
 
         # define the final shape (snapshots + domain)
         shape = (snapshots,) + self.space_model.extended_shape
+
+        return np.zeros(shape, dtype=self.space_model.dtype)
+    
+    @property
+    def v(self):
+        """Return the adjoint grid (3, nz. nx [, ny])."""
+
+        # add 2 halo snapshots (second order in time)
+        snapshots = 3
+
+        # define the final shape (snapshots + domain)
+        shape = (snapshots,) + self.space_model.extended_shape
+
+        return np.zeros(shape, dtype=self.space_model.dtype)
+    
+    @property
+    def grad(self):
+        """Return the the gradient array."""        
+
+        # define the final shape (domain)
+        shape = self.space_model.extended_shape
 
         return np.zeros(shape, dtype=self.space_model.dtype)
 
@@ -164,54 +186,59 @@ class Solver:
         u_full = self.time_model.remove_time_halo_region(u_full)
 
         # remove spatial halo region
-        u_full = self.space_model.remove_halo_region(u_full)
+        #u_full = self.space_model.remove_halo_region(u_full)
 
         return u_full, recv
     
-    def gradient(self):
+    def gradient(self, u, residual):
         """
         Run the the adjoint and gradient.
+        
+        Parameters
+        ----------
+        u : ndarray
+            Full wavefield from forward with snapshots.
+        residual : ndarray
+            Difference between observed and predicted data.
 
         Returns
         ----------
         ndarray
             Gradient array
         """
+        
+        # in the adjoint case the receives became sources
         src_points, src_values, src_offsets = \
-            self.sources.interpolated_points_and_values
-        rec_points, rec_values, rec_offsets = \
             self.receivers.interpolated_points_and_values
+        
+        # encapsulate the residual in a multi wavelet object
+        adjoint_wavelet = MultiWavelet(
+            values=residual,
+            time_model=self.time_model
+        )
 
         grad = self._middleware.exec(
             operator='gradient',
-            u_full=self.u_full,
+            u_full=u,
+            v=self.v,
+            grad=self.grad,
             velocity_model=self.space_model.extended_velocity_model,
             density_model=self.space_model.extended_density_model,
             damping_mask=self.space_model.damping_mask,
-            wavelet=self.wavelet.values,
-            wavelet_size=self.wavelet.timesteps,
-            wavelet_count=self.wavelet.num_sources,
+            wavelet=adjoint_wavelet.values,
+            wavelet_size=adjoint_wavelet.timesteps,
+            wavelet_count=adjoint_wavelet.num_sources,
             second_order_fd_coefficients=self.space_model.fd_coefficients(2),
             first_order_fd_coefficients=self.space_model.fd_coefficients(1),
-            boundary_condition=self.space_model.boundary_condition,
-            
+            boundary_condition=self.space_model.boundary_condition,            
             src_points_interval=src_points,
             src_points_interval_size=len(src_points),
             src_points_values=src_values,
             src_points_values_offset=src_offsets,
-            src_points_values_size=len(src_values),
-            
-            rec_points_interval=rec_points,
-            rec_points_interval_size=len(rec_points),
-            rec_points_values=rec_values,
-            rec_points_values_offset=rec_offsets,
-            rec_points_values_size=len(rec_values),
-            
-            shot_record=self.shot_record,
-            num_sources=self.sources.count,
-            num_receivers=self.receivers.count,
+            src_points_values_size=len(src_values),            
+            num_sources=adjoint_wavelet.num_sources,            
             grid_spacing=self.space_model.grid_spacing,
-            saving_stride=self.time_model.saving_stride,
+            stride=self.time_model.saving_stride,
             dt=self.time_model.dt,
             begin_timestep=1,
             end_timestep=self.time_model.timesteps,
@@ -219,4 +246,4 @@ class Solver:
             num_snapshots=self.u_full.shape[0]
         )       
 
-        return grad
+        return self.grad
