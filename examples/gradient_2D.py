@@ -91,6 +91,8 @@ receiver = Receiver(
     window_radius=4
 )
 
+print(receiver.count)
+
 # create a ricker wavelet with 10hz of peak frequency
 ricker = RickerWavelet(10.0, time_model)
 
@@ -114,4 +116,6 @@ print("Timesteps:", time_model.timesteps)
 #plot_wavefield(u_full[-1])
 #plot_shotrecord(recv)
 
-grad = solver.gradient()
+u_full, recv = solver.forward()
+
+grad = solver.gradient(u_full, recv)
