@@ -31,8 +31,6 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
                size_t stride, f_type dt,
                size_t begin_timestep, size_t end_timestep,
                size_t space_order, size_t num_snapshots){
-    
-    printf("GRADIENT....\n");
 
     size_t stencil_radius = space_order / 2;
 
@@ -93,9 +91,10 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
     #pragma acc enter data copyin(src_points_values_offset[:num_sources])    
     #pragma acc enter data copyin(wavelet[:wavelet_size * wavelet_count])
     #endif
-
-    // wavefield modeling
+    
+    // adjoint modeling
     for(size_t n = begin_timestep; n <= end_timestep; n++) {
+    //for(size_t n = end_timestep; n >= begin_timestep; n--) {
 
         // no saving case        
         prev_t = (n - 1) % 3;
@@ -116,7 +115,7 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
         #endif
 
         #ifdef GPU_OPENACC
-        #pragma acc parallel loop collapse(2) present(coeff,damp,u,velocity)
+        #pragma acc parallel loop collapse(2) present(coeff,damp,v,velocity)
         #endif
 
         for(size_t i = stencil_radius; i < nz - stencil_radius; i++) {
@@ -131,8 +130,8 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
                 // stencil code to update grid
                 f_type value = 0.0;
 
-                f_type sum_x = coeff[0] * u[current_snapshot];
-                f_type sum_z = coeff[0] * u[current_snapshot];
+                f_type sum_x = coeff[0] * v[current_snapshot];
+                f_type sum_z = coeff[0] * v[current_snapshot];
 
                 // radius of the stencil
                 #ifdef GPU_OPENACC
@@ -140,10 +139,10 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
                 #endif
                 for(size_t ir = 1; ir <= stencil_radius; ir++){
                     //neighbors in the horizontal direction
-                    sum_x += coeff[ir] * (u[current_snapshot + ir] + u[current_snapshot - ir]);
+                    sum_x += coeff[ir] * (v[current_snapshot + ir] + v[current_snapshot - ir]);
 
                     //neighbors in the vertical direction
-                    sum_z += coeff[ir] * (u[current_snapshot + (ir * nx)] + u[current_snapshot - (ir * nx)]);
+                    sum_z += coeff[ir] * (v[current_snapshot + (ir * nx)] + v[current_snapshot - (ir * nx)]);
                 }
 
                 value += sum_x/dxSquared + sum_z/dzSquared;
@@ -157,7 +156,7 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
 
                 value *= (dtSquared / slowness) / denominator;
 
-                u[next_snapshot] = 2.0 / denominator * u[current_snapshot] - (numerator / denominator) * u[prev_snapshot] + value;
+                v[next_snapshot] = 2.0 / denominator * v[current_snapshot] - (numerator / denominator) * v[prev_snapshot] + value;
             }
         }
 
@@ -175,7 +174,7 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
         #endif
 
         #ifdef GPU_OPENACC
-        #pragma acc parallel loop present(src_points_interval,src_points_values,src_points_values_offset,u,velocity,wavelet)
+        #pragma acc parallel loop present(src_points_interval,src_points_values,src_points_values_offset,v,velocity,wavelet)
         #endif
 
         // for each source
@@ -244,7 +243,7 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
                         #ifdef GPU_OPENACC
                         #pragma acc atomic update
                         #endif
-                        u[next_snapshot] += value;
+                        v[next_snapshot] += value;
 
                         kws_index_x++;
                     }
@@ -275,7 +274,7 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
         #endif
 
         #ifdef GPU_OPENACC
-        #pragma acc parallel loop present(u)
+        #pragma acc parallel loop present(v)
         #endif
 
         for(size_t i = stencil_radius; i < nz - stencil_radius; i++){
@@ -284,7 +283,7 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
             if(x_before == 1){
                 size_t domain_offset = i * nx + stencil_radius;
                 size_t next_snapshot = next_t * domain_size + domain_offset;
-                u[next_snapshot] = 0.0;
+                v[next_snapshot] = 0.0;
             }
 
             // null neumann on the left
@@ -295,7 +294,7 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
                 for(size_t ir = 1; ir <= stencil_radius; ir++){
                     size_t domain_offset = i * nx + stencil_radius;
                     size_t next_snapshot = next_t * domain_size + domain_offset;
-                    u[next_snapshot - ir] = u[next_snapshot + ir];
+                    v[next_snapshot - ir] = v[next_snapshot + ir];
                 }
             }
 
@@ -303,7 +302,7 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
             if(x_after == 1){
                 size_t domain_offset = i * nx + (nx - stencil_radius - 1);
                 size_t next_snapshot = next_t * domain_size + domain_offset;
-                u[next_snapshot] = 0.0;
+                v[next_snapshot] = 0.0;
             }
 
             // null neumann on the right
@@ -314,7 +313,7 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
                 for(size_t ir = 1; ir <= stencil_radius; ir++){
                     size_t domain_offset = i * nx + (nx - stencil_radius - 1);
                     size_t next_snapshot = next_t * domain_size + domain_offset;
-                    u[next_snapshot + ir] = u[next_snapshot - ir];
+                    v[next_snapshot + ir] = v[next_snapshot - ir];
                 }
             }
 
@@ -330,7 +329,7 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
         #endif
 
         #ifdef GPU_OPENACC
-        #pragma acc parallel loop present(u)
+        #pragma acc parallel loop present(v)
         #endif
 
         for(size_t j = stencil_radius; j < nx - stencil_radius; j++){
@@ -339,7 +338,7 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
             if(z_before == 1){
                 size_t domain_offset = stencil_radius * nx + j;
                 size_t next_snapshot = next_t * domain_size + domain_offset;
-                u[next_snapshot] = 0.0;
+                v[next_snapshot] = 0.0;
             }
 
             // null neumann on the top
@@ -350,7 +349,7 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
                 for(size_t ir = 1; ir <= stencil_radius; ir++){
                     size_t domain_offset = stencil_radius * nx + j;
                     size_t next_snapshot = next_t * domain_size + domain_offset;
-                    u[next_snapshot - (ir * nx)] = u[next_snapshot + (ir * nx)];
+                    v[next_snapshot - (ir * nx)] = v[next_snapshot + (ir * nx)];
                 }
             }
 
@@ -358,7 +357,7 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
             if(z_after == 1){
                 size_t domain_offset = (nz - stencil_radius - 1) * nx + j;
                 size_t next_snapshot = next_t * domain_size + domain_offset;
-                u[next_snapshot] = 0.0;
+                v[next_snapshot] = 0.0;
             }
 
             // null neumann on the bottom
@@ -369,13 +368,36 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
                 for(size_t ir = 1; ir <= stencil_radius; ir++){
                     size_t domain_offset = (nz - stencil_radius - 1) * nx + j;
                     size_t next_snapshot = next_t * domain_size + domain_offset;
-                    u[next_snapshot + (ir * nx)] = u[next_snapshot - (ir * nx)];
+                    v[next_snapshot + (ir * nx)] = v[next_snapshot - (ir * nx)];
                 }
             }
 
         }
 
+        /*
+            Section 4: gradient calculation
+        */
+        for(size_t i = stencil_radius; i < nz - stencil_radius; i++) {
+            for(size_t j = stencil_radius; j < nx - stencil_radius; j++) {
+                // index of the current point in the grid
+                size_t domain_offset = i * nx + j;
+
+                size_t prev_snapshot = prev_t * domain_size + domain_offset;
+                size_t current_snapshot = current_t * domain_size + domain_offset;
+                size_t next_snapshot = next_t * domain_size + domain_offset;
+
+                f_type v_second_time_derivative = (v[prev_snapshot] - 2.0 * v[current_snapshot] + v[next_snapshot]) / dtSquared;
+
+                //printf("%f | ", v_second_time_derivative);
+
+                // update gradient
+                size_t current_point_u = n * domain_size + domain_offset;
+                grad[domain_offset] -= v_second_time_derivative * u[current_point_u];
+            }
+        }
+
     }
+    
 
     #ifdef GPU_OPENMP    
     #pragma omp target exit data map(from: u[:u_size])

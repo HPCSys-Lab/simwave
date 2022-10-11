@@ -212,7 +212,7 @@ class Middleware:
 
         print('Run gradient in %f seconds.' % exec_time) 
         
-        return None#kwargs.get('grad')
+        return kwargs.get('grad'), kwargs.get('v')
 
     @property
     def _keys_in_order(self):
@@ -222,6 +222,8 @@ class Middleware:
 
         key_order = [
             'u_full',
+            'v',
+            'grad',
             'velocity_model',
             'density_model',
             'damping_mask',
@@ -251,6 +253,7 @@ class Middleware:
             'dx',
             'dy',
             'saving_stride',
+            'stride',
             'dt',
             'begin_timestep',
             'end_timestep',

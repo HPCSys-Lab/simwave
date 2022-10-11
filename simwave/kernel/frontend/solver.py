@@ -217,7 +217,7 @@ class Solver:
             time_model=self.time_model
         )
 
-        grad = self._middleware.exec(
+        grad, v = self._middleware.exec(
             operator='gradient',
             u_full=u,
             v=self.v,
@@ -244,6 +244,9 @@ class Solver:
             end_timestep=self.time_model.timesteps,
             space_order=self.space_model.space_order,
             num_snapshots=self.u_full.shape[0]
-        )       
+        )   
+        
+        print("aqui em solver.py - linha 249")
+        print("V min and max:", np.min(v), np.max(v))   
 
-        return self.grad
+        return grad
