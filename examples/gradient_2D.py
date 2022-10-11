@@ -45,16 +45,16 @@ compiler = Compiler(
 )
 
 # Velocity model
-vel = np.zeros(shape=(512, 512), dtype=np.float32)
+vel = np.zeros(shape=(256, 256), dtype=np.float32)
 vel[:] = 1500.0
-vel[100:] = 2000.0
+vel[128:] = 2000.0
 
 # create the space model
 space_model = SpaceModel(
-    bounding_box=(0, 5120, 0, 5120),
+    bounding_box=(0, 2560, 0, 2560),
     grid_spacing=(10, 10),
     velocity_model=vel,
-    space_order=4,
+    space_order=2,
     dtype=np.float32
 )
 
@@ -73,25 +73,23 @@ space_model.config_boundary(
 # create the time model
 time_model = TimeModel(
     space_model=space_model,
-    tf=1.0,
-    saving_stride=0
+    tf=0.7,
+    saving_stride=1
 )
 
 # create the set of sources
 source = Source(
     space_model,
-    coordinates=[(2560, 2560)],
+    coordinates=[(1280, 1280)],
     window_radius=4
 )
 
 # crete the set of receivers
 receiver = Receiver(
     space_model=space_model,
-    coordinates=[(2560, i) for i in range(0, 5120, 10)],
+    coordinates=[(1280, i) for i in range(0, 2560, 10)],
     window_radius=4
 )
-
-print(receiver.count)
 
 # create a ricker wavelet with 10hz of peak frequency
 ricker = RickerWavelet(10.0, time_model)
@@ -109,13 +107,15 @@ solver = Solver(
 print("Timesteps:", time_model.timesteps)
 
 # run the forward
-#u_full, recv = solver.forward()
-
-#print("u_full shape:", u_full.shape)
-#plot_velocity_model(space_model.velocity_model)
-#plot_wavefield(u_full[-1])
-#plot_shotrecord(recv)
-
 u_full, recv = solver.forward()
 
+print("u_full shape:", u_full.shape)
+plot_velocity_model(space_model.velocity_model)
+plot_wavefield(u_full[-1])
+plot_shotrecord(recv)
+
 grad = solver.gradient(u_full, recv)
+
+plot_velocity_model(grad, file_name="grad")
+
+#print(np.mean(grad))
