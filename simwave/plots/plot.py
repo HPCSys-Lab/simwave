@@ -13,7 +13,7 @@ def plot_wavefield(wavefield, file_name="wavefield", colorbar=True,
     Parameters
     ----------
     wavefield : ndarray
-        Wavefield data.
+        Wavefield data.   
     file_name : str, optional
         Name of the image to be saved.
         Default is wavefield.
@@ -104,7 +104,8 @@ def plot_shotrecord(rec, file_name="shotrecord", colorbar=True, show=False):
     print("Shot record saved in plots/{}.png".format(file_name))
 
 
-def plot_velocity_model(model, file_name="velocity_model", colorbar=True,
+def plot_velocity_model(model, sources=None, receivers=None,
+                        file_name="velocity_model", colorbar=True,
                         extent=None, cmap="jet", show=False):
     """
     Plot the velocity model.
@@ -113,6 +114,10 @@ def plot_velocity_model(model, file_name="velocity_model", colorbar=True,
     ----------
     model : ndarray
         Velocity model data.
+    sources : ndarray
+        Coordinates of the sources.
+    receivers : ndarray
+        Coordinates of the receivers.
     file_name : str, optional
         Name of the image to be saved.
         Default is velocity_model.
@@ -140,6 +145,18 @@ def plot_velocity_model(model, file_name="velocity_model", colorbar=True,
     # labels
     plt.xlabel('Width ({})'.format(m_unit))
     plt.ylabel('Depth ({})'.format(m_unit))
+    
+    # plot receiver points, if provided
+    if receivers is not None:
+        # in simwave, it's assumed 
+        # Z (vertical) and X (horizontal) order
+        plt.scatter(receivers[:, 1], receivers[:, 0],
+                    s=20, c='green', marker='D')
+
+    # plot sources points, if provided
+    if sources is not None:
+        plt.scatter(sources[:, 1], sources[:, 0],
+                    s=20, c='red', marker='o')
 
     # Create aligned colorbar on the right
     if colorbar:

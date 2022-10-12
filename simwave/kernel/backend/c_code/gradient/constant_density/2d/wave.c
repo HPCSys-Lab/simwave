@@ -92,14 +92,14 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
     #pragma acc enter data copyin(wavelet[:wavelet_size * wavelet_count])
     #endif
     
-    // adjoint modeling
-    for(size_t n = begin_timestep; n <= end_timestep; n++) {
-    //for(size_t n = end_timestep; n >= begin_timestep; n--) {
+    // adjoint modeling   
+    for(size_t n = end_timestep; n >= begin_timestep; n--) {
 
-        // no saving case        
-        prev_t = (n - 1) % 3;
+        // no saving case
+        // since we are moving backwards, we invert the next_t and prev_t pointer       
+        next_t = (n - 1) % 3;
         current_t = n % 3;
-        next_t = (n + 1) % 3;
+        prev_t = (n + 1) % 3;
         
 
         /*
@@ -387,8 +387,6 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
                 size_t next_snapshot = next_t * domain_size + domain_offset;
 
                 f_type v_second_time_derivative = (v[prev_snapshot] - 2.0 * v[current_snapshot] + v[next_snapshot]) / dtSquared;
-
-                //printf("%f | ", v_second_time_derivative);
 
                 // update gradient
                 size_t current_point_u = n * domain_size + domain_offset;
