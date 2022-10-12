@@ -11,7 +11,7 @@ domain_size = 1000
 spacing = 10
 
 # space order
-space_order = 2
+space_order = 8
 
 # dtype
 dtype = np.float32
