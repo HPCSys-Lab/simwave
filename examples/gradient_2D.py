@@ -11,7 +11,7 @@ domain_size = 1000
 spacing = 10
 
 # space order
-space_order = 8
+space_order = 4
 
 # dtype
 dtype = np.float32
@@ -20,7 +20,7 @@ dtype = np.float32
 propagation_time = 0.5
 
 # time step variation
-dt = 0.001;
+dt = 0.001
 
 # compiler options
 compiler_options = {
@@ -74,7 +74,8 @@ def create_solver(saving_stride, velocity_model):
     # config boundary conditions
     # (none,  null_dirichlet or null_neumann)   
     space_model.config_boundary(
-        damping_length=(damping, damping, damping, damping),
+        #damping_length=(damping, damping, damping, damping),
+        damping_length=10,
         boundary_condition=(
             "null_neumann", "null_dirichlet",
             "null_dirichlet", "null_dirichlet"
@@ -96,14 +97,15 @@ def create_solver(saving_stride, velocity_model):
     # create the set of sources
     source = Source(
         space_model,
-        coordinates=[(domain_size//2, 40)],
+        coordinates=[(20, domain_size//2)],
         window_radius=4
     )
 
     # crete the set of receivers
     receiver = Receiver(
         space_model=space_model,
-        coordinates=[(i, domain_size-40) for i in range(0, domain_size, 10)],
+        #coordinates=[(domain_size-20, i) for i in range(0, domain_size, 10)],
+        coordinates=[(domain_size-20, i) for i in np.linspace(0, domain_size, num=101)],
         window_radius=4
     )
 
@@ -127,7 +129,9 @@ def calculate_true_seimogram(velocity_model):
     # true model solver
     solver = create_solver(saving_stride=0, velocity_model=velocity_model)
     
-    u_true, recv_true = solver.forward()    
+    u_true, recv_true = solver.forward()
+
+    print("Shape u", u_true.shape)  
     
     plot_velocity_model(solver.space_model.velocity_model,
                         sources=solver.sources.grid_positions,
@@ -182,12 +186,12 @@ def camembert_velocity_model(grid_size, radius):
 
 if __name__ == "__main__":
     
-    grid_size = domain_size // spacing
+    grid_size = domain_size // spacing + 1
 
     # True velocity model
     # Camembert model    
     tru_vel = camembert_velocity_model(grid_size, radius=15)
-    
+   
     # Smooth velocity model
     smooth_vel = np.zeros(shape=(grid_size, grid_size), dtype=dtype)
     smooth_vel[:] = 2000
