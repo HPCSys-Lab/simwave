@@ -183,11 +183,11 @@ class SpaceModel:
     @property
     def damping_alpha(self):
         """Constant parameter of the extension function."""
-        # if boundary is not configured, damping_alpha is 0.0001
+        # if boundary is not configured, damping_alpha is 0.002
         try:
             return self._damping_alpha
         except AttributeError:
-            return 0.001
+            return 0.002
 
     def fd_coefficients(self, derivative_order):
         """
@@ -269,7 +269,7 @@ class SpaceModel:
         return (space_order_radius, ) * self.dimension * 2
 
     def config_boundary(self, damping_length=0.0, boundary_condition="none",
-                        damping_polynomial_degree=3, damping_alpha=0.001):
+                        damping_polynomial_degree=3, damping_alpha=0.002):
         """
         Applies the domain extension (for absorbing layers with damping)
         and boundary conditions.
@@ -292,7 +292,7 @@ class SpaceModel:
             Default is 1 (linear).
         alpha : float, optional
             Constant parameter of the extension function.
-            Default is 0.0001.
+            Default is 0.002.
         """
 
         self._damping_polynomial_degree = damping_polynomial_degree
