@@ -81,7 +81,7 @@ def create_solver(saving_stride, velocity_model):
             "null_dirichlet", "null_dirichlet"
         ),
         damping_polynomial_degree=3,
-        damping_alpha=0.001
+        damping_alpha=0.002
     )
 
     # create the time model

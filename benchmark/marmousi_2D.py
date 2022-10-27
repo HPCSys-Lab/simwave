@@ -85,7 +85,7 @@ if __name__ == '__main__':
             "null_dirichlet", "null_dirichlet"
         ),
         damping_polynomial_degree=3,
-        damping_alpha=0.001
+        damping_alpha=0.002
     )
 
     # create the time model
