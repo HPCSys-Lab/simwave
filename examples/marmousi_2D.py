@@ -82,10 +82,8 @@ u_full, recv = solver.forward()
 # remove damping extension from u_full
 u_full = space_model.remove_nbl(u_full)
 
-extent = [0, 17000, 3500, 0]
-
 print("u_full shape:", u_full.shape)
 print("timesteps:", time_model.timesteps)
-plot_velocity_model(space_model.velocity_model, extent=extent)
-plot_wavefield(u_full[-1], extent=extent)
+plot_velocity_model(space_model.velocity_model, solver=solver)
+plot_wavefield(u_full[-1], solver=solver)
 plot_shotrecord(recv)

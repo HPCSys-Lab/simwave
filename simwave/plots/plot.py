@@ -6,7 +6,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 def plot_wavefield(wavefield, file_name="wavefield", colorbar=True,
-                   cmap="gray", extent=None, show=False, clim=[-5, 5]):
+                   cmap="gray", solver=None, show=False, clim=[-5, 5]):
     """
     Plot the wavefield.
 
@@ -23,8 +23,9 @@ def plot_wavefield(wavefield, file_name="wavefield", colorbar=True,
         The Colormap instance or registered colormap name
         used to map scalar data to colors.
         Default is gray.
-    extent : floats(left, right, bottom, top), optional
-        The bounding box in data coordinates that the image will fill.
+    solver : Solver, optional
+        Solver object. If provided, the plot sets
+        the extent values.
     show : bool, optional
         If True, show the image on a pop up window.
         Default is False.
@@ -35,6 +36,17 @@ def plot_wavefield(wavefield, file_name="wavefield", colorbar=True,
 
     # create the destination dir
     os.makedirs("plots", exist_ok=True)
+    
+    if solver is not None:
+        #left, right, bottom, top
+        left = solver.space_model.bounding_box[2]
+        right = solver.space_model.bounding_box[3]
+        bottom = solver.space_model.bounding_box[1]
+        top = solver.space_model.bounding_box[0]
+        
+        extent = [left, right, bottom, top]
+    else:   
+        extent = None
 
     # process data and generate the plot
     plot = plt.imshow(wavefield, cmap=cmap, extent=extent)
@@ -63,7 +75,8 @@ def plot_wavefield(wavefield, file_name="wavefield", colorbar=True,
     print("Wavefield saved in plots/{}.png".format(file_name))
 
 
-def plot_shotrecord(rec, file_name="shotrecord", colorbar=True, show=False):
+def plot_shotrecord(rec, file_name="shotrecord", colorbar=True,
+                    show=False, solver=None):
     """
     Plot a shot record (receiver values over time).
 
@@ -79,10 +92,28 @@ def plot_shotrecord(rec, file_name="shotrecord", colorbar=True, show=False):
     show : bool, optional
         If True, show the image on a pop up window.
         Default is False.
+    solver : Solver, optional
+        Solver object. If provided, the plot sets
+        the extent values.
     """
     scale = np.max(rec) / 10.0
-    plot = plt.imshow(rec, vmin=-scale, vmax=scale, cmap=cm.gray)
-    plt.xlabel("Receivers")
+
+    if solver is not None:
+        #left, right, bottom, top
+        left = solver.space_model.bounding_box[2]
+        right = solver.space_model.bounding_box[3]
+        bottom = solver.time_model.tf * 1000
+        top = solver.time_model.t0 * 1000
+        
+        extent = [left, right, bottom, top]
+        x_label = "Width (m)"
+    else:   
+        extent = None
+        x_label = "Receivers"
+
+    plot = plt.imshow(rec, vmin=-scale, vmax=scale,
+                      cmap=cm.gray, extent=extent)
+    plt.xlabel(x_label)
     plt.ylabel("Time (ms)")
 
     # Create colorbar on the right
@@ -106,7 +137,7 @@ def plot_shotrecord(rec, file_name="shotrecord", colorbar=True, show=False):
 
 def plot_velocity_model(model, sources=None, receivers=None,
                         file_name="velocity_model", colorbar=True,
-                        extent=None, cmap="jet", show=False):
+                        solver=None, cmap="jet", show=False):
     """
     Plot the velocity model.
 
@@ -127,8 +158,9 @@ def plot_velocity_model(model, sources=None, receivers=None,
         The Colormap instance or registered colormap name
         used to map scalar data to colors.
         Default is jet.
-    extent : floats(left, right, bottom, top), optional
-        The bounding box in data coordinates that the image will fill.
+    solver : Solver, optional
+        Solver object. If provided, the plot sets
+        the extent values.
     show : bool, optional
         If True, show the image on a pop up window.
         Default is False.
@@ -136,6 +168,17 @@ def plot_velocity_model(model, sources=None, receivers=None,
 
     # create the destination dir
     os.makedirs("plots", exist_ok=True)
+    
+    if solver is not None:
+        #left, right, bottom, top
+        left = solver.space_model.bounding_box[2]
+        right = solver.space_model.bounding_box[3]
+        bottom = solver.space_model.bounding_box[1]
+        top = solver.space_model.bounding_box[0]
+        
+        extent = [left, right, bottom, top]
+    else:   
+        extent = None
 
     # process data and generate the plot
     plot = plt.imshow(model, cmap=cmap, extent=extent)
