@@ -32,7 +32,7 @@ class TestSpaceModel:
         assert space_model.damping_length == (0.0,) * dimension * 2
         assert space_model.boundary_condition == ('none',) * dimension * 2
         assert space_model.damping_polynomial_degree == 3
-        assert space_model.damping_alpha == 0.001
+        assert space_model.damping_alpha == 0.002
 
     @pytest.mark.parametrize(
         'dimension, bbox, spacing, shape', [
