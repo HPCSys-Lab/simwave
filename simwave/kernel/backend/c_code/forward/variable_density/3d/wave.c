@@ -203,8 +203,8 @@ double forward(f_type *u, f_type *velocity, f_type *density, f_type *damp,
                     f_type slowness = 1.0 / (velocity[domain_offset] * velocity[domain_offset]);
 
                     // denominator with damp coefficient
-                    f_type denominator = (1.0 + damp[domain_offset] * dt / 2 );
-                    f_type numerator = (1.0 - damp[domain_offset] * dt / 2 );
+                    f_type denominator = (1.0 + damp[domain_offset] * dt / 2);
+                    f_type numerator = (1.0 - damp[domain_offset] * dt / 2);
 
                     value *= (dtSquared / slowness) / denominator;
 
@@ -297,7 +297,7 @@ double forward(f_type *u, f_type *velocity, f_type *density, f_type *damp,
                             f_type slowness = 1.0 / (velocity[domain_offset] * velocity[domain_offset]);
 
                             // denominator with damp coefficient
-                            f_type denominator = (1.0 + damp[domain_offset] * dt / 2 );
+                            f_type denominator = (1.0 + damp[domain_offset] * dt / 2);
 
                             f_type value = dtSquared / slowness * kws * wavelet[wavelet_offset] / denominator;
 

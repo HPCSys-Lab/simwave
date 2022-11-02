@@ -467,7 +467,7 @@ class SpaceModel:
 
     def remove_halo_region(self, u):
         """
-        Remove the halo region outside some wavefield u.
+        Remove the halo region outside some full wavefield u.
 
         Parameters
         ----------
@@ -490,6 +490,58 @@ class SpaceModel:
             return u[:, halo:-halo, halo:-halo, halo:-halo]
         else:
             raise Exception("Wavefield dimension not supported.")
+
+    def remove_halo_region_from_gradient(self, grad):
+        """
+        Remove the halo region outside some gradient.
+
+        Parameters
+        ----------
+        grad : ndarray
+            Gradient.
+
+        Returns
+        ----------
+        ndarray
+            Gradient without halo zone.
+        """
+
+        # number of halo grid points
+        # It is the same in all edges and axis
+        halo = self.halo_size[0]
+
+        if self.dimension == 2:
+            return grad[halo:-halo, halo:-halo]
+        elif self.dimension == 3:
+            return grad[halo:-halo, halo:-halo, halo:-halo]
+        else:
+            raise Exception("Gradient dimension not supported.")
+
+    def add_halo_region(self, u):
+        """
+        Add the halo region outside some full wavefield u.
+        This is used to add the halo ragion to u full
+        in the gradient operator.
+
+        Parameters
+        ----------
+        u : ndarray
+            Full wavefield (with snapshots)
+
+        Returns
+        ----------
+        ndarray
+            Full wavefield with halo zone.
+        """
+        # the first axis is for the snapshots
+        # it does not have halo region
+        padding = tuple(
+            [(0, 0)] + [(i) for i in self.halo_pad_width]
+        )
+        # extension to the spatial order halo
+        u = np.pad(array=u, pad_width=padding)
+
+        return self.dtype(u)
 
     def remove_nbl(self, u):
         """

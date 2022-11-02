@@ -58,10 +58,13 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
     #ifdef DEVICEID
     omp_set_default_device(DEVICEID);
     #endif
-    
+
     size_t u_size = num_snapshots * domain_size;
+    size_t v_size = 3 * domain_size; // prev, current, next
 
     #pragma omp target enter data map(to: u[:u_size])
+    #pragma omp target enter data map(to: v[:v_size])
+    #pragma omp target enter data map(to: grad[:domain_size])
     #pragma omp target enter data map(to: velocity[:domain_size])
     #pragma omp target enter data map(to: damp[:domain_size])
     #pragma omp target enter data map(to: coeff[:stencil_radius+1])
@@ -79,10 +82,13 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
     acc_init(acc_device_nvidia);
     acc_set_device_num(DEVICEID, acc_device_nvidia);
     #endif
-    
+
     size_t u_size = num_snapshots * domain_size;
+    size_t v_size = 3 * domain_size; // prev, current, next
 
     #pragma acc enter data copyin(u[:u_size])
+    #pragma acc enter data copyin(v[:v_size])
+    #pragma acc enter data copyin(grad[:domain_size])
     #pragma acc enter data copyin(velocity[:domain_size])
     #pragma acc enter data copyin(damp[:domain_size])
     #pragma acc enter data copyin(coeff[:stencil_radius+1])
@@ -151,8 +157,8 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
                 f_type slowness = 1.0 / (velocity[domain_offset] * velocity[domain_offset]);
 
                 // denominator with damp coefficient
-                f_type denominator = (1.0 + damp[domain_offset] * dt / 2 );
-                f_type numerator = (1.0 - damp[domain_offset] * dt / 2 );
+                f_type denominator = (1.0 + damp[domain_offset] * dt / 2);
+                f_type numerator = (1.0 - damp[domain_offset] * dt / 2);
 
                 value *= (dtSquared / slowness) / denominator;
 
@@ -232,7 +238,7 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
                         f_type slowness = 1.0 / (velocity[domain_offset] * velocity[domain_offset]);
 
                         // denominator with damp coefficient
-                        f_type denominator = (1.0 + damp[domain_offset] * dt / 2 );
+                        f_type denominator = (1.0 + damp[domain_offset] * dt / 2);
 
                         f_type value = dtSquared / slowness * kws * wavelet[wavelet_offset] / denominator;
 
@@ -377,6 +383,19 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
         /*
             Section 4: gradient calculation
         */
+
+        #ifdef CPU_OPENMP
+        #pragma omp parallel for simd
+        #endif
+
+        #ifdef GPU_OPENMP
+        #pragma omp target teams distribute parallel for collapse(2)
+        #endif
+
+        #ifdef GPU_OPENACC
+        #pragma acc parallel loop collapse(2) present(v,u,grad)
+        #endif
+
         for(size_t i = stencil_radius; i < nz - stencil_radius; i++) {
             for(size_t j = stencil_radius; j < nx - stencil_radius; j++) {
                 // index of the current point in the grid
@@ -389,7 +408,7 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
                 f_type v_second_time_derivative = (v[prev_snapshot] - 2.0 * v[current_snapshot] + v[next_snapshot]) / dtSquared;
 
                 // update gradient
-                size_t current_point_u = n * domain_size + domain_offset;
+                size_t current_point_u = (n-1) * domain_size + domain_offset;
                 grad[domain_offset] -= v_second_time_derivative * u[current_point_u];
             }
         }
@@ -398,8 +417,10 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
     
 
     #ifdef GPU_OPENMP    
-    #pragma omp target exit data map(from: u[:u_size])
+    #pragma omp target exit data map(from: grad[:domain_size])
 
+    #pragma omp target exit data map(delete: u[:u_size])
+    #pragma omp target exit data map(delete: v[:v_size])
     #pragma omp target exit data map(delete: velocity[:domain_size])
     #pragma omp target exit data map(delete: damp[:domain_size])
     #pragma omp target exit data map(delete: coeff[:stencil_radius+1])
@@ -411,9 +432,11 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
 
     #ifdef GPU_OPENACC
     
-    #pragma acc exit data copyout(u[:u_size])    
-    #pragma acc exit data delete(u[:u_size])
+    #pragma acc exit data copyout(grad[:domain_size])    
+    #pragma acc exit data delete(grad[:domain_size])
 
+    #pragma acc exit data delete(u[:u_size])
+    #pragma acc exit data delete(v[:v_size])
     #pragma acc exit data delete(velocity[:domain_size])
     #pragma acc exit data delete(damp[:domain_size])
     #pragma acc exit data delete(coeff[:stencil_radius+1])

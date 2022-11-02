@@ -13,7 +13,7 @@ def plot_wavefield(wavefield, file_name="wavefield", colorbar=True,
     Parameters
     ----------
     wavefield : ndarray
-        Wavefield data.   
+        Wavefield data.
     file_name : str, optional
         Name of the image to be saved.
         Default is wavefield.
@@ -36,16 +36,16 @@ def plot_wavefield(wavefield, file_name="wavefield", colorbar=True,
 
     # create the destination dir
     os.makedirs("plots", exist_ok=True)
-    
+
     if solver is not None:
-        #left, right, bottom, top
+        # left, right, bottom, top
         left = solver.space_model.bounding_box[2]
         right = solver.space_model.bounding_box[3]
         bottom = solver.space_model.bounding_box[1]
         top = solver.space_model.bounding_box[0]
-        
+
         extent = [left, right, bottom, top]
-    else:   
+    else:
         extent = None
 
     # process data and generate the plot
@@ -99,15 +99,15 @@ def plot_shotrecord(rec, file_name="shotrecord", colorbar=True,
     scale = np.max(rec) / 10.0
 
     if solver is not None:
-        #left, right, bottom, top
+        # left, right, bottom, top
         left = solver.space_model.bounding_box[2]
         right = solver.space_model.bounding_box[3]
         bottom = solver.time_model.tf * 1000
         top = solver.time_model.t0 * 1000
-        
+
         extent = [left, right, bottom, top]
         x_label = "Width (m)"
-    else:   
+    else:
         extent = None
         x_label = "Receivers"
 
@@ -168,16 +168,16 @@ def plot_velocity_model(model, sources=None, receivers=None,
 
     # create the destination dir
     os.makedirs("plots", exist_ok=True)
-    
+
     if solver is not None:
-        #left, right, bottom, top
+        # left, right, bottom, top
         left = solver.space_model.bounding_box[2]
         right = solver.space_model.bounding_box[3]
         bottom = solver.space_model.bounding_box[1]
         top = solver.space_model.bounding_box[0]
-        
+
         extent = [left, right, bottom, top]
-    else:   
+    else:
         extent = None
 
     # process data and generate the plot
@@ -188,10 +188,10 @@ def plot_velocity_model(model, sources=None, receivers=None,
     # labels
     plt.xlabel('Width ({})'.format(m_unit))
     plt.ylabel('Depth ({})'.format(m_unit))
-    
+
     # plot receiver points, if provided
     if receivers is not None:
-        # in simwave, it's assumed 
+        # in simwave, it's assumed
         # Z (vertical) and X (horizontal) order
         plt.scatter(receivers[:, 1], receivers[:, 0],
                     s=20, c='green', marker='D')
@@ -245,5 +245,7 @@ def plot_wavelet(time_values, wavelet_values,
 
     if show:
         plt.show()
+
+    plt.close()
 
     print("Wavelet saved in plots/{}.png".format(file_name))

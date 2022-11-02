@@ -103,7 +103,7 @@ class Middleware:
         # run the forward operator
         if operator == 'forward':
             return self._exec_forward(**kwargs)
-        
+
         # run the gradient operator
         if operator == 'gradient':
             return self._exec_gradient(**kwargs)
@@ -161,7 +161,7 @@ class Middleware:
         print('Run forward in %f seconds.' % exec_time)
 
         return kwargs.get('u_full'), kwargs.get('shot_record')
-    
+
     def _exec_gradient(self, **kwargs):
         """
         Run the adjoint and gradient operator.
@@ -210,9 +210,9 @@ class Middleware:
         # run the C gradient function
         exec_time = gradient(*args)
 
-        print('Run gradient in %f seconds.' % exec_time) 
-        
-        return kwargs.get('grad'), kwargs.get('v')
+        print('Run gradient in %f seconds.' % exec_time)
+
+        return kwargs.get('grad')
 
     @property
     def _keys_in_order(self):

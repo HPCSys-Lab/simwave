@@ -109,7 +109,7 @@ class Solver:
         shape = (snapshots,) + self.space_model.extended_shape
 
         return np.zeros(shape, dtype=self.space_model.dtype)
-    
+
     @property
     def v(self):
         """Return the adjoint grid (3, nz. nx [, ny])."""
@@ -121,10 +121,10 @@ class Solver:
         shape = (snapshots,) + self.space_model.extended_shape
 
         return np.zeros(shape, dtype=self.space_model.dtype)
-    
+
     @property
     def grad(self):
-        """Return the the gradient array."""        
+        """Return the the gradient array."""
 
         # define the final shape (domain)
         shape = self.space_model.extended_shape
@@ -186,14 +186,14 @@ class Solver:
         u_full = self.time_model.remove_time_halo_region(u_full)
 
         # remove spatial halo region
-        #u_full = self.space_model.remove_halo_region(u_full)
+        u_full = self.space_model.remove_halo_region(u_full)
 
         return u_full, recv
-    
+
     def gradient(self, u, residual):
         """
         Run the the adjoint and gradient.
-        
+
         Parameters
         ----------
         u : ndarray
@@ -206,18 +206,21 @@ class Solver:
         ndarray
             Gradient array
         """
-        
+
+        # add the spatial halo region to u
+        u = self.space_model.add_halo_region(u)
+
         # in the adjoint case the receives became sources
         src_points, src_values, src_offsets = \
             self.receivers.interpolated_points_and_values
-        
+
         # encapsulate the residual in a multi wavelet object
         adjoint_wavelet = MultiWavelet(
             values=residual,
             time_model=self.time_model
         )
 
-        grad, v = self._middleware.exec(
+        grad = self._middleware.exec(
             operator='gradient',
             u_full=u,
             v=self.v,
@@ -230,23 +233,23 @@ class Solver:
             wavelet_count=adjoint_wavelet.num_sources,
             second_order_fd_coefficients=self.space_model.fd_coefficients(2),
             first_order_fd_coefficients=self.space_model.fd_coefficients(1),
-            boundary_condition=self.space_model.boundary_condition,            
+            boundary_condition=self.space_model.boundary_condition,
             src_points_interval=src_points,
             src_points_interval_size=len(src_points),
             src_points_values=src_values,
             src_points_values_offset=src_offsets,
-            src_points_values_size=len(src_values),            
-            num_sources=adjoint_wavelet.num_sources,            
+            src_points_values_size=len(src_values),
+            num_sources=adjoint_wavelet.num_sources,
             grid_spacing=self.space_model.grid_spacing,
             stride=self.time_model.saving_stride,
             dt=self.time_model.dt,
             begin_timestep=1,
             end_timestep=self.time_model.timesteps,
             space_order=self.space_model.space_order,
-            num_snapshots=self.u_full.shape[0]
-        )   
-        
-        print("aqui em solver.py - linha 249")
-        print("V min and max:", np.min(v), np.max(v))   
+            num_snapshots=u.shape[0]
+        )
+
+        # remove spatial halo region from gradient
+        grad = self.space_model.remove_halo_region_from_gradient(grad)
 
         return grad
