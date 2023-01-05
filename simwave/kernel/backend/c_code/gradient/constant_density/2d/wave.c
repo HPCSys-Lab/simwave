@@ -418,7 +418,6 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
 
     #ifdef GPU_OPENMP    
     #pragma omp target exit data map(from: grad[:domain_size])
-
     #pragma omp target exit data map(delete: u[:u_size])
     #pragma omp target exit data map(delete: v[:v_size])
     #pragma omp target exit data map(delete: velocity[:domain_size])
@@ -430,11 +429,9 @@ double gradient(f_type *u, f_type *v, f_type *grad, f_type *velocity, f_type *da
     #pragma omp target exit data map(delete: wavelet[:wavelet_size * wavelet_count])
     #endif
 
-    #ifdef GPU_OPENACC
-    
+    #ifdef GPU_OPENACC    
     #pragma acc exit data copyout(grad[:domain_size])    
     #pragma acc exit data delete(grad[:domain_size])
-
     #pragma acc exit data delete(u[:u_size])
     #pragma acc exit data delete(v[:v_size])
     #pragma acc exit data delete(velocity[:domain_size])
