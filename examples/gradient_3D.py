@@ -62,8 +62,8 @@ def create_solver(saving_stride, velocity_model):
 
     # create the space model
     space_model = SpaceModel(
-        bounding_box=(0, domain_size, 0, domain_size),
-        grid_spacing=(spacing, spacing),
+        bounding_box=(0, domain_size, 0, domain_size, 0, domain_size),
+        grid_spacing=(spacing, spacing, spacing),
         velocity_model=velocity_model,
         space_order=space_order,
         dtype=dtype
@@ -75,9 +75,10 @@ def create_solver(saving_stride, velocity_model):
     # config boundary conditions
     # (none,  null_dirichlet or null_neumann)
     space_model.config_boundary(
-        damping_length=(damping, damping, damping, damping),
+        damping_length=(damping, damping, damping, damping, damping, damping),
         boundary_condition=(
             "null_neumann", "null_dirichlet",
+            "null_dirichlet", "null_dirichlet",
             "null_dirichlet", "null_dirichlet"
         ),
         damping_polynomial_degree=3,
@@ -95,21 +96,19 @@ def create_solver(saving_stride, velocity_model):
     # create the set of sources
     source = Source(
         space_model,
-        #coordinates=[(20, domain_size//2)],
-        coordinates=[(domain_size//2, domain_size//2)],
+        coordinates=[(domain_size//2, domain_size//2, domain_size//2)],
         window_radius=4
     )
 
     # crete the set of receivers
     receiver = Receiver(
         space_model=space_model,
-        #coordinates=[(domain_size-20, i) for i in range(0, domain_size, 10)],
-        coordinates=[(domain_size//2, i) for i in range(0, domain_size, 10)],
+        coordinates=[(domain_size//2, domain_size//2, i) for i in range(0, domain_size, 10)],
         window_radius=4
     )
 
     # create a ricker wavelet with 10hz of peak frequency
-    ricker = RickerWavelet(10.0, time_model)
+    ricker = RickerWavelet(15.0, time_model)
 
     # create the solver
     solver = Solver(
@@ -138,8 +137,6 @@ def calculate_true_seimogram(velocity_model):
 
     plot_wavefield(u_true[-1], file_name="true_final_wavefield")
     plot_shotrecord(recv_true, file_name="true_seismogram", solver=solver)
-    
-    print(u_true.shape)
 
     return recv_true
 
@@ -155,7 +152,7 @@ def compute_gradient(velocity_model, recv_true):
     plot_velocity_model(solver.space_model.velocity_model,
                         file_name="smooth_velocity_model")
 
-    plot_wavefield(u_full[-1], file_name="smooth_final_wavefield")
+    plot_wavefield(u_full[-1, 50, :, :], file_name="smooth_final_wavefield")
     plot_shotrecord(recv_sim, file_name="smooth_seismogram", solver=solver)
 
     # residual
@@ -171,14 +168,14 @@ def compute_gradient(velocity_model, recv_true):
 
 def camembert_velocity_model(grid_size, radius):
 
-    shape = (grid_size, grid_size)
+    shape = (grid_size, grid_size, grid_size)
 
     vel = np.zeros(shape, dtype=dtype)
     vel[:] = 2500
 
-    a, b = shape[0] / 2, shape[1] / 2
-    z, x = np.ogrid[-a:shape[0]-a, -b:shape[1]-b]
-    vel[z*z + x*x <= radius*radius] = 3000
+    a, b, c = shape[0] / 2, shape[1] / 2, shape[2] / 2
+    z, x, y = np.ogrid[-a:shape[0]-a, -b:shape[1]-b, -c:shape[2]-c]
+    vel[z*z + x*x + y*y <= radius*radius*radius] = 3000
 
     return vel
 
@@ -192,7 +189,7 @@ if __name__ == "__main__":
     tru_vel = camembert_velocity_model(grid_size, radius=15)
 
     # Smooth velocity model
-    smooth_vel = np.zeros(shape=(grid_size, grid_size), dtype=dtype)
+    smooth_vel = np.zeros(shape=(grid_size, grid_size, grid_size), dtype=dtype)
     smooth_vel[:] = 2500
 
     # calculate the true (observed) seismogram
