@@ -48,7 +48,7 @@ compiler_options = {
     },
 }
 
-selected_compiler = compiler_options['c']
+selected_compiler = compiler_options['cpu_openmp']
 
 
 def create_solver(saving_stride, velocity_model):

@@ -17,7 +17,7 @@ space_order = 4
 dtype = np.float32
 
 # propagation time
-propagation_time = 1.0
+propagation_time = .5
 
 # time step variation
 dt = 0.001
@@ -48,7 +48,7 @@ compiler_options = {
     },
 }
 
-selected_compiler = compiler_options['c']
+selected_compiler = compiler_options['cpu_openmp']
 
 
 def create_solver(saving_stride, velocity_model):
@@ -103,7 +103,7 @@ def create_solver(saving_stride, velocity_model):
     # crete the set of receivers
     receiver = Receiver(
         space_model=space_model,
-        coordinates=[(domain_size//2, domain_size//2, i) for i in range(0, domain_size, 10)],
+        coordinates=[(i, domain_size//2, domain_size//2) for i in range(0, domain_size, 10)],
         window_radius=4
     )
 
@@ -130,12 +130,12 @@ def calculate_true_seimogram(velocity_model):
 
     u_true, recv_true = solver.forward()
 
-    plot_velocity_model(solver.space_model.velocity_model,
+    plot_velocity_model(solver.space_model.velocity_model[50, :, :],
                         sources=solver.sources.grid_positions,
                         receivers=solver.receivers.grid_positions,
                         file_name="true_velocity_model")
 
-    plot_wavefield(u_true[-1], file_name="true_final_wavefield")
+    plot_wavefield(u_true[-1, 100, :, :], file_name="true_final_wavefield")
     plot_shotrecord(recv_true, file_name="true_seismogram", solver=solver)
 
     return recv_true
@@ -149,7 +149,7 @@ def compute_gradient(velocity_model, recv_true):
     # run the forward computation
     u_full, recv_sim = solver.forward()
 
-    plot_velocity_model(solver.space_model.velocity_model,
+    plot_velocity_model(solver.space_model.velocity_model[50, :, :],
                         file_name="smooth_velocity_model")
 
     plot_wavefield(u_full[-1, 50, :, :], file_name="smooth_final_wavefield")
@@ -186,7 +186,7 @@ if __name__ == "__main__":
 
     # True velocity model
     # Camembert model
-    tru_vel = camembert_velocity_model(grid_size, radius=15)
+    tru_vel = camembert_velocity_model(grid_size, radius=10)
 
     # Smooth velocity model
     smooth_vel = np.zeros(shape=(grid_size, grid_size, grid_size), dtype=dtype)
@@ -198,4 +198,4 @@ if __name__ == "__main__":
     # compute the adjoint and gradient
     grad = compute_gradient(velocity_model=smooth_vel, recv_true=recv_true)
 
-    plot_velocity_model(grad, file_name="grad")
+    plot_velocity_model(grad[50, :, :], file_name="grad")
