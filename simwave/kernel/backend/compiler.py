@@ -205,11 +205,11 @@ class Compiler:
             # and consequenty fail; moreover split the compilation flags string to separate
             # arguments to ensure proper parsing
             args = [self.cc, program_path]
-            args += self.cflags.split(' ')
+            args += [flag.strip() for flag in self.cflags.split(' ') if flag.strip() != '']
             if float_precision.strip() != '':
-                args.append("{}".format(float_precision))
+                args.append("{}".format(float_precision).strip())
             if language_c.strip() != '':
-                args.append(language_c)
+                args.append(language_c.strip())
             args += ["-o", object_path]
 
             print("Compilation command:", ' '.join(args))
