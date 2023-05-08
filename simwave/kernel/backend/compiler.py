@@ -1,4 +1,4 @@
-import os
+import os, subprocess
 from hashlib import sha1
 
 
@@ -200,25 +200,26 @@ class Compiler:
         if os.path.exists(object_path):
             print("Shared object already compiled in:", object_path)
         else:
-            cmd = (
-                self.cc
-                + " "
-                + program_path
-                + " "
-                + self.cflags
-                + " {}".format(float_precision)
-                + language_c
-                + " -o "
-                + object_path
-            )
+            # create arguments list for `subprocess.run`: pay attention to not providing
+            # empty arguments, which the compiler will try to interpret as source filenames
+            # and consequenty fail; moreover split the compilation flags string to separate
+            # arguments to ensure proper parsing
+            args = [self.cc, program_path]
+            args += self.cflags.split(' ')
+            if float_precision.strip() != '':
+                args.append("{}".format(float_precision))
+            if language_c.strip() != '':
+                args.append(language_c)
+            args += ["-o", object_path]
 
-            print("Compilation command:", cmd)
+            print("Compilation command:", ' '.join(args))
 
             # create a dir to save the compiled shared object
             os.makedirs(object_dir, exist_ok=True)
 
             # execute the command
-            if os.system(cmd) != 0:
+            result = subprocess.run(args)
+            if result.returncode != 0:
                 raise Exception("Compilation failed")
 
         return object_path
