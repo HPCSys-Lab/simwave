@@ -1,4 +1,5 @@
-import os, subprocess
+import os
+import subprocess
 from hashlib import sha1
 
 
@@ -200,12 +201,15 @@ class Compiler:
         if os.path.exists(object_path):
             print("Shared object already compiled in:", object_path)
         else:
-            # create arguments list for `subprocess.run`: pay attention to not providing
-            # empty arguments, which the compiler will try to interpret as source filenames
-            # and consequenty fail; moreover split the compilation flags string to separate
-            # arguments to ensure proper parsing
+            # create arguments list for `subprocess.run`: pay attention to not
+            # providing empty arguments, which the compiler will try to
+            # interpret as source filenames and consequenty fail; moreover
+            # split the compilation flags string to separate arguments to
+            # ensure proper parsing
             args = [self.cc, program_path]
-            args += [flag.strip() for flag in self.cflags.split(' ') if flag.strip() != '']
+            args += [flag.strip()
+                     for flag in self.cflags.split(' ')
+                     if flag.strip() != '']
             if float_precision.strip() != '':
                 args.append("{}".format(float_precision).strip())
             if language_c.strip() != '':
