@@ -1,0 +1,6 @@
+#ifndef SELECTED_KERNEL_H
+#define SELECTED_KERNEL_H
+
+#include "{KERNEL_HEADER}"
+
+#endif // SELECTED_KERNEL_H

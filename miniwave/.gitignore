@@ -1,0 +1,9 @@
+plots/*
+R-miniwave*
+run.sh
+*.nvvp
+__pycache__
+tmp/
+*.sif
+data/
+build/
