@@ -7,7 +7,6 @@ from typing import Tuple, Optional, Callable
 from utils.model import Model
 from utils.compiler import Compiler
 from utils.properties import Properties
-from time import time
 from utils.dataset_writer import DatasetWriter
 import subprocess
 import h5py
@@ -53,7 +52,10 @@ class Kernel:
 
     def _import_python_lib(self) -> Callable:
 
-        spec = importlib.util.spec_from_file_location("kernel.forward", self.file)
+        spec = importlib.util.spec_from_file_location(
+            "kernel.forward",
+            self.file
+        )
         lib = importlib.util.module_from_spec(spec)
         sys.modules["kernel.forward"] = lib
         spec.loader.exec_module(lib)
@@ -79,7 +81,7 @@ class Kernel:
                 ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),  # prev_u
                 ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),  # next_u
                 ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),  # vel_model
-                ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),  # coefficients
+                ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),  # coeffs
                 ctypes.c_float,  # d1
                 ctypes.c_float,  # d2
                 ctypes.c_float,  # d3
@@ -100,7 +102,7 @@ class Kernel:
                 ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),  # prev_u
                 ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),  # next_u
                 ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),  # vel_model
-                ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),  # coefficients
+                ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),  # coeffs
                 ctypes.c_double,  # d1
                 ctypes.c_double,  # d2
                 ctypes.c_double,  # d3
@@ -116,7 +118,9 @@ class Kernel:
             ]
 
         else:
-            raise ValueError("Unkown float precision. Must be float32 or float64")
+            raise ValueError(
+                "Unkown float precision. Must be float32 or float64"
+            )
 
         forward = lib.forward
         forward.restype = ctypes.c_int
@@ -156,7 +160,7 @@ class Kernel:
         # return execution time and last wavefield
 
         # load the lib
-        forward = self._load_lib()
+        self._load_lib()
 
         # get args
         prev_u, next_u = self.model.u_arrays
@@ -212,23 +216,37 @@ class Kernel:
         DatasetWriter.write_dataset(data, "c-frontend/data/miniwave_data.h5")
 
         KERNEL_SOURCE = self.file
-        KERNEL_HEADER = self.file.split('.')[0] + ".h" 
+        KERNEL_HEADER = self.file.split('.')[0] + ".h"
         CUDA_ARCH = self.compiler.sm
         KERNEL_TYPE = self.language
-        
+
         # Compile C code
         subprocess.run("ls c-frontend", shell=True)
-        subprocess.run(f"cmake -S c-frontend -B c-frontend/build/ -DKERNEL_SOURCE={KERNEL_SOURCE} -DKERNEL_HEADER={KERNEL_HEADER} -DKERNEL_TYPE={KERNEL_TYPE} -DCUDA_ARCHITECTURE={CUDA_ARCH}", shell=True)
+        subprocess.run(
+            f"cmake -S c-frontend -B c-frontend/build/ \
+            -DKERNEL_SOURCE={KERNEL_SOURCE} -DKERNEL_HEADER={KERNEL_HEADER} \
+            -DKERNEL_TYPE={KERNEL_TYPE} -DCUDA_ARCHITECTURE={CUDA_ARCH}",
+            shell=True
+        )
         subprocess.run("cmake --build c-frontend/build/", shell=True)
 
         # run the forward function
         if self.language == "ompc":
-            subprocess.run("mpirun -np 4 offload-mpi-worker : -np 1 ./c-frontend/build/miniwave", shell=True)
+            subprocess.run(
+                "mpirun -np 4 offload-mpi-worker : \
+                -np 1 ./c-frontend/build/miniwave",
+                shell=True
+            )
         elif self.language == "mpi" or self.language == "mpi_cuda":
-            subprocess.run("mpirun -np 4 ./c-frontend/build/miniwave", shell=True)
+            subprocess.run(
+                "mpirun -np 4 ./c-frontend/build/miniwave",
+                shell=True
+            )
         else:
             subprocess.run("./c-frontend/build/miniwave", shell=True)
 
-        exec_time, next_u = self.read_data_from_hdf5("./c-frontend/data/results.h5")
+        exec_time, next_u = self.read_data_from_hdf5(
+            "./c-frontend/data/results.h5"
+        )
 
         return exec_time[0], next_u

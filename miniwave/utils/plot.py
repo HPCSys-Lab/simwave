@@ -1,10 +1,17 @@
-import numpy as np
 import matplotlib.pyplot as plt
 import os
-from matplotlib import cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-def plot(wavefield, file_name="wavefield", colorbar=True, cmap="gray", extent=None, show=False, clim=[-5, 5]):
+
+def plot(
+        wavefield,
+        file_name="wavefield",
+        colorbar=True,
+        cmap="gray",
+        extent=None,
+        show=False,
+        clim=[-5, 5]
+):
     """
     Plot the wavefield.
 

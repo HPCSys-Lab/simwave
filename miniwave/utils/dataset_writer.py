@@ -8,7 +8,8 @@ class DatasetWriter:
         pass
 
     def write_dataset(data: dict, path: str):
-        """Writes HDF5 file from data. Non array data written to "scalar_data" dataset as attributes.
+        """Writes HDF5 file from data.
+        Non array data written to "scalar_data" dataset as attributes.
 
         :param data: dictionary containing data to be written.
             Object format:
@@ -51,7 +52,11 @@ class DatasetWriter:
             os.makedirs(dir)
         file = h5py.File(path, "w")
         # Create datasets
-        scalar_data_dataset = file.create_dataset("scalar_data", (1,), dtype="f")
+        scalar_data_dataset = file.create_dataset(
+            "scalar_data",
+            (1,),
+            dtype="f"
+        )
         for key, value in data.items():
 
             dataset_name = key
@@ -60,7 +65,10 @@ class DatasetWriter:
             dataset_attributes = dataset_properties["dataset_attributes"]
 
             if isinstance(dataset_data, np.ndarray):
-                dataset = file.create_dataset(name=dataset_name, data=dataset_data)
+                dataset = file.create_dataset(
+                    name=dataset_name,
+                    data=dataset_data
+                )
                 dataset.attrs.update(dataset_attributes)
             else:
                 scalar_data_dataset.attrs[dataset_name] = str(dataset_data)
