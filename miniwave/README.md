@@ -1,6 +1,6 @@
 # Miniwave - Minimum Simwave
 
-Python wrapper for forward wave propagation.
+Miniwave is a streamlined version of Simwave, tailored mainly for educational use and benchmarking of computational systems. Its backend implements only the wave propagation kernel (no absorbing layers, boundary conditions, etc). miniwave.py is a Python wrapper for the forward wave propagation.
 
 # Dependencies
 
