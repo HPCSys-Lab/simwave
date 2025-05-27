@@ -47,7 +47,7 @@ compiler = Compiler(
 # Velocity model
 vel = np.zeros(shape=(512, 512), dtype=np.float32)
 vel[:] = 1500.0
-#vel[100:] = 2000.0
+vel[100:] = 2000.0
 
 # create the space model
 space_model = SpaceModel(
