@@ -1,4 +1,3 @@
-import versioneer
 from setuptools import setup, find_packages
 
 with open("requirements.txt") as f:
@@ -9,8 +8,6 @@ with open("README.md") as f:
 
 setup(
     name="simwave",
-    version=versioneer.get_version(),
-    cmdclass=versioneer.get_cmdclass(),
     description="Finite difference 2D/3D acoustic wave propagator.",
     long_description=readme,
     long_description_content_type="text/markdown",
