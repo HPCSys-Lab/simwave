@@ -62,6 +62,7 @@ space_model = SpaceModel(
 # (none,  null_dirichlet or null_neumann)
 space_model.config_boundary(
     damping_length=(0, 510, 510, 510),
+#    damping_length=0,
     boundary_condition=(
         "null_neumann", "null_dirichlet",
         "null_dirichlet", "null_dirichlet"
@@ -73,7 +74,7 @@ print(' damping_alpha=',space_model.damping_alpha)
 # create the time model
 time_model = TimeModel(
     space_model=space_model,
-    tf=2.0,
+    tf=2.5,
     saving_stride=0
 )
 

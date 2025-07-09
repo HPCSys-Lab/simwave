@@ -413,8 +413,12 @@ class SpaceModel:
             end_values=self.nbl_pad_width
         )
         # change the damping values (coefficients) according to a function
-        degree = self.damping_polynomial_degree
-        damp_mask = (damp_mask ** degree) * self.damping_alpha
+        #degree = self.damping_polynomial_degree
+        delta = max(self.damping_length) * 2 + 5120
+        # damp_mask = ( 3 * np.max(self.velocity_model) / (2 * delta ) ) * np.log(1/10 ** -3) * ( damp_mask * max(self.grid_spacing) / delta ) ** 2
+        # damp_mask = ( 3 * np.max(self.velocity_model) / (2 * delta ) ) * np.log(1/10 ** -3) * ( damp_mask * max(self.grid_spacing) / delta ) ** 2
+        damp_mask = ( 3 * np.max(self.velocity_model) / (2 * delta ) ) * np.log(1/10 ** -3) * (( damp_mask / delta ) ** 2)
+
         # damp mask in the halo region
         # The values in this extended region is zero
         damp_mask = np.pad(array=damp_mask, pad_width=self.halo_pad_width)
