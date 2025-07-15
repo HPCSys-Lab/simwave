@@ -46,13 +46,13 @@ compiler = Compiler(
 
 # Velocity model
 #vel = np.zeros(shape=(512, 512), dtype=np.float32)
-vel = np.zeros(shape=(512, 512), dtype=np.float32)
+vel = np.zeros(shape=(3, 3), dtype=np.float32)
 vel[:] = 1500.0
 #vel[100:] = 2000.0
-#vel[1,1]=4500
+
 # create the space model
 space_model = SpaceModel(
-    bounding_box=(0, 5120, 0, 5120),
+    bounding_box=(0, 20, 0, 20),
     grid_spacing=(10, 10),
     velocity_model=vel,
     space_order=4,
@@ -63,13 +63,13 @@ space_model = SpaceModel(
 # (none,  null_dirichlet or null_neumann)
 space_model.config_boundary(
         #           damping_length=(0, 1010, 1010, 1010),
-        damping_length=(510, 510, 510, 510),
+        damping_length=(20, 20, 20, 20),
 #    damping_length=0,
-#    boundary_condition=(
-#        #        "null_neumann", "null_dirichlet",
-#        "null_dirichlet", "null_dirichlet",
-#        "null_dirichlet", "null_dirichlet"
-#    )
+    boundary_condition=(
+        #        "null_neumann", "null_dirichlet",
+        "null_dirichlet", "null_dirichlet",
+        "null_dirichlet", "null_dirichlet"
+    )
 )
 
 print(' damping_alpha=',space_model.damping_alpha)
@@ -77,21 +77,21 @@ print(' damping_alpha=',space_model.damping_alpha)
 # create the time model
 time_model = TimeModel(
     space_model=space_model,
-    tf=2.0,
+    tf=0.01,
     saving_stride=0
 )
 
 # create the set of sources
 source = Source(
     space_model,
-    coordinates=[(2560, 2560)],
+    coordinates=[(10, 10)],
     window_radius=4
 )
 
 # crete the set of receivers
 receiver = Receiver(
     space_model=space_model,
-    coordinates=[(2560, i) for i in range(0, 5120, 10)],
+    coordinates=[(10, i) for i in range(0, 10, 10)],
     window_radius=4
 )
 
