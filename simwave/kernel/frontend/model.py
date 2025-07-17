@@ -1,7 +1,6 @@
 from scipy.interpolate import RegularGridInterpolator
 import numpy as np
 from simwave.kernel.frontend import fd
-import IPython
 
 
 class SpaceModel:
@@ -404,8 +403,6 @@ class SpaceModel:
         # damp mask in the original domain
         damp_mask = np.zeros(self.shape, dtype=self.dtype)
         
-        print(damp_mask)
-
         # damp mask in the damping extention
         # use the perpendicular distance from the point to
         # the boundary between original and extended domain
@@ -415,8 +412,6 @@ class SpaceModel:
             mode="linear_ramp",
             end_values=self.nbl_pad_width
         )
-
-        #IPython.embed()
 
         delta = max(self.damping_length)
         temp_spacing = np.max(self.grid_spacing)
