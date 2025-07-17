@@ -454,6 +454,7 @@ class SpaceModel:
         # damp_mask = ( 3 * np.max(self.velocity_model) / (2 * delta ) ) * np.log(1/10 ** -3) * ( damp_mask * max(self.grid_spacing) / delta ) ** 2
         # damp_mask = ( 3 * np.max(self.velocity_model) / (2 * delta ) ) * np.log(1/10 ** -3) * (( damp_mask / delta ) ** 2)
         if modo ==2:
+
             # 2a forma: delta é a extensão total (dominio fisico + 2 * espessura do damping (metros)
             # com o x em número de pontos
             print("2a forma: delta é a extensão total (dominio fisico + 2 * espessura do damping (em Número de pontos)")
