@@ -34,8 +34,10 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
                size_t saving_stride, f_type dt,
                size_t begin_timestep, size_t end_timestep,
                size_t space_order, size_t num_snapshots){
-
+ 
     size_t stencil_radius = space_order / 2;
+
+    //size_t stencil_radius = space_order / 2;
 
     size_t domain_size = nz * nx;
 
@@ -167,13 +169,16 @@ double forward(f_type *u, f_type *velocity, f_type *damp,
                 value += sum_x/dxSquared + sum_z/dzSquared;
 
                 // parameter to be used
-                f_type slowness = 1.0 / (velocity[domain_offset] * velocity[domain_offset]);
+                //f_type slowness = 1.0 / (velocity[domain_offset] * velocity[domain_offset]);
+                f_type c2 = velocity[domain_offset] * velocity[domain_offset];
 
                 // denominator with damp coefficient
-                f_type denominator = (1.0 + damp[domain_offset] * dt / (2 * slowness));
-                f_type numerator = (1.0 - damp[domain_offset] * dt / (2 * slowness));
+                // f_type denominator = (1.0 + damp[domain_offset] * dt / (2 * slowness));
+                f_type denominator = 1.0 + damp[domain_offset] * dt;
+                f_type numerator = 1.0 - damp[domain_offset] * dt;
 
-                value *= (dtSquared / slowness) / denominator;
+                //value *= (dtSquared / slowness) / denominator;
+                value *= (dtSquared * c2) / denominator;
 
                 u[next_snapshot] = 2.0 / denominator * u[current_snapshot] - (numerator / denominator) * u[prev_snapshot] + value;
             }

@@ -189,13 +189,17 @@ double forward(f_type *u, f_type *velocity, f_type *density, f_type *damp,
                 value -= (term_x + term_z) / density[domain_offset];
 
                 // parameter to be used
-                f_type slowness = 1.0 / (velocity[domain_offset] * velocity[domain_offset]);
+                //f_type slowness = 1.0 / (velocity[domain_offset] * velocity[domain_offset]);
+                f_type c2 = velocity[domain_offset] * velocity[domain_offset];
 
                 // denominator with damp coefficient
-                f_type denominator = (1.0 + damp[domain_offset] * dt / (2 * slowness));
-                f_type numerator = (1.0 - damp[domain_offset] * dt / (2 * slowness));
+                //f_type denominator = (1.0 + damp[domain_offset] * dt / (2 * slowness));
+                f_type denominator = 1.0 + damp[domain_offset] * dt;
+                //f_type numerator = (1.0 - damp[domain_offset] * dt / (2 * slowness));
+                f_type numerator = 1.0 - damp[domain_offset] * dt;
 
-                value *= (dtSquared / slowness) / denominator;
+                //value *= (dtSquared / slowness) / denominator;
+                value *= (dtSquared * c2) / denominator;
 
                 u[next_snapshot] = 2.0 / denominator * u[current_snapshot] - (numerator / denominator) * u[prev_snapshot] + value;
             }
