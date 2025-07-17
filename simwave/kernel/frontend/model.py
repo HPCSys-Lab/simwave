@@ -406,7 +406,6 @@ class SpaceModel:
         
         print(damp_mask)
 
-        #IPython.embed()
         # damp mask in the damping extention
         # use the perpendicular distance from the point to
         # the boundary between original and extended domain
@@ -416,107 +415,14 @@ class SpaceModel:
             mode="linear_ramp",
             end_values=self.nbl_pad_width
         )
-        print(damp_mask)
 
         #IPython.embed()
-        # change the damping values (coefficients) according to a function
-        #degree = self.damping_polynomial_degree
 
-        # Possiveis cálculos para o delta (?) 
-        modo = 1
-        verbose = 1
-        print(" ----------------------------- ")
-        if modo ==1:
-            # 1a forma: delta é espessura do dominio (em metros) com x em metros
-            print("1a forma: delta é espessura do dominio (em metros) com x em metros")
-            delta = max(self.damping_length)
-            temp_spacing = np.max(self.grid_spacing)
-            
-            if verbose == 1:
-                print("delta=",delta," metros")
-                print("temp_spacing=",temp_spacing," metros")
-                print("termo 1 = ",3 * np.max(self.velocity_model) / (2 * delta ))
-                print("termo 2 = ", np.log10(1/10 ** -3) )
-                print("termo 3 = ")
-                print((( damp_mask * temp_spacing / delta ) ** 2))
-
-            #damp_mask = ( 3 * np.max(self.velocity_model) / (2 * delta ) ) * np.log10(1/10 ** -3) * (( damp_mask * temp_spacing / delta ) ** 2)
-            damp_mask = ( 3 * np.max(self.velocity_model) / (2 * delta ) ) * np.log10(1/10 ** -3) * (( damp_mask * temp_spacing / delta ) ** 2)
-            #damp_mask = 0.00007 * (( damp_mask * temp_spacing / delta ) ** 2)
-            if verbose == 1:
-                print("dampo_mask final=")
-                print(damp_mask)
-                #IPython.embed()
+        delta = max(self.damping_length)
+        temp_spacing = np.max(self.grid_spacing)
+        damp_mask = ( 3 * np.max(self.velocity_model) / (2 * delta ) ) * np.log10(1/10 ** -3) * (( damp_mask * temp_spacing / delta ) ** 2)
         
-        # delta = max(self.damping_length) * 2 + np.max(self.bounding_box)
-
-        # damp_mask = ( 3 * np.max(self.velocity_model) / (2 * delta ) ) * np.log(1/10 ** -3) * ( damp_mask * max(self.grid_spacing) / delta ) ** 2
-        # damp_mask = ( 3 * np.max(self.velocity_model) / (2 * delta ) ) * np.log(1/10 ** -3) * ( damp_mask * max(self.grid_spacing) / delta ) ** 2
-        # damp_mask = ( 3 * np.max(self.velocity_model) / (2 * delta ) ) * np.log(1/10 ** -3) * (( damp_mask / delta ) ** 2)
-        if modo ==2:
-
-            # 2a forma: delta é a extensão total (dominio fisico + 2 * espessura do damping (metros)
-            # com o x em número de pontos
-            print("2a forma: delta é a extensão total (dominio fisico + 2 * espessura do damping (em Número de pontos)")
-
-            delta = max(self.damping_length) * 2 + np.max(self.bounding_box)
-            
-            if verbose == 1:
-                print("delta=",delta)
-                print("termo 1 = ",3 * np.max(self.velocity_model) / (2 * delta ))
-                print("termo 2 = ", np.log10(1/10 ** -3) )
-                print("termo 3 = ")
-                print((( damp_mask / delta ) ** 2))
-            damp_mask = ( 3 * np.max(self.velocity_model) / (2 * delta ) ) * np.log10(1/10 ** -3) * (( damp_mask / delta ) ** 2)
-            if verbose == 1:
-                print("damp_mask=",damp_mask)            
-                #IPython.embed()
-
-        if modo ==3:
-            # 3a forma: delta é a extensão total (dominio fisico + 2 * espessura do damping (metros)
-            # com o x em número de pontos
-            print("3a forma: delta é a extensão total (dominio fisico) metros e x: em Número de pontos)")          
-
-            delta = max(self.damping_length) 
-            if verbose == 1:
-                print("delta=",delta)
-                print("termo 1 = ",3 * np.max(self.velocity_model) / (2 * delta ))
-                print("termo 2 = ", np.log10(1/10 ** -3) )
-                print("termo 3 = ") 
-                print((( damp_mask / delta ) ** 2))
-            damp_mask = ( 3 * np.max(self.velocity_model) / (2 * delta ) ) * np.log10(1/10 ** -3) * (( damp_mask / delta ) ** 2)
-            if verbose == 1:
-                print("damp_mask=")
-                print(damp_mask)          
-                #IPython.embed()
-
-        if modo ==4:
-            # 4a forma: delta é a extensão total (dominio fisico + 2 * espessura do damping (metros)
-            # com o x em número de pontos
-            print("4a forma: delta é a extensão total (dominio fisico + 2 * espessura do damping (metros)")
-
-            delta = max(self.damping_length) * 2 + np.max(self.bounding_box)
-            temp_spacing = np.max(self.grid_spacing)
-            if verbose == 1:
-                print("delta=",delta," metros")
-                print("temp_spacing=",temp_spacing," metros")
-                print("termo 1 = ",3 * np.max(self.velocity_model) / (2 * delta ))
-                print("termo 2 = ", np.log10(1/10 ** -3) )
-                print("termo 3 = ")
-                print((( damp_mask * temp_spacing / delta ) ** 2))
-            damp_mask = ( 3 * np.max(self.velocity_model) / (2 * delta ) ) * np.log10(1/10 ** -3) * (( damp_mask * temp_spacing / delta ) ** 2)
-            if verbose == 1:
-                print("dampo_mask final=")
-                print(damp_mask)
-                #IPython.embed()
- 
-
-        # damp mask in the halo region
-        # The values in this extended region is zero
-     
-        #damp_mask = np.pad(array=damp_mask, pad_width=self.halo_pad_width)
         damp_mask = np.pad(array=damp_mask, mode="edge", pad_width=self.halo_pad_width)
-#        exit()
         return damp_mask
 
     @property
