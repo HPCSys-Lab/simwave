@@ -72,7 +72,6 @@ space_model.config_boundary(
 #    )
 )
 
-print(' damping_alpha=',space_model.damping_alpha)
 
 # create the time model
 time_model = TimeModel(
