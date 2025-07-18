@@ -62,14 +62,11 @@ space_model = SpaceModel(
 # config boundary conditions
 # (none,  null_dirichlet or null_neumann)
 space_model.config_boundary(
-        #           damping_length=(0, 1010, 1010, 1010),
         damping_length=(510, 510, 510, 510),
-#    damping_length=0,
-#    boundary_condition=(
-#        #        "null_neumann", "null_dirichlet",
-#        "null_dirichlet", "null_dirichlet",
-#        "null_dirichlet", "null_dirichlet"
-#    )
+    boundary_condition=(
+        "null_dirichlet", "null_dirichlet",
+        "null_dirichlet", "null_dirichlet"
+    )
 )
 
 
